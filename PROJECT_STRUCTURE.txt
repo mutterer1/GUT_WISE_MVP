@@ -1,0 +1,222 @@
+PROJECT FILE TREE - HEALTH TRACKING APPLICATION
+================================================
+
+project-root/
+┣ .bolt/                                    # Bolt.new configuration
+┃ ┣ config.json
+┃ ┣ mcp.json
+┃ ┗ prompt
+┣ src/                                      # SOURCE CODE
+┃ ┣ App.tsx                                 # (UPDATED) Main app + hook integration
+┃ ┣ main.tsx                                # App entry point
+┃ ┣ index.css                               # Global styles
+┃ ┣ animations.css                          # Animations
+┃ ┣ vite-env.d.ts                           # Vite types
+┃ ┣
+┃ ┣ services/                               # SERVICES (NEW)
+┃ ┃ ┗ saveEventManager.ts                   # Save event manager (NEW)
+┃ ┣
+┃ ┣ hooks/                                  # CUSTOM HOOKS
+┃ ┃ ┣ useSaveEventHandler.ts                # (NEW) Save event listener
+┃ ┃ ┣ useDashboardData.ts
+┃ ┃ ┣ useTrendsData.ts
+┃ ┃ ┣ useMealStatistics.ts
+┃ ┃ ┗ useAutoGenerateInsights.ts
+┃ ┣
+┃ ┣ contexts/                               # REACT CONTEXTS
+┃ ┃ ┗ AuthContext.tsx
+┃ ┣
+┃ ┣ lib/                                    # LIBRARIES
+┃ ┃ ┗ supabase.ts                           # Supabase client
+┃ ┣
+┃ ┣ types/                                  # TYPES
+┃ ┃ ┗ domain.ts
+┃ ┣
+┃ ┣ constants/                              # CONSTANTS
+┃ ┃ ┗ domain.ts
+┃ ┣
+┃ ┣ utils/                                  # UTILITIES
+┃ ┃ ┣ calorieEstimator.ts
+┃ ┃ ┣ dateFormatters.ts
+┃ ┃ ┣ copySystem.ts
+┃ ┃ ┣ supabaseHelper.ts
+┃ ┃ ┣ retryHelper.ts
+┃ ┃ ┣ insightEngine.ts
+┃ ┃ ┗ clinicalReportQueries.ts
+┃ ┣
+┃ ┗ components/                             # COMPONENTS
+┃   ┣ App-Level
+┃   ┣ Header.tsx
+┃   ┣ Sidebar.tsx
+┃   ┣ Button.tsx
+┃   ┣ Card.tsx
+┃   ┣ EmptyState.tsx
+┃   ┣ ProtectedRoute.tsx
+┃   ┣
+┃   ┣ Notifications
+┃   ┣ SuccessToast.tsx
+┃   ┣ GlobalSaveNotification.tsx             # (NEW)
+┃   ┣
+┃   ┣ Specialized
+┃   ┣ InsightCard.tsx
+┃   ┣ StreakTracker.tsx
+┃   ┣ WelcomeBanner.tsx
+┃   ┣ EncouragementPrompt.tsx
+┃   ┣
+┃   ┣ dashboard/                            # DASHBOARD WIDGETS (7)
+┃   ┃ ┣ TodaySummaryWidget.tsx
+┃   ┃ ┣ BMCountWidget.tsx
+┃   ┃ ┣ BristolScaleWidget.tsx
+┃   ┃ ┣ SymptomSnapshotWidget.tsx
+┃   ┃ ┣ HydrationWidget.tsx
+┃   ┃ ┣ MedicationWidget.tsx
+┃   ┃ ┗ PatternInsightsWidget.tsx
+┃   ┣
+┃   ┣ trends/                               # TREND CHARTS (6)
+┃   ┃ ┣ BMFrequencyChart.tsx
+┃   ┃ ┣ BristolDistributionChart.tsx
+┃   ┃ ┣ SymptomIntensityChart.tsx
+┃   ┃ ┣ SleepSymptomChart.tsx
+┃   ┃ ┣ StressUrgencyChart.tsx
+┃   ┃ ┗ HydrationCorrelationChart.tsx
+┃   ┣
+┃   ┗ reports/                              # REPORT SECTIONS (9)
+┃     ┣ ExecutiveSummary.tsx
+┃     ┣ DateRangeSelector.tsx
+┃     ┣ BMAnalyticsSection.tsx
+┃     ┣ BristolDistributionSection.tsx
+┃     ┣ SymptomProgressionSection.tsx
+┃     ┣ HealthMarkersSection.tsx
+┃     ┣ TriggerPatternsSection.tsx
+┃     ┣ MedicationCorrelationSection.tsx
+┃     ┗ ClinicalAlertsSection.tsx
+┃
+┣ pages/                                     # PAGE COMPONENTS (17)
+┃ ┣ AUTHENTICATION
+┃ ┣ Landing.tsx
+┃ ┣ Login.tsx
+┃ ┣ Signup.tsx
+┃ ┣
+┃ ┣ MAIN PAGES
+┃ ┣ Dashboard.tsx
+┃ ┣ Insights.tsx
+┃ ┣ Meals.tsx
+┃ ┣ Trends.tsx
+┃ ┣ Reports.tsx
+┃ ┣ Community.tsx
+┃ ┣ Settings.tsx
+┃ ┣ Account.tsx
+┃ ┣
+┃ ┣ LOG ENTRY PAGES (ALL UPDATED)
+┃ ┣ BMLog.tsx                               # Bowel Movement - UPDATED
+┃ ┣ FoodLog.tsx                             # Food Intake - UPDATED
+┃ ┣ SymptomsLog.tsx                         # Symptoms - UPDATED
+┃ ┣ SleepLog.tsx                            # Sleep - UPDATED
+┃ ┣ StressLog.tsx                           # Stress - UPDATED
+┃ ┣ HydrationLog.tsx                        # Hydration - UPDATED
+┃ ┣ MedicationLog.tsx                       # Medication - UPDATED
+┃ ┣ MenstrualCycleLog.tsx                   # Menstrual Cycle - UPDATED
+┃ ┣
+┃ ┣ INFORMATION
+┃ ┣ Privacy.tsx
+┃ ┗ Disclaimer.tsx
+┃
+┣ supabase/                                 # DATABASE
+┃ ┗ migrations/                             # SQL MIGRATIONS (9)
+┃   ┣ 20260331160220_create_users_and_profiles.sql
+┃   ┣ 20260331160310_create_health_tracking_tables.sql
+┃   ┣ 20260331160348_create_lifestyle_tracking_tables.sql
+┃   ┣ 20260331160422_create_insights_and_reports_tables.sql
+┃   ┣ 20260331160514_add_additional_performance_indexes.sql
+┃   ┣ 20260331170325_create_bm_logs_table.sql
+┃   ┣ 20260331171427_fix_bm_logs_schema_alignment.sql
+┃   ┣ 20260331191521_create_insights_table.sql
+┃   ┗ 20260401122429_create_menstrual_cycle_logs_table.sql
+┃
+┣ CONFIGURATION FILES
+┣ .env                                      # Local environment variables
+┣ .gitignore                                # Git ignore rules
+┣ package.json                              # Dependencies
+┣ package-lock.json                         # Dependency lock
+┣ tsconfig.json                             # TypeScript config
+┣ tsconfig.app.json                         # App TypeScript config
+┣ tsconfig.node.json                        # Node TypeScript config
+┣ vite.config.ts                            # Vite build config
+┣ tailwind.config.js                        # Tailwind config
+┣ postcss.config.js                         # PostCSS config
+┣ eslint.config.js                          # ESLint config
+┣ index.html                                # HTML entry point
+┣
+┣ DOCUMENTATION (PROJECT REFERENCE)
+┣ CODE_EXPORT.md
+┣ CODE_REVIEW_SUMMARY.md
+┣ MENSTRUAL_CYCLE_TRACKER_SPECS.md
+┣ DASHBOARD_*.md (4 files)
+┣ NAVIGATION_*.md (2 files)
+┣ SIDEBAR_*.md (3 files)
+┣
+┣ SAVE EVENT SYSTEM DOCUMENTATION (NEW)
+┣ SAVE_EVENT_SYSTEM_DOCUMENTATION.md
+┣ SAVE_EVENT_SYSTEM_QUICK_REFERENCE.md
+┣ SAVE_EVENT_SYSTEM_CODE_REFERENCE.md
+┣ SAVE_EVENT_SYSTEM_SUMMARY.md
+┣ SAVE_EVENT_SYSTEM_VISUAL_GUIDE.md
+┣ PROJECT_FILE_TREE.md
+┣ PROJECT_STRUCTURE.txt
+┣
+┣ node_modules/                             # DEPENDENCIES (NOT SHOWN)
+┃ ┣ @supabase/supabase-js
+┃ ┣ react
+┃ ┣ react-dom
+┃ ┣ react-router-dom
+┃ ┣ lucide-react
+┃ ┣ typescript
+┃ ┣ vite
+┃ ┣ tailwindcss
+┃ ┗ ... (additional packages)
+┣
+┗ dist/                                     # BUILD OUTPUT (GENERATED)
+  ┣ index.html
+  ┗ assets/
+    ┣ index-*.css
+    ┗ index-*.js
+
+═══════════════════════════════════════════════════════════════
+
+COMPONENT SUMMARY
+─────────────────
+Total Pages:        17
+Total Components:   25+
+Total Hooks:        5
+Total Utils:        7
+Total Services:     1 (NEW)
+Total Migrations:   9
+Total Docs:         18
+
+NEW FILES (Save Event System)
+──────────────────────────────
+✅ src/services/saveEventManager.ts
+✅ src/hooks/useSaveEventHandler.ts
+✅ src/components/GlobalSaveNotification.tsx
+✅ SAVE_EVENT_SYSTEM_DOCUMENTATION.md
+✅ SAVE_EVENT_SYSTEM_QUICK_REFERENCE.md
+✅ SAVE_EVENT_SYSTEM_CODE_REFERENCE.md
+✅ SAVE_EVENT_SYSTEM_SUMMARY.md
+✅ SAVE_EVENT_SYSTEM_VISUAL_GUIDE.md
+✅ PROJECT_FILE_TREE.md
+
+UPDATED FILES (Save Event Integration)
+──────────────────────────────────────
+✅ src/App.tsx
+✅ src/pages/BMLog.tsx
+✅ src/pages/FoodLog.tsx
+✅ src/pages/SymptomsLog.tsx
+✅ src/pages/SleepLog.tsx
+✅ src/pages/StressLog.tsx
+✅ src/pages/HydrationLog.tsx
+✅ src/pages/MedicationLog.tsx
+✅ src/pages/MenstrualCycleLog.tsx
+
+═══════════════════════════════════════════════════════════════
+Last Updated: April 1, 2026 | Status: ✅ PRODUCTION READY
+═══════════════════════════════════════════════════════════════
