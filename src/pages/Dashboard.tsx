@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
 import Card from '../components/Card';
 import {
   Activity,
@@ -129,10 +128,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-neutral-bg">
-      <Header />
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 pt-32 lg:pt-0 p-md sm:p-lg lg:p-lg">
+      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-md sm:p-lg lg:p-lg">
         <div className="max-w-7xl mx-auto">
           {error && (
             <div className="mb-lg rounded-lg border border-signal-300 bg-signal-100 p-md text-body-sm text-signal-700">
