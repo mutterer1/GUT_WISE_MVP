@@ -1,5 +1,9 @@
-import { Sun, Moon, Utensils, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sun, Moon, Utensils, Activity, Flame, Calendar, CheckCircle } from 'lucide-react';
 import Card from '../Card';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { getStreakCelebration } from '../../utils/copySystem';
 
 interface TodaySummaryWidgetProps {
   bmCount: number;
@@ -8,7 +12,7 @@ interface TodaySummaryWidgetProps {
   hydrationMl: number;
   sleepHours: number | null;
   loading: boolean;
-  userName?: string; // Added: User's name to display in greeting
+  userName?: string;
 }
 
 export default function TodaySummaryWidget({
@@ -18,8 +22,76 @@ export default function TodaySummaryWidget({
   hydrationMl,
   sleepHours,
   loading,
-  userName, // Added: Destructure userName prop
+  userName,
 }: TodaySummaryWidgetProps) {
+  const { user } = useAuth();
+  const [streakDays, setStreakDays] = useState(0);
+  const [loggedToday, setLoggedToday] = useState(false);
+  const [streakLoading, setStreakLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      calculateStreak();
+    }
+  }, [user]);
+
+  const calculateStreak = async () => {
+    if (!user) return;
+
+    try {
+      setStreakLoading(true);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let streak = 0;
+      const checkDate = new Date(today);
+      let hasLoggedToday = false;
+
+      const tables = ['bm_logs', 'food_logs', 'hydration_logs', 'symptom_logs', 'sleep_logs', 'stress_logs'];
+
+      for (let i = 0; i < 400; i++) {
+        const dayStart = new Date(checkDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(checkDate);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        let dayHasLogs = false;
+
+        for (const table of tables) {
+          const { count } = await supabase
+            .from(table)
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .gte('logged_at', dayStart.toISOString())
+            .lte('logged_at', dayEnd.toISOString());
+
+          if ((count || 0) > 0) {
+            dayHasLogs = true;
+            break;
+          }
+        }
+
+        if (i === 0) {
+          hasLoggedToday = dayHasLogs;
+          if (dayHasLogs) streak++;
+        } else if (dayHasLogs) {
+          streak++;
+        } else {
+          break;
+        }
+
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+
+      setStreakDays(streak);
+      setLoggedToday(hasLoggedToday);
+    } catch {
+      setStreakDays(0);
+    } finally {
+      setStreakLoading(false);
+    }
+  };
+
   const totalFood = mealsCount + snacksCount;
   const hydrationLiters = (hydrationMl / 1000).toFixed(1);
 
@@ -32,6 +104,7 @@ export default function TodaySummaryWidget({
 
   const greeting = getGreeting();
   const GreetingIcon = greeting.icon;
+  const celebration = getStreakCelebration(streakDays);
 
   if (loading) {
     return (
@@ -50,10 +123,48 @@ export default function TodaySummaryWidget({
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <GreetingIcon className="h-6 w-6 text-teal-600" />
-            {/* Display greeting with user's name if available */}
             {greeting.text}{userName ? `, ${userName}` : ''}
           </h2>
-          <p className="text-sm text-gray-600 mt-1">Here's your health snapshot for today</p>
+          <p className="text-sm text-gray-600 mt-1">
+            {!streakLoading && (celebration || 'Here\'s your health snapshot for today')}
+            {streakLoading && 'Here\'s your health snapshot for today'}
+          </p>
+        </div>
+
+        <div className="flex-shrink-0 ml-4">
+          {streakLoading ? (
+            <div className="animate-pulse flex items-center gap-2">
+              <div className="h-8 w-20 bg-gray-200 rounded-xl" />
+            </div>
+          ) : streakDays > 0 || loggedToday ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-100 border border-brand-300">
+              <div className={`flex items-center justify-center h-7 w-7 rounded-lg ${
+                streakDays >= 7 ? 'bg-orange-100' : 'bg-brand-200'
+              }`}>
+                <Flame
+                  className={`h-4 w-4 ${streakDays >= 7 ? 'text-orange-500' : 'text-brand-700'}`}
+                  style={streakDays >= 7 ? { animation: 'flamePulse 2s ease-in-out infinite' } : undefined}
+                />
+              </div>
+              <div>
+                <p className="text-body-sm font-semibold text-brand-900 leading-none">
+                  {streakDays} day{streakDays !== 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-brand-700 leading-none mt-0.5">streak</p>
+              </div>
+              {loggedToday && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium ml-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Today
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <p className="text-body-sm text-neutral-muted">No streak yet</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -81,7 +192,7 @@ export default function TodaySummaryWidget({
         </div>
 
         <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-          <Moon className="h-6 w-6 mx-auto mb-2 text-indigo-600" />
+          <Moon className="h-6 w-6 mx-auto mb-2 text-blue-600" />
           <p className="text-2xl font-bold text-gray-900">
             {sleepHours !== null ? `${sleepHours}h` : '--'}
           </p>

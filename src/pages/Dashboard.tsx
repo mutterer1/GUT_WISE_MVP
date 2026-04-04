@@ -23,7 +23,6 @@ import SymptomSnapshotWidget from '../components/dashboard/SymptomSnapshotWidget
 import HydrationWidget from '../components/dashboard/HydrationWidget';
 import MedicationWidget from '../components/dashboard/MedicationWidget';
 import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget';
-import WelcomeBanner from '../components/WelcomeBanner';
 
 interface QuickAction {
   label: string;
@@ -140,8 +139,6 @@ export default function Dashboard() {
               {error}
             </div>
           )}
-
-          <WelcomeBanner userName={userName} />
 
           <div className="mb-lg">
             <TodaySummaryWidget
