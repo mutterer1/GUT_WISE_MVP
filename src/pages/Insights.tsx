@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
 import Button from '../components/Button';
 import InsightCard from '../components/InsightCard';
 import { Brain, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
@@ -63,10 +62,9 @@ export default function Insights() {
 
   return (
     <div className="flex min-h-screen bg-neutral-bg">
-      <Header />
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 pt-32 lg:pt-0 p-md sm:p-lg lg:p-lg">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

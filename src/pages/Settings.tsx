@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { User, Bell, Lock, CreditCard, Shield, Globe, HelpCircle } from 'lucide-react';
@@ -49,10 +48,9 @@ export default function Settings() {
 
   return (
     <div className="flex min-h-screen bg-neutral-bg">
-      <Header />
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 pt-32 lg:pt-0 p-md sm:p-lg lg:p-lg">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>

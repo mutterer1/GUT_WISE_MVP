@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Save, Clock, Activity, AlertCircle } from 'lucide-react';
-import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
