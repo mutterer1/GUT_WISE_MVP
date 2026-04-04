@@ -31,57 +31,57 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-neutral-bg flex items-center justify-center px-md py-xl">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <Activity className="h-8 w-8 text-teal-600" />
-          <span className="text-2xl font-bold text-gray-900">GutWise</span>
+        <Link to="/" className="flex items-center justify-center gap-2 mb-xl">
+          <Activity className="h-8 w-8 text-brand-500" />
+          <span className="text-h4 font-sora font-semibold text-neutral-text">GutWise</span>
         </Link>
 
-        <Card>
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Your health data is right where you left it.</p>
+        <Card variant="elevated">
+          <div className="text-center mb-lg">
+            <h1 className="text-h3 font-sora font-semibold text-neutral-text mb-2">Welcome Back</h1>
+            <p className="text-body-md text-neutral-muted">Your health data is right where you left it.</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+            <div className="mb-md p-3 bg-signal-100 border border-signal-300 rounded-lg text-body-sm text-signal-700">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-lg">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-label font-medium text-neutral-text mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-muted" />
                 <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="input-base pl-10"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-label font-medium text-neutral-text mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-muted" />
                 <input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="input-base pl-10"
                   placeholder="Enter your password"
                 />
               </div>
@@ -93,14 +93,14 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand-500 focus:ring-brand-500 border-neutral-border rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="remember-me" className="ml-2 block text-body-sm text-neutral-text">
                   Remember me
                 </label>
               </div>
 
-              <Link to="/forgot-password" className="text-sm font-medium text-teal-600 hover:text-teal-700">
+              <Link to="/forgot-password" className="text-body-sm font-medium text-brand-500 hover:text-brand-700 transition-colors">
                 Forgot password?
               </Link>
             </div>
@@ -110,30 +110,30 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+          <div className="mt-lg text-center">
+            <p className="text-body-sm text-neutral-muted">
               Don't have an account?{' '}
-              <Link to="/signup" className="font-medium text-teal-600 hover:text-teal-700">
+              <Link to="/signup" className="font-medium text-brand-500 hover:text-brand-700 transition-colors">
                 Sign up for free
               </Link>
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <div className="mt-lg pt-lg border-t border-neutral-border">
+            <div className="flex items-center justify-center gap-2 text-body-sm text-neutral-muted">
               <Lock className="h-4 w-4" />
               <span>Secure login protected by 256-bit encryption</span>
             </div>
           </div>
         </Card>
 
-        <p className="mt-8 text-center text-xs text-gray-500">
+        <p className="mt-xl text-center text-body-sm text-neutral-muted">
           By logging in, you agree to our{' '}
-          <Link to="/privacy" className="text-teal-600 hover:text-teal-700">
+          <Link to="/privacy" className="text-brand-500 hover:text-brand-700 transition-colors">
             Privacy Policy
           </Link>{' '}
           and{' '}
-          <Link to="/disclaimer" className="text-teal-600 hover:text-teal-700">
+          <Link to="/disclaimer" className="text-brand-500 hover:text-brand-700 transition-colors">
             Medical Disclaimer
           </Link>
         </p>

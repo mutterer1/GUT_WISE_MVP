@@ -129,23 +129,23 @@ export default function Dashboard() {
       : 0;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-neutral-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-md sm:p-lg lg:p-lg">
         <div className="max-w-7xl mx-auto">
           {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <div className="mb-lg rounded-lg border border-signal-300 bg-signal-100 p-md text-body-sm text-signal-700">
               {error}
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mb-lg grid grid-cols-1 gap-md md:grid-cols-2">
             <WelcomeBanner userName={userName} />
             <StreakTracker />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-lg">
             <TodaySummaryWidget
               bmCount={metrics.todayBMCount}
               mealsCount={metrics.todayFood.meals}
@@ -157,12 +157,12 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="mb-8">
-            <Card>
-              <div className="mb-4 flex items-center justify-between">
+          <div className="mb-lg">
+            <Card variant="elevated">
+              <div className="mb-md flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Quick Log Actions</h2>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <h2 className="text-h4 font-sora font-semibold text-neutral-text">Quick Log Actions</h2>
+                  <p className="mt-1 text-body-sm text-neutral-muted">
                     Quickly add a new health entry.
                   </p>
                 </div>
@@ -176,12 +176,12 @@ export default function Dashboard() {
                     <button
                       key={action.path}
                       onClick={() => navigate(action.path)}
-                      className={`rounded-lg px-3 py-3 text-left transition-all hover:shadow-sm group ${action.bgClass} ${action.hoverBgClass}`}
+                      className={`rounded-lg px-3 py-3 text-left transition-smooth hover:shadow-sm group ${action.bgClass} ${action.hoverBgClass}`}
                     >
                       <Icon
                         className={`mb-1 h-5 w-5 transition-transform group-hover:scale-110 ${action.iconClass}`}
                       />
-                      <p className={`text-sm font-medium ${action.textClass}`}>
+                      <p className={`text-body-sm font-medium ${action.textClass}`}>
                         {action.label}
                       </p>
                     </button>
@@ -191,7 +191,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-lg">
             <PatternInsightsWidget
               bmCount={metrics.todayBMCount}
               symptomsCount={metrics.todaySymptoms.length}
@@ -201,7 +201,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3">
             <BMCountWidget count={metrics.todayBMCount} loading={loading} />
 
             <BristolScaleWidget
@@ -228,27 +228,27 @@ export default function Dashboard() {
             />
           </div>
 
-          <Card>
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
+          <Card variant="elevated">
+            <h2 className="mb-md text-h4 font-sora font-semibold text-neutral-text">
               About Your Health Dashboard
             </h2>
-            <div className="space-y-3 text-sm text-gray-600">
+            <div className="space-y-3 text-body-md text-neutral-muted">
               <p>
                 Your dashboard provides a real-time overview of your health metrics.
                 Data updates as you log your daily activities.
               </p>
 
-              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="rounded-lg bg-teal-50 p-3">
-                  <p className="mb-1 font-medium text-teal-900">Track Consistently</p>
-                  <p className="text-xs text-teal-700">
+              <div className="mt-md grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="rounded-lg bg-brand-100 p-3">
+                  <p className="mb-1 font-medium text-brand-900">Track Consistently</p>
+                  <p className="text-body-sm text-brand-700">
                     Log daily to unlock stronger patterns and more useful insights.
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-blue-50 p-3">
-                  <p className="mb-1 font-medium text-blue-900">Data Privacy</p>
-                  <p className="text-xs text-blue-700">
+                <div className="rounded-lg bg-discovery-100 p-3">
+                  <p className="mb-1 font-medium text-discovery-900">Data Privacy</p>
+                  <p className="text-body-sm text-discovery-700">
                     Your health data is private and only accessible to you.
                   </p>
                 </div>

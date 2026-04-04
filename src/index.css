@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased;
+    @apply font-sans antialiased bg-neutral-bg text-neutral-text;
     font-family: 'Inter', sans-serif;
   }
 
@@ -15,25 +15,122 @@
   }
 
   * {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
-    line-height: 1.2;
+  h1 {
+    @apply font-sora text-h1 font-semibold text-neutral-text;
+    letter-spacing: -0.01em;
+  }
+
+  h2 {
+    @apply font-sora text-h2 font-semibold text-neutral-text;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    @apply font-sora text-h3 font-semibold text-neutral-text;
+    letter-spacing: -0.01em;
+  }
+
+  h4 {
+    @apply font-sora text-h4 font-semibold text-neutral-text;
+  }
+
+  h5 {
+    @apply font-sora text-h5 font-semibold text-neutral-text;
+  }
+
+  h6 {
+    @apply font-sans text-body-lg font-semibold text-neutral-text;
   }
 
   p {
-    line-height: 1.5;
+    @apply text-body-md text-neutral-text;
+    line-height: 1.6;
   }
 
   a {
     @apply transition-colors duration-150;
+  }
+
+  label {
+    @apply text-label font-medium text-neutral-text;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-500 text-white font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-discovery-500 text-white font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-discovery-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply border-2 border-neutral-border text-neutral-text font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-neutral-bg hover:border-neutral-text disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card-elevated {
+    @apply bg-neutral-surface border border-neutral-border rounded-2xl shadow-soft;
+  }
+
+  .card-glass {
+    @apply bg-neutral-surface/80 backdrop-blur-soft border border-neutral-border/20 rounded-2xl shadow-glass;
+  }
+
+  .input-base {
+    @apply w-full px-4 py-3 border border-neutral-border rounded-lg bg-neutral-surface text-neutral-text transition-all duration-200 placeholder:text-neutral-muted focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+  }
+
+  .glow-subtle {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:bg-discovery-500/5 before:rounded-2xl;
+  }
+
+  .glow-accent {
+    @apply relative overflow-hidden before:absolute before:-inset-1 before:bg-gradient-to-br before:from-discovery-500/20 before:to-transparent before:rounded-2xl before:blur-lg -before:z-0;
+  }
+
+  .text-headline {
+    @apply text-h2 font-sora font-semibold text-neutral-text tracking-tight;
+  }
+
+  .text-subheading {
+    @apply text-h4 font-sora font-semibold text-neutral-text;
+  }
+
+  .text-body {
+    @apply text-body-md text-neutral-muted;
+  }
+
+  .text-label-style {
+    @apply text-label font-medium text-neutral-muted uppercase tracking-wide;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .elevation-1 {
+    @apply shadow-soft;
+  }
+
+  .elevation-2 {
+    @apply shadow-sm;
+  }
+
+  .elevation-3 {
+    @apply shadow-md;
+  }
+
+  .elevation-4 {
+    @apply shadow-lg;
   }
 }

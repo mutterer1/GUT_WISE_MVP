@@ -32,79 +32,79 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-neutral-bg flex items-center justify-center px-md py-xl">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <Activity className="h-8 w-8 text-teal-600" />
-          <span className="text-2xl font-bold text-gray-900">GutWise</span>
+        <Link to="/" className="flex items-center justify-center gap-2 mb-xl">
+          <Activity className="h-8 w-8 text-brand-500" />
+          <span className="text-h4 font-sora font-semibold text-neutral-text">GutWise</span>
         </Link>
 
-        <Card>
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Your Account</h1>
-            <p className="text-gray-600">Your gut health data belongs to you. Let us help you understand it.</p>
+        <Card variant="elevated">
+          <div className="text-center mb-lg">
+            <h1 className="text-h3 font-sora font-semibold text-neutral-text mb-2">Create Your Account</h1>
+            <p className="text-body-md text-neutral-muted">Your gut health data belongs to you. Let us help you understand it.</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+            <div className="mb-md p-3 bg-signal-100 border border-signal-300 rounded-lg text-body-sm text-signal-700">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-md">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="name" className="block text-label font-medium text-neutral-text mb-2">
                 Full Name
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-muted" />
                 <input
                   id="name"
                   name="name"
                   type="text"
                   autoComplete="name"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="input-base pl-10"
                   placeholder="Jane Smith"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-label font-medium text-neutral-text mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-muted" />
                 <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="input-base pl-10"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-label font-medium text-neutral-text mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-muted" />
                 <input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                  className="input-base pl-10"
                   placeholder="Create a strong password"
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-body-sm text-neutral-muted">
                 Must be at least 8 characters with a mix of letters and numbers
               </p>
             </div>
@@ -116,17 +116,17 @@ export default function Signup() {
                   name="terms"
                   type="checkbox"
                   required
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand-500 focus:ring-brand-500 border-neutral-border rounded"
                 />
               </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="terms" className="text-gray-700">
+              <div className="ml-3 text-body-sm">
+                <label htmlFor="terms" className="text-neutral-text">
                   I agree to the{' '}
-                  <Link to="/privacy" className="font-medium text-teal-600 hover:text-teal-700">
+                  <Link to="/privacy" className="font-medium text-brand-500 hover:text-brand-700 transition-colors">
                     Privacy Policy
                   </Link>{' '}
                   and{' '}
-                  <Link to="/disclaimer" className="font-medium text-teal-600 hover:text-teal-700">
+                  <Link to="/disclaimer" className="font-medium text-brand-500 hover:text-brand-700 transition-colors">
                     Medical Disclaimer
                   </Link>
                 </label>
@@ -138,25 +138,25 @@ export default function Signup() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+          <div className="mt-lg text-center">
+            <p className="text-body-sm text-neutral-muted">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-teal-600 hover:text-teal-700">
+              <Link to="/login" className="font-medium text-brand-500 hover:text-brand-700 transition-colors">
                 Log in
               </Link>
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <div className="mt-lg pt-lg border-t border-neutral-border">
+            <div className="flex items-center justify-center gap-2 text-body-sm text-neutral-muted">
               <Lock className="h-4 w-4" />
               <span>Your data is encrypted and HIPAA compliant</span>
             </div>
           </div>
         </Card>
 
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-xs text-blue-800 text-center">
+        <div className="mt-xl bg-brand-100 border border-brand-300 rounded-lg p-md">
+          <p className="text-body-sm text-brand-900 text-center">
             <strong>Free 14-day trial</strong> - No credit card required. Cancel anytime.
           </p>
         </div>
