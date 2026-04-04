@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Save, Clock, Heart, Droplet } from 'lucide-react';
+import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';

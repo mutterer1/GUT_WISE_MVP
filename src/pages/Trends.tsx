@@ -11,6 +11,7 @@ import {
   FileText,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { useTrendsData, TimeRange } from '../hooks/useTrendsData';
@@ -134,10 +135,11 @@ export default function Trends() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-neutral-bg">
+      <Header />
       <Sidebar />
 
-      <main className="flex-1 p-4 pt-16 sm:p-6 lg:ml-64 lg:p-8 lg:pt-0">
+      <main className="flex-1 p-md pt-32 sm:p-lg lg:ml-64 lg:p-lg lg:pt-0">
         <div className="mx-auto max-w-7xl space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-center gap-4">

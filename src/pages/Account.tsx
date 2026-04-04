@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Calendar, LogOut, Save } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { useAuth } from '../contexts/AuthContext';
@@ -235,9 +236,10 @@ export default function Account() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-neutral-bg">
+      <Header />
       <Sidebar />
-      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-6">
+      <main className="flex-1 lg:ml-64 pt-32 lg:pt-0 p-md sm:p-lg">
           <div className="max-w-4xl mx-auto">
             <button
               onClick={() => navigate(-1)}

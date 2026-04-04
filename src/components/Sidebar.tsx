@@ -89,7 +89,7 @@ export default function Sidebar() {
     <>
       <button
         type="button"
-        className="fixed left-4 top-4 z-50 rounded-lg bg-white p-2 shadow-md transition-colors hover:bg-gray-50 lg:hidden"
+        className="fixed left-4 top-20 z-40 rounded-lg bg-white p-2 shadow-md transition-colors hover:bg-gray-50 lg:hidden"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
       >
