@@ -87,18 +87,22 @@ export default function Sidebar() {
 
   return (
     <>
-      <button
-        type="button"
-        className="fixed left-4 top-20 z-40 rounded-lg bg-white p-2 shadow-md transition-colors hover:bg-gray-50 lg:hidden"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-      >
-        {isMobileMenuOpen ? (
-          <X className="h-6 w-6 text-gray-700" />
-        ) : (
-          <Menu className="h-6 w-6 text-gray-700" />
-        )}
-      </button>
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
+        <button
+          type="button"
+          className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-6 w-6 text-gray-700" />
+          ) : (
+            <Menu className="h-6 w-6 text-gray-700" />
+          )}
+        </button>
+        <Activity className="h-6 w-6 text-teal-600" />
+        <span className="text-lg font-bold text-gray-900">GutWise</span>
+      </div>
 
       <aside
         className={`
