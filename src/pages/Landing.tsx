@@ -48,7 +48,7 @@ export default function Landing() {
       <Header />
 
       <main>
-        <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl sm:py-2xl">
+        <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 text-brand-900 rounded-full text-body-sm font-medium mb-lg">
               <Activity className="h-4 w-4" />
