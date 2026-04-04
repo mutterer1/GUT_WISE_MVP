@@ -24,7 +24,6 @@ import HydrationWidget from '../components/dashboard/HydrationWidget';
 import MedicationWidget from '../components/dashboard/MedicationWidget';
 import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget';
 import WelcomeBanner from '../components/WelcomeBanner';
-import StreakTracker from '../components/StreakTracker';
 
 interface QuickAction {
   label: string;
@@ -142,10 +141,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="mb-lg grid grid-cols-1 gap-md md:grid-cols-2">
-            <WelcomeBanner userName={userName} />
-            <StreakTracker />
-          </div>
+          <WelcomeBanner userName={userName} />
 
           <div className="mb-lg">
             <TodaySummaryWidget
