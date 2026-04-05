@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalSaveNotification from './components/GlobalSaveNotification';
 import { useSaveEventHandler } from './hooks/useSaveEventHandler';
@@ -75,9 +76,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }
