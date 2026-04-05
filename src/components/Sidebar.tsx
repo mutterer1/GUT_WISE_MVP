@@ -18,8 +18,10 @@ import {
   Pill,
   Heart,
   BookOpen,
+  Sun,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -48,6 +50,7 @@ export default function Sidebar() {
 
   const location = useLocation();
   const { user, profile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleResize = () => {
@@ -87,35 +90,48 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-3 border-b border-neutral-border bg-neutral-surface px-4 lg:hidden dark:border-dark-border dark:bg-dark-bg">
         <button
           type="button"
-          className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+          className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
           {isMobileMenuOpen ? (
-            <X className="h-6 w-6 text-gray-700" />
+            <X className="h-6 w-6 text-neutral-text dark:text-dark-text" />
           ) : (
-            <Menu className="h-6 w-6 text-gray-700" />
+            <Menu className="h-6 w-6 text-neutral-text dark:text-dark-text" />
           )}
         </button>
-        <Activity className="h-6 w-6 text-teal-600" />
-        <span className="text-lg font-bold text-gray-900">GutWise</span>
+        <Activity className="h-6 w-6 text-brand-500" />
+        <span className="text-lg font-bold text-neutral-text dark:text-dark-text">GutWise</span>
       </div>
 
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen w-64 border-r border-gray-200 bg-white
-          transition-transform duration-300 ease-in-out
+          fixed top-0 left-0 z-50 h-screen w-64 border-r border-neutral-border bg-neutral-surface
+          transition-transform duration-300 ease-in-out dark:border-dark-border dark:bg-dark-bg
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center gap-2 border-b border-gray-200 px-6 py-6">
-            <Activity className="h-8 w-8 text-teal-600" />
-            <span className="text-xl font-bold text-gray-900">GutWise</span>
+          <div className="flex items-center justify-between border-b border-neutral-border px-6 py-6 dark:border-dark-border">
+            <div className="flex items-center gap-2">
+              <Activity className="h-8 w-8 text-brand-500" />
+              <span className="text-xl font-bold text-neutral-text dark:text-dark-text">GutWise</span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5 text-dark-muted" />
+              ) : (
+                <Moon className="h-5 w-5 text-neutral-muted" />
+              )}
+            </button>
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
@@ -135,8 +151,8 @@ export default function Sidebar() {
                         flex items-center gap-3 transition-colors duration-150
                         ${
                           showLoggingHubActive
-                            ? 'bg-teal-50 text-teal-700'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                            : 'text-neutral-text hover:bg-neutral-bg dark:text-dark-text dark:hover:bg-dark-surface'
                         }
                       `}
                     >
@@ -150,7 +166,7 @@ export default function Sidebar() {
                     </button>
 
                     {expandedLoggingHub && (
-                      <div className="mt-1 ml-2 space-y-1 border-l border-gray-200 pl-2">
+                      <div className="mt-1 ml-2 space-y-1 border-l border-neutral-border pl-2 dark:border-dark-border">
                         {loggingSubmenu.map((subitem) => {
                           const SubIcon = subitem.icon;
                           const subActive = isActive(subitem.href);
@@ -164,8 +180,8 @@ export default function Sidebar() {
                                 transition-colors duration-150
                                 ${
                                   subActive
-                                    ? 'bg-teal-50 text-teal-700'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                                    : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
                                 }
                               `}
                               onClick={() => setIsMobileMenuOpen(false)}
@@ -190,8 +206,8 @@ export default function Sidebar() {
                     transition-colors duration-150
                     ${
                       active
-                        ? 'bg-teal-50 text-teal-700'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                        : 'text-neutral-text hover:bg-neutral-bg dark:text-dark-text dark:hover:bg-dark-surface'
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -203,21 +219,21 @@ export default function Sidebar() {
             })}
           </nav>
 
-          <div className="border-t border-gray-200 px-6 py-4">
+          <div className="border-t border-neutral-border px-6 py-4 dark:border-dark-border">
             <Link
               to="/account"
-              className="flex items-center gap-3 rounded-lg px-2 transition-colors duration-150 hover:bg-gray-50"
+              className="flex items-center gap-3 rounded-lg px-2 transition-colors duration-150 hover:bg-neutral-bg dark:hover:bg-dark-surface"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-blue-500 font-semibold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 font-semibold text-white">
                 {getInitial()}
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">
+                <p className="truncate text-sm font-medium text-neutral-text dark:text-dark-text">
                   {displayName}
                 </p>
-                <p className="truncate text-xs text-gray-500">{userEmail}</p>
+                <p className="truncate text-xs text-neutral-muted dark:text-dark-muted">{userEmail}</p>
               </div>
             </Link>
           </div>
