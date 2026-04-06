@@ -6,100 +6,112 @@ import {
   Brain,
   Shield,
   TrendingUp,
-  Users,
   Lock,
   Award,
   ChevronRight,
-  Activity
+  Activity,
+  Sparkles,
+  LineChart,
+  Heart
 } from 'lucide-react';
 
 export default function Landing() {
   const features = [
     {
       icon: Brain,
-      title: 'Personalized Insights',
-      description: 'AI-powered analysis tailored to your unique gut microbiome and health patterns.',
+      title: 'Pattern Recognition',
+      description: 'Our AI analyzes your daily logs to surface connections between your diet, stress, sleep, and digestive symptoms that would be impossible to spot on your own.',
+      isAI: true,
     },
     {
-      icon: TrendingUp,
-      title: 'Track Your Progress',
-      description: 'Monitor improvements over time with detailed charts and actionable recommendations.',
+      icon: LineChart,
+      title: 'Meaningful Trends',
+      description: 'Move beyond raw data. See how your body responds over time with clear visualizations that tell the story of your gut health journey.',
+      isAI: false,
     },
     {
       icon: Shield,
-      title: 'Privacy First',
-      description: 'Your health data is encrypted and never shared without your explicit consent.',
+      title: 'Clinical-Grade Privacy',
+      description: 'Your health data is encrypted end-to-end and never shared. Built to exceed HIPAA requirements because trust is non-negotiable.',
+      isAI: false,
     },
     {
-      icon: Users,
-      title: 'Expert Community',
-      description: 'Connect with others on similar journeys and learn from certified health professionals.',
+      icon: Heart,
+      title: 'Body Signals Decoded',
+      description: 'Log symptoms, meals, and lifestyle factors in seconds. GutWise translates these signals into actionable understanding.',
+      isAI: false,
     },
   ];
 
   const trustSignals = [
     { icon: Lock, text: 'HIPAA Compliant' },
-    { icon: Shield, text: 'Bank-Level Encryption' },
-    { icon: Award, text: 'Medically Reviewed' },
+    { icon: Shield, text: 'End-to-End Encrypted' },
+    { icon: Award, text: 'Clinically Informed' },
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-bg">
+    <div className="min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Header />
 
-      <main className="pt-16 lg:pt-0">
-        <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-100 text-brand-900 rounded-full text-body-sm font-medium mb-lg">
-              <Activity className="h-4 w-4" />
-              <span>Your gut's new best friend</span>
-            </div>
+      <main className="pt-16">
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 gradient-dark-radial dark:opacity-100 opacity-0" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
 
-            <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text mb-lg leading-tight">
-              Unlock the Power of Your
-              <span className="block text-brand-500">Gut Health Intelligence</span>
-            </h1>
+          <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-dark-elevated dark:bg-dark-elevated bg-brand-100 border border-dark-border dark:border-dark-border border-brand-200 rounded-full text-body-sm font-medium mb-lg">
+                <Sparkles className="h-4 w-4 text-discovery-500" />
+                <span className="text-neutral-text dark:text-dark-text">AI-Powered Gut Intelligence</span>
+              </div>
 
-            <p className="text-body-lg text-neutral-muted mb-lg max-w-3xl mx-auto leading-relaxed">
-              Transform your digestive wellness with personalized insights, expert guidance,
-              and a supportive community. Because your gut feeling deserves data-driven confidence.
-            </p>
+              <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-lg leading-tight">
+                Understand What Your
+                <span className="block text-brand-500">Body is Telling You</span>
+              </h1>
 
-            <div className="flex flex-col sm:flex-row gap-md justify-center items-center">
-              <Link to="/signup">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Start Your Journey
-                  <ChevronRight className="inline ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Log In
-                </Button>
-              </Link>
-            </div>
+              <p className="text-body-lg text-neutral-muted dark:text-dark-muted mb-lg max-w-2xl mx-auto leading-relaxed">
+                GutWise transforms scattered health logs into clear insights.
+                See the patterns. Understand the connections. Make informed decisions
+                about your digestive wellness.
+              </p>
 
-            <div className="flex flex-wrap justify-center gap-lg mt-2xl text-body-sm text-neutral-muted">
-              {trustSignals.map((signal) => {
-                const Icon = signal.icon;
-                return (
-                  <div key={signal.text} className="flex items-center gap-2">
-                    <Icon className="h-5 w-5 text-brand-500" />
-                    <span>{signal.text}</span>
-                  </div>
-                );
-              })}
+              <div className="flex flex-col sm:flex-row gap-md justify-center items-center">
+                <Link to="/signup">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Start Understanding
+                    <ChevronRight className="inline ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-surface">
+                    Log In
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-lg mt-2xl text-body-sm text-neutral-muted dark:text-dark-muted">
+                {trustSignals.map((signal) => {
+                  const Icon = signal.icon;
+                  return (
+                    <div key={signal.text} className="flex items-center gap-2">
+                      <Icon className="h-5 w-5 text-brand-500" />
+                      <span>{signal.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
 
         <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
           <div className="text-center mb-2xl">
-            <h2 className="text-h2 font-sora font-semibold text-neutral-text mb-md">
-              Everything You Need to Thrive
+            <h2 className="text-h2 font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">
+              Intelligence, Not Just Tracking
             </h2>
-            <p className="text-body-lg text-neutral-muted max-w-2xl mx-auto">
-              Comprehensive tools and insights to help you understand and improve your gut health
+            <p className="text-body-lg text-neutral-muted dark:text-dark-muted max-w-2xl mx-auto">
+              Most health apps give you charts. GutWise gives you understanding.
             </p>
           </div>
 
@@ -107,16 +119,32 @@ export default function Landing() {
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={feature.title} variant="elevated">
+                <Card
+                  key={feature.title}
+                  variant={feature.isAI ? 'discovery' : 'elevated'}
+                  glowIntensity={feature.isAI ? 'medium' : 'subtle'}
+                  className="transition-all duration-300 hover:scale-[1.02]"
+                >
                   <div className="flex items-start gap-md">
-                    <div className="flex-shrink-0 w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center">
-                      <Icon className="h-6 w-6 text-brand-500" />
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                      feature.isAI
+                        ? 'bg-discovery-500/10 dark:bg-discovery-500/20'
+                        : 'bg-brand-500/10 dark:bg-brand-500/20'
+                    }`}>
+                      <Icon className={`h-6 w-6 ${
+                        feature.isAI ? 'text-discovery-500' : 'text-brand-500'
+                      }`} />
                     </div>
                     <div>
-                      <h3 className="text-h5 font-sora font-semibold text-neutral-text mb-2">
+                      <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text mb-2">
                         {feature.title}
+                        {feature.isAI && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded-full">
+                            AI
+                          </span>
+                        )}
                       </h3>
-                      <p className="text-body-md text-neutral-muted leading-relaxed">
+                      <p className="text-body-md text-neutral-muted dark:text-dark-muted leading-relaxed">
                         {feature.description}
                       </p>
                     </div>
@@ -127,67 +155,78 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="bg-gradient-to-br from-brand-500 to-brand-700 py-xl sm:py-2xl">
-          <div className="max-w-4xl mx-auto px-lg sm:px-lg lg:px-lg text-center">
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-700 to-brand-900 dark:from-brand-900 dark:to-dark-bg" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(124,92,255,0.15)_0%,_transparent_70%)]" />
+
+          <div className="relative max-w-4xl mx-auto px-lg sm:px-lg lg:px-lg py-xl sm:py-2xl text-center">
+            <div className="inline-flex items-center gap-2 mb-md">
+              <Brain className="h-5 w-5 text-discovery-300" />
+              <span className="text-body-sm text-brand-200">Powered by AI</span>
+            </div>
+
             <h2 className="text-h2 sm:text-display-md font-sora font-semibold text-white mb-md">
-              Ready to Take Control of Your Gut Health?
+              Your Gut Health Story, Understood
             </h2>
-            <p className="text-body-lg text-brand-100 mb-lg">
-              Join thousands of users who have transformed their digestive wellness
+            <p className="text-body-lg text-brand-100 mb-lg max-w-xl mx-auto">
+              Every body is different. GutWise learns your patterns and surfaces insights
+              that matter specifically to you.
             </p>
             <Link to="/signup">
-              <Button size="lg" className="bg-white text-brand-500 hover:bg-neutral-bg">
-                Get Started Free
+              <Button size="lg" className="bg-white text-brand-700 hover:bg-brand-50">
+                Begin Your Journey
               </Button>
             </Link>
             <p className="text-body-sm text-brand-200 mt-md">
-              No credit card required. 14-day free trial.
+              Free 14-day trial. No credit card required.
             </p>
           </div>
         </section>
 
-        <footer className="bg-neutral-surface border-t border-neutral-border">
+        <footer className="bg-neutral-surface dark:bg-dark-bg border-t border-neutral-border dark:border-dark-border">
           <div className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-lg">
               <div>
                 <div className="flex items-center gap-2 mb-md">
                   <Activity className="h-6 w-6 text-brand-500" />
-                  <span className="text-h5 font-sora font-semibold text-neutral-text">GutWise</span>
+                  <span className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                    Gut<span className="text-brand-500">Wise</span>
+                  </span>
                 </div>
-                <p className="text-body-sm text-neutral-muted">
-                  Empowering you with personalized gut health intelligence
+                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+                  Turning body signals into understanding
                 </p>
               </div>
 
               <div>
-                <h4 className="font-sora font-semibold text-neutral-text mb-md">Product</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted">
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">Features</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">Pricing</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">FAQ</Link></li>
+                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Product</h4>
+                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Features</Link></li>
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Pricing</Link></li>
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">FAQ</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-sora font-semibold text-neutral-text mb-md">Company</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted">
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">About</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">Blog</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">Careers</Link></li>
+                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Company</h4>
+                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">About</Link></li>
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Blog</Link></li>
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Careers</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-sora font-semibold text-neutral-text mb-md">Legal</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted">
-                  <li><Link to="/privacy" className="hover:text-neutral-text transition-colors">Privacy Policy</Link></li>
-                  <li><Link to="/disclaimer" className="hover:text-neutral-text transition-colors">Medical Disclaimer</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text transition-colors">Terms of Service</Link></li>
+                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Legal</h4>
+                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <li><Link to="/privacy" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Privacy Policy</Link></li>
+                  <li><Link to="/disclaimer" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Medical Disclaimer</Link></li>
+                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Terms of Service</Link></li>
                 </ul>
               </div>
             </div>
 
-            <div className="border-t border-neutral-border mt-xl pt-xl text-center text-body-sm text-neutral-muted">
+            <div className="border-t border-neutral-border dark:border-dark-border mt-xl pt-xl text-center text-body-sm text-neutral-muted dark:text-dark-muted">
               <p>&copy; 2024 GutWise. All rights reserved.</p>
             </div>
           </div>

@@ -1,6 +1,5 @@
 import { AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import Card from '../Card';
-import { formatDateTime } from '../../utils/dateFormatters';
 
 interface Symptom {
   symptom_type: string;
@@ -19,19 +18,19 @@ export default function SymptomSnapshotWidget({
 }: SymptomSnapshotWidgetProps) {
   if (loading) {
     return (
-      <Card>
+      <Card variant="elevated">
         <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-1/2"></div>
+          <div className="h-12 bg-neutral-border dark:bg-dark-border rounded"></div>
         </div>
       </Card>
     );
   }
 
   const getSeverityColor = (severity: number) => {
-    if (severity <= 3) return 'bg-green-100 text-green-700 border-green-200';
-    if (severity <= 6) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    return 'bg-red-100 text-red-700 border-red-200';
+    if (severity <= 3) return 'bg-brand-500/10 dark:bg-brand-500/20 text-brand-500 border-brand-500/20';
+    if (severity <= 6) return 'bg-signal-500/10 dark:bg-signal-500/20 text-signal-500 border-signal-500/20';
+    return 'bg-signal-700/10 dark:bg-signal-700/20 text-signal-700 border-signal-700/20';
   };
 
   const getSeverityLabel = (severity: number) => {
@@ -42,25 +41,21 @@ export default function SymptomSnapshotWidget({
 
   if (symptoms.length === 0) {
     return (
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card variant="elevated">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Symptoms Today</p>
-            <p className="text-4xl font-bold text-green-600">0</p>
+            <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted mb-1">Symptoms Today</p>
+            <p className="text-display-md font-sora font-semibold text-brand-500">0</p>
           </div>
-          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-            <CheckCircle className="h-6 w-6 text-green-600" />
+          <div className="w-12 h-12 bg-brand-500/10 dark:bg-brand-500/20 rounded-xl flex items-center justify-center">
+            <CheckCircle className="h-6 w-6 text-brand-500" />
           </div>
         </div>
 
-        <div className="bg-green-50 p-4 rounded-lg text-center">
-          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
-          <p className="text-sm font-medium text-green-900">Feeling great!</p>
-          <p className="text-xs text-green-700 mt-1">No symptoms logged today</p>
-        </div>
-
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          <p>Keep up the good work with your health routine</p>
+        <div className="bg-brand-500/5 dark:bg-brand-500/10 p-4 rounded-xl text-center border border-brand-500/10 dark:border-brand-500/20">
+          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-brand-500" />
+          <p className="text-body-sm font-medium text-neutral-text dark:text-dark-text">No symptoms logged</p>
+          <p className="text-xs text-neutral-muted dark:text-dark-muted mt-1">Your body seems to be doing well today</p>
         </div>
       </Card>
     );
@@ -71,44 +66,44 @@ export default function SymptomSnapshotWidget({
   const maxSeverity = Math.max(...symptoms.map((s) => s.severity));
   const mostRecent = symptoms[0];
 
+  const getProgressColor = () => {
+    if (averageSeverity <= 3) return 'bg-brand-500';
+    if (averageSeverity <= 6) return 'bg-signal-500';
+    return 'bg-signal-700';
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card variant="elevated">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Symptoms Today</p>
-          <p className="text-4xl font-bold text-gray-900">{symptoms.length}</p>
+          <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted mb-1">Symptoms Today</p>
+          <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{symptoms.length}</p>
         </div>
-        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-          <AlertCircle className="h-6 w-6 text-orange-600" />
+        <div className="w-12 h-12 bg-signal-500/10 dark:bg-signal-500/20 rounded-xl flex items-center justify-center">
+          <AlertCircle className="h-6 w-6 text-signal-500" />
         </div>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Average Severity</span>
-          <span className="text-sm font-bold text-gray-900">
+          <span className="text-body-sm text-neutral-muted dark:text-dark-muted">Average Severity</span>
+          <span className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">
             {averageSeverity.toFixed(1)}/10
           </span>
         </div>
 
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-neutral-border dark:bg-dark-border rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all ${
-              averageSeverity <= 3
-                ? 'bg-green-500'
-                : averageSeverity <= 6
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-            }`}
+            className={`h-2 rounded-full transition-all ${getProgressColor()}`}
             style={{ width: `${(averageSeverity / 10) * 100}%` }}
           />
         </div>
 
         <div
-          className={`p-3 rounded-lg border ${getSeverityColor(maxSeverity)}`}
+          className={`p-3 rounded-xl border ${getSeverityColor(maxSeverity)}`}
         >
-          <p className="text-xs font-medium mb-1">Most Recent</p>
-          <p className="text-sm font-semibold">{mostRecent.symptom_type}</p>
+          <p className="text-xs font-medium mb-1 opacity-80">Most Recent</p>
+          <p className="text-body-sm font-semibold">{mostRecent.symptom_type}</p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs">
               {getSeverityLabel(mostRecent.severity)} ({mostRecent.severity}/10)
@@ -123,8 +118,8 @@ export default function SymptomSnapshotWidget({
         </div>
 
         {symptoms.length > 1 && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-600">
+          <div className="bg-neutral-bg dark:bg-dark-surface p-3 rounded-xl">
+            <p className="text-xs text-neutral-muted dark:text-dark-muted">
               <Activity className="inline h-3 w-3 mr-1" />
               {symptoms.length} symptoms logged today
             </p>

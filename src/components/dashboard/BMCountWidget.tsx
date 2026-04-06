@@ -1,4 +1,4 @@
-import { Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Activity, TrendingUp, Minus } from 'lucide-react';
 import Card from '../Card';
 
 interface BMCountWidgetProps {
@@ -9,10 +9,10 @@ interface BMCountWidgetProps {
 export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
   if (loading) {
     return (
-      <Card>
+      <Card variant="elevated">
         <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-12 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-1/2"></div>
+          <div className="h-12 bg-neutral-border dark:bg-dark-border rounded w-1/3"></div>
         </div>
       </Card>
     );
@@ -22,32 +22,24 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
     if (count === 0) {
       return {
         message: 'No movements logged yet today',
-        color: 'text-gray-600',
+        color: 'text-neutral-muted dark:text-dark-muted',
         icon: Minus,
-        bgColor: 'bg-gray-100',
+        bgColor: 'bg-neutral-bg dark:bg-dark-surface',
       };
     }
-    if (count === 1) {
-      return {
-        message: 'Normal frequency',
-        color: 'text-green-600',
-        icon: TrendingUp,
-        bgColor: 'bg-green-50',
-      };
-    }
-    if (count === 2) {
+    if (count <= 2) {
       return {
         message: 'Healthy range',
-        color: 'text-green-600',
+        color: 'text-brand-500',
         icon: TrendingUp,
-        bgColor: 'bg-green-50',
+        bgColor: 'bg-brand-500/10 dark:bg-brand-500/20',
       };
     }
     return {
       message: 'Above average',
-      color: 'text-blue-600',
+      color: 'text-brand-300',
       icon: TrendingUp,
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-brand-500/10 dark:bg-brand-500/20',
     };
   };
 
@@ -55,23 +47,23 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
   const StatusIcon = status.icon;
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card variant="elevated">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Bowel Movements</p>
-          <p className="text-4xl font-bold text-gray-900">{count}</p>
+          <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted mb-1">Bowel Movements</p>
+          <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{count}</p>
         </div>
-        <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-          <Activity className="h-6 w-6 text-teal-600" />
+        <div className="w-12 h-12 bg-signal-500/10 dark:bg-signal-500/20 rounded-xl flex items-center justify-center">
+          <Activity className="h-6 w-6 text-signal-500" />
         </div>
       </div>
 
-      <div className={`flex items-center gap-2 ${status.bgColor} p-3 rounded-lg`}>
+      <div className={`flex items-center gap-2 ${status.bgColor} p-3 rounded-xl`}>
         <StatusIcon className={`h-4 w-4 ${status.color}`} />
-        <span className={`text-sm font-medium ${status.color}`}>{status.message}</span>
+        <span className={`text-body-sm font-medium ${status.color}`}>{status.message}</span>
       </div>
 
-      <div className="mt-4 text-xs text-gray-500">
+      <div className="mt-4 text-xs text-neutral-muted dark:text-dark-muted">
         <p>Typical range: 1-3 movements per day</p>
       </div>
     </Card>

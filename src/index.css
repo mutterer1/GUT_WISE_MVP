@@ -10,22 +10,44 @@
     font-family: 'Inter', sans-serif;
   }
 
+  .dark body,
+  html.dark body {
+    @apply bg-dark-bg text-dark-text;
+  }
+
   html {
     scroll-behavior: smooth;
+  }
+
+  html.dark {
+    background-color: #0F172A;
+    color-scheme: dark;
   }
 
   * {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
   }
 
+  .dark * {
+    @apply focus-visible:ring-offset-dark-bg;
+  }
+
   h1 {
     @apply font-sora text-h1 font-semibold text-neutral-text;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+  }
+
+  .dark h1 {
+    @apply text-dark-text;
   }
 
   h2 {
     @apply font-sora text-h2 font-semibold text-neutral-text;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+  }
+
+  .dark h2 {
+    @apply text-dark-text;
   }
 
   h3 {
@@ -33,21 +55,41 @@
     letter-spacing: -0.01em;
   }
 
+  .dark h3 {
+    @apply text-dark-text;
+  }
+
   h4 {
     @apply font-sora text-h4 font-semibold text-neutral-text;
+  }
+
+  .dark h4 {
+    @apply text-dark-text;
   }
 
   h5 {
     @apply font-sora text-h5 font-semibold text-neutral-text;
   }
 
+  .dark h5 {
+    @apply text-dark-text;
+  }
+
   h6 {
     @apply font-sans text-body-lg font-semibold text-neutral-text;
+  }
+
+  .dark h6 {
+    @apply text-dark-text;
   }
 
   p {
     @apply text-body-md text-neutral-text;
     line-height: 1.6;
+  }
+
+  .dark p {
+    @apply text-dark-text;
   }
 
   a {
@@ -57,6 +99,10 @@
   label {
     @apply text-label font-medium text-neutral-text;
   }
+
+  .dark label {
+    @apply text-dark-text;
+  }
 }
 
 @layer components {
@@ -64,48 +110,128 @@
     @apply bg-brand-500 text-white font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  .dark .btn-primary {
+    @apply focus-visible:ring-offset-dark-bg;
+  }
+
   .btn-secondary {
     @apply bg-discovery-500 text-white font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-discovery-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dark .btn-secondary {
+    @apply focus-visible:ring-offset-dark-bg;
   }
 
   .btn-outline {
     @apply border-2 border-neutral-border text-neutral-text font-medium rounded-lg px-6 py-3 transition-all duration-200 hover:bg-neutral-bg hover:border-neutral-text disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  .dark .btn-outline {
+    @apply border-dark-border text-dark-text hover:bg-dark-surface hover:border-dark-muted;
+  }
+
   .card-elevated {
     @apply bg-neutral-surface border border-neutral-border rounded-2xl shadow-soft;
+  }
+
+  .dark .card-elevated {
+    @apply bg-dark-surface border-dark-border shadow-dark-soft;
   }
 
   .card-glass {
     @apply bg-neutral-surface/80 backdrop-blur-soft border border-neutral-border/20 rounded-2xl shadow-glass;
   }
 
+  .dark .card-glass {
+    @apply bg-dark-elevated/60 border-dark-border shadow-dark-glass;
+  }
+
+  .card-discovery {
+    @apply bg-neutral-surface border border-neutral-border rounded-2xl shadow-glow-subtle;
+  }
+
+  .dark .card-discovery {
+    @apply bg-dark-surface border-dark-border shadow-glow-subtle;
+  }
+
+  .card-discovery-active {
+    @apply bg-neutral-surface border border-discovery-300/30 rounded-2xl shadow-glow-medium;
+  }
+
+  .dark .card-discovery-active {
+    @apply bg-dark-surface border-discovery-500/20 shadow-glow-medium;
+  }
+
+  .card-discovery-highlight {
+    @apply bg-neutral-surface border border-discovery-500/40 rounded-2xl shadow-glow-bright;
+  }
+
+  .dark .card-discovery-highlight {
+    @apply bg-dark-surface border-discovery-500/30 shadow-glow-bright animate-glow-pulse;
+  }
+
   .input-base {
     @apply w-full px-4 py-3 border border-neutral-border rounded-lg bg-neutral-surface text-neutral-text transition-all duration-200 placeholder:text-neutral-muted focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
   }
 
-  .glow-subtle {
-    @apply relative overflow-hidden before:absolute before:inset-0 before:bg-discovery-500/5 before:rounded-2xl;
+  .dark .input-base {
+    @apply bg-dark-surface border-dark-border text-dark-text placeholder:text-dark-muted focus:border-brand-500 focus:ring-brand-500/30;
   }
 
-  .glow-accent {
-    @apply relative overflow-hidden before:absolute before:-inset-1 before:bg-gradient-to-br before:from-discovery-500/20 before:to-transparent before:rounded-2xl before:blur-lg -before:z-0;
+  .glow-subtle {
+    @apply shadow-glow-subtle;
+  }
+
+  .glow-medium {
+    @apply shadow-glow-medium;
+  }
+
+  .glow-bright {
+    @apply shadow-glow-bright;
+  }
+
+  .glow-pulse {
+    @apply shadow-glow-bright animate-glow-pulse;
   }
 
   .text-headline {
     @apply text-h2 font-sora font-semibold text-neutral-text tracking-tight;
   }
 
+  .dark .text-headline {
+    @apply text-dark-text;
+  }
+
   .text-subheading {
     @apply text-h4 font-sora font-semibold text-neutral-text;
+  }
+
+  .dark .text-subheading {
+    @apply text-dark-text;
   }
 
   .text-body {
     @apply text-body-md text-neutral-muted;
   }
 
+  .dark .text-body {
+    @apply text-dark-muted;
+  }
+
   .text-label-style {
     @apply text-label font-medium text-neutral-muted uppercase tracking-wide;
+  }
+
+  .dark .text-label-style {
+    @apply text-dark-muted;
+  }
+
+  .gradient-dark-radial {
+    background: radial-gradient(ellipse at top, rgba(74, 143, 168, 0.15) 0%, transparent 50%);
+  }
+
+  .gradient-dark-hero {
+    background: linear-gradient(180deg, rgba(74, 143, 168, 0.08) 0%, transparent 40%);
   }
 }
 
@@ -122,15 +248,31 @@
     @apply shadow-soft;
   }
 
+  .dark .elevation-1 {
+    @apply shadow-dark-soft;
+  }
+
   .elevation-2 {
     @apply shadow-sm;
+  }
+
+  .dark .elevation-2 {
+    @apply shadow-dark-sm;
   }
 
   .elevation-3 {
     @apply shadow-md;
   }
 
+  .dark .elevation-3 {
+    @apply shadow-dark-md;
+  }
+
   .elevation-4 {
     @apply shadow-lg;
+  }
+
+  .dark .elevation-4 {
+    @apply shadow-dark-lg;
   }
 }
