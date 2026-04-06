@@ -109,63 +109,49 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     setEditingId(null);
   }, [createDefaultFormData]);
 
+  async function saveEntry(): Promise<{ mode: 'create' | 'update' }> {
+    if (!user?.id) {
+      throw new Error('You must be signed in to save an entry');
+    }
+
+    const loggedAtTimestamp = new Date(formData.logged_at).toISOString();
+    const dataWithTimestamp = { ...formData, logged_at: loggedAtTimestamp };
+
+    if (editingId) {
+      const { error: updateError } = await supabase
+        .from(table)
+        .update({
+          ...buildUpdatePayload(dataWithTimestamp),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingId);
+
+      if (updateError) throw updateError;
+
+      showSuccess(getUpdateMessage());
+      saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId: editingId });
+      setEditingId(null);
+      return { mode: 'update' };
+    }
+
+    const { error: insertError } = await supabase
+      .from(table)
+      .insert(buildInsertPayload(dataWithTimestamp, user.id));
+
+    if (insertError) throw insertError;
+
+    showSuccess(getSuccessMessage(logType));
+    saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
+    return { mode: 'create' };
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     setSaving(true);
 
     try {
-      if (!user?.id) {
-        throw new Error('You must be signed in to save an entry');
-      }
-
-      const loggedAtTimestamp = new Date(formData.logged_at).toISOString();
-      const dataWithTimestamp = {
-        ...formData,
-        logged_at: loggedAtTimestamp,
-      };
-
-      if (editingId) {
-        const { error: updateError } = await supabase
-          .from(table)
-          .update({
-            ...buildUpdatePayload(dataWithTimestamp),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editingId);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        showSuccess(getUpdateMessage());
-
-        saveEventManager.emit({
-          type: 'update',
-          logType,
-          timestamp: Date.now(),
-          entryId: editingId,
-        });
-
-        setEditingId(null);
-      } else {
-        const { error: insertError } = await supabase
-          .from(table)
-          .insert(buildInsertPayload(dataWithTimestamp, user.id));
-
-        if (insertError) {
-          throw insertError;
-        }
-
-        showSuccess(getSuccessMessage(logType));
-
-        saveEventManager.emit({
-          type: 'save',
-          logType,
-          timestamp: Date.now(),
-        });
-      }
-
+      await saveEntry();
       resetForm();
 
       if (showHistory) {
