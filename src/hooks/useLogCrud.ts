@@ -27,7 +27,7 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   toastVisible: boolean;
   error: string;
   showHistory: boolean;
-  setShowHistory: (v: boolean) => void;
+  setShowHistory: React.Dispatch<React.SetStateAction<boolean>>;
   history: Array<T & { id: string }>;
   editingId: string | null;
   setEditingId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -130,7 +130,6 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
       showSuccess(getUpdateMessage());
       saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId: editingId });
-      setEditingId(null);
       return { mode: 'update' };
     }
 
@@ -166,7 +165,8 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
   };
 
   const handleEdit = (log: T & { id: string }) => {
-    const mappedLog = mapHistoryToForm ? mapHistoryToForm(log) : (log as T);
+    const { id: _id, ...rest } = log;
+    const mappedLog = mapHistoryToForm ? mapHistoryToForm(log) : (rest as T);
 
     setFormData(mappedLog);
     setEditingId(log.id);
@@ -187,7 +187,15 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     try {
       clearError();
 
-      const { error: deleteError } = await supabase.from(table).delete().eq('id', id);
+      if (!user?.id) {
+        throw new Error('You must be signed in to delete an entry');
+      }
+
+      const { error: deleteError } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (deleteError) {
         throw deleteError;
