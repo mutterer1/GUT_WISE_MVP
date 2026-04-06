@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
 type LogoVariant = 'full' | 'icon' | 'wordmark';
-type LogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+type LogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface LogoProps {
   variant?: LogoVariant;
@@ -16,162 +17,122 @@ const sizeConfig = {
   md: { icon: 32, text: 'text-xl', gap: 'gap-2' },
   lg: { icon: 40, text: 'text-2xl', gap: 'gap-3' },
   xl: { icon: 48, text: 'text-3xl', gap: 'gap-3' },
+  '2xl': { icon: 64, text: 'text-4xl', gap: 'gap-4' },
 };
 
-function GutWiseIcon({ size, isDark }: { size: number; isDark: boolean }) {
-  const uniqueId = isDark ? 'dark' : 'light';
-
-  if (isDark) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 64 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <defs>
-          <linearGradient id={`g-outer-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#A8D4E6" />
-            <stop offset="40%" stopColor="#6BA3BD" />
-            <stop offset="100%" stopColor="#4A8FA8" />
-          </linearGradient>
-          <linearGradient id={`g-inner-${uniqueId}`} x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#5A9BB5" />
-            <stop offset="100%" stopColor="#3D7A94" />
-          </linearGradient>
-          <linearGradient id={`gut-main-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E5C4C7" />
-            <stop offset="50%" stopColor="#D4A5AA" />
-            <stop offset="100%" stopColor="#C28F94" />
-          </linearGradient>
-          <linearGradient id={`gut-accent-${uniqueId}`} x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#9B7FE6" />
-            <stop offset="50%" stopColor="#8B6FD6" />
-            <stop offset="100%" stopColor="#7B5FC6" />
-          </linearGradient>
-          <filter id={`glow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        <path
-          d="M54 32C54 44.15 44.15 54 32 54C19.85 54 12 46 12 32C12 18 19.85 10 32 10"
-          stroke={`url(#g-inner-${uniqueId})`}
-          strokeWidth="9"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M54 32C54 44.15 44.15 54 32 54C19.85 54 12 46 12 32C12 18 19.85 10 32 10"
-          stroke={`url(#g-outer-${uniqueId})`}
-          strokeWidth="7"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        <path
-          d="M32 10C44.15 10 54 14 54 22"
-          stroke={`url(#g-inner-${uniqueId})`}
-          strokeWidth="9"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.6"
-        />
-        <path
-          d="M32 10C44.15 10 54 14 54 22"
-          stroke={`url(#g-outer-${uniqueId})`}
-          strokeWidth="7"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.85"
-        />
-
-        <path
-          d="M18 36C22 28 27 31 32 36C37 41 42 38 46 30"
-          stroke={`url(#gut-main-${uniqueId})`}
-          strokeWidth="6"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        <path
-          d="M20 37C23 30 27 33 32 37C37 41 41 38 44 32"
-          stroke={`url(#gut-accent-${uniqueId})`}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-          filter={`url(#glow-${uniqueId})`}
-        />
-      </svg>
-    );
-  }
-
+function GutWiseSvgIcon({ size }: { size: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id={`brand-gradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="g-outer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#A8D4E6" />
+          <stop offset="50%" stopColor="#5A9BB5" />
+          <stop offset="100%" stopColor="#2C617D" />
+        </linearGradient>
+        <linearGradient id="g-inner-grad" x1="100%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#4A8FA8" />
-          <stop offset="50%" stopColor="#2C617D" />
           <stop offset="100%" stopColor="#183C52" />
         </linearGradient>
-        <linearGradient id={`signal-gradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#D9B3B7" />
-          <stop offset="50%" stopColor="#C28F94" />
-          <stop offset="100%" stopColor="#8D5D62" />
+        <linearGradient id="gut-rose-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#E5C4C7" />
+          <stop offset="50%" stopColor="#D4A5AA" />
+          <stop offset="100%" stopColor="#C28F94" />
         </linearGradient>
-        <linearGradient id={`discovery-gradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="gut-purple-grad" x1="0%" y1="50%" x2="100%" y2="50%">
           <stop offset="0%" stopColor="#B8A8FF" />
+          <stop offset="50%" stopColor="#9B7FE6" />
           <stop offset="100%" stopColor="#7C5CFF" />
         </linearGradient>
+        <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="2" dy="3" stdDeviation="3" floodOpacity="0.15" />
+        </filter>
       </defs>
 
+      <g filter="url(#shadow)">
+        <path
+          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 72 18 50C18 28 32.327 18 50 18"
+          stroke="url(#g-inner-grad)"
+          strokeWidth="14"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 72 18 50C18 28 32.327 18 50 18"
+          stroke="url(#g-outer-grad)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+        />
+
+        <path
+          d="M50 18C67.673 18 82 24 82 36"
+          stroke="url(#g-inner-grad)"
+          strokeWidth="14"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.7"
+        />
+        <path
+          d="M50 18C67.673 18 82 24 82 36"
+          stroke="url(#g-outer-grad)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.9"
+        />
+      </g>
+
       <path
-        d="M52 32C52 43.046 43.046 52 32 52C20.954 52 14 45 14 32C14 19 20.954 12 32 12"
-        stroke={`url(#brand-gradient-${uniqueId})`}
-        strokeWidth="8"
+        d="M28 56C35 42 42 48 50 56C58 64 65 58 72 44"
+        stroke="url(#gut-rose-grad)"
+        strokeWidth="9"
         strokeLinecap="round"
         fill="none"
       />
 
       <path
-        d="M32 12C43.046 12 52 16 52 24"
-        stroke={`url(#brand-gradient-${uniqueId})`}
-        strokeWidth="8"
+        d="M32 57C37 46 43 50 50 57C57 64 63 58 68 48"
+        stroke="url(#gut-purple-grad)"
+        strokeWidth="3"
         strokeLinecap="round"
         fill="none"
-        opacity="0.7"
-      />
-
-      <path
-        d="M20 34C24 28 28 30 32 34C36 38 40 36 44 30"
-        stroke={`url(#signal-gradient-${uniqueId})`}
-        strokeWidth="5"
-        strokeLinecap="round"
-        fill="none"
-      />
-
-      <path
-        d="M22 35C25 30 28 32 32 35C36 38 39 36 42 32"
-        stroke={`url(#discovery-gradient-${uniqueId})`}
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.8"
+        filter="url(#glow-effect)"
       />
     </svg>
+  );
+}
+
+function GutWiseIcon({ size }: { size: number }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (imgError) {
+    return <GutWiseSvgIcon size={size} />;
+  }
+
+  return (
+    <img
+      src="/gutwise-logo.png"
+      alt="GutWise"
+      width={size}
+      height={size}
+      className="object-contain"
+      style={{ width: size, height: size }}
+      onError={() => setImgError(true)}
+    />
   );
 }
 
@@ -203,7 +164,7 @@ export default function Logo({
   if (variant === 'icon') {
     return (
       <div className={`relative inline-flex items-center justify-center ${className}`}>
-        <GutWiseIcon size={config.icon} isDark={isDark} />
+        <GutWiseIcon size={config.icon} />
         {showHoverGlow && (
           <div className="absolute inset-0 bg-discovery-500/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         )}
@@ -222,7 +183,7 @@ export default function Logo({
   return (
     <div className={`relative inline-flex items-center ${config.gap} ${className}`}>
       <div className="relative">
-        <GutWiseIcon size={config.icon} isDark={isDark} />
+        <GutWiseIcon size={config.icon} />
         {showHoverGlow && (
           <div className="absolute inset-0 bg-discovery-500/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         )}
