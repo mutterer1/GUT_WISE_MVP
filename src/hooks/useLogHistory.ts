@@ -50,7 +50,6 @@ export function useLogHistory<T extends { id: string; logged_at: string }>({
     showHistory,
     setShowHistory,
     history,
-    setHistory,
     fetchHistory,
   };
 }

@@ -112,7 +112,8 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
           ...buildUpdatePayload(dataWithTimestamp),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', editingId);
+        .eq('id', editingId)
+        .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
@@ -196,7 +197,9 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
         entryId: id,
       });
 
-      await fetchHistory();
+      if (showHistory) {
+        await fetchHistory();
+      }
     } catch (err) {
       console.error(`Error deleting entry from ${table}:`, err);
       showError(err instanceof Error ? err.message : 'Failed to delete entry');
