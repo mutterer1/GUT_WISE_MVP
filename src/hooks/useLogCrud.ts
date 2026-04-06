@@ -109,6 +109,16 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     setEditingId(null);
   }, [createDefaultFormData]);
 
+  function runSaveSideEffects(mode: 'create' | 'update', entryId?: string) {
+    if (mode === 'update') {
+      showSuccess(getUpdateMessage());
+      saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId });
+    } else {
+      showSuccess(getSuccessMessage(logType));
+      saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
+    }
+  }
+
   async function saveEntry(): Promise<{ mode: 'create' | 'update' }> {
     if (!user?.id) {
       throw new Error('You must be signed in to save an entry');
@@ -128,8 +138,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
       if (updateError) throw updateError;
 
-      showSuccess(getUpdateMessage());
-      saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId: editingId });
+      runSaveSideEffects('update', editingId);
       return { mode: 'update' };
     }
 
@@ -139,8 +148,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
     if (insertError) throw insertError;
 
-    showSuccess(getSuccessMessage(logType));
-    saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
+    runSaveSideEffects('create');
     return { mode: 'create' };
   }
 
