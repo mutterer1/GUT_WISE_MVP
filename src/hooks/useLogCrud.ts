@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getLocalDateTimeString } from '../utils/dateFormatters';
 import { getSuccessMessage, getUpdateMessage, getDeleteMessage } from '../utils/copySystem';
 import { saveEventManager } from '../services/saveEventManager';
+import { useLogFeedback } from './useLogFeedback';
 import type { SaveEvent } from '../services/saveEventManager';
 
 type LogType = SaveEvent['logType'];
@@ -64,14 +65,11 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
   const [formData, setFormData] = useState<T>(createDefaultFormData);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
-  const [toastVisible, setToastVisible] = useState(false);
-  const [error, setError] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<T[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const dismissToast = useCallback(() => setToastVisible(false), []);
+  const { message, toastVisible, error, showSuccess, showError, clearError, dismissToast } = useLogFeedback();
 
   const fetchHistory = useCallback(async () => {
     if (!user?.id) {
@@ -80,7 +78,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     }
 
     try {
-      setError('');
+      clearError();
 
       const { data, error: fetchError } = await supabase
         .from(table)
@@ -96,9 +94,9 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       setHistory((data || []) as T[]);
     } catch (err) {
       console.error(`Error fetching history from ${table}:`, err);
-      setError(err instanceof Error ? err.message : 'Failed to load history');
+      showError(err instanceof Error ? err.message : 'Failed to load history');
     }
-  }, [table, user?.id, historyLimit]);
+  }, [table, user?.id, historyLimit, clearError, showError]);
 
   useEffect(() => {
     if (showHistory) {
@@ -113,8 +111,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
+    clearError();
     setSaving(true);
 
     try {
@@ -141,8 +138,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
           throw updateError;
         }
 
-        setMessage(getUpdateMessage());
-        setToastVisible(true);
+        showSuccess(getUpdateMessage());
 
         saveEventManager.emit({
           type: 'update',
@@ -161,8 +157,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
           throw insertError;
         }
 
-        setMessage(getSuccessMessage(logType));
-        setToastVisible(true);
+        showSuccess(getSuccessMessage(logType));
 
         saveEventManager.emit({
           type: 'save',
@@ -178,7 +173,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       }
     } catch (err) {
       console.error(`Error saving entry to ${table}:`, err);
-      setError(err instanceof Error ? err.message : 'Failed to save entry');
+      showError(err instanceof Error ? err.message : 'Failed to save entry');
     } finally {
       setSaving(false);
     }
@@ -204,7 +199,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     }
 
     try {
-      setError('');
+      clearError();
 
       const { error: deleteError } = await supabase.from(table).delete().eq('id', id);
 
@@ -212,8 +207,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
         throw deleteError;
       }
 
-      setMessage(getDeleteMessage());
-      setToastVisible(true);
+      showSuccess(getDeleteMessage());
 
       saveEventManager.emit({
         type: 'delete',
@@ -225,7 +219,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       await fetchHistory();
     } catch (err) {
       console.error(`Error deleting entry from ${table}:`, err);
-      setError(err instanceof Error ? err.message : 'Failed to delete entry');
+      showError(err instanceof Error ? err.message : 'Failed to delete entry');
     }
   };
 
