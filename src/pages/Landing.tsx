@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import Logo from '../components/Logo';
 import {
   Brain,
   Shield,
@@ -9,7 +10,6 @@ import {
   Lock,
   Award,
   ChevronRight,
-  Activity,
   Sparkles,
   LineChart,
   Heart
@@ -187,11 +187,8 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-lg">
               <div>
-                <div className="flex items-center gap-2 mb-md">
-                  <Activity className="h-6 w-6 text-brand-500" />
-                  <span className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                    Gut<span className="text-brand-500">Wise</span>
-                  </span>
+                <div className="mb-md">
+                  <Logo variant="full" size="sm" />
                 </div>
                 <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                   Turning body signals into understanding

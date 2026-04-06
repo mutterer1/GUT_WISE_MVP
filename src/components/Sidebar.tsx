@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import Logo from './Logo';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -103,8 +104,7 @@ export default function Sidebar() {
             <Menu className="h-6 w-6 text-neutral-text dark:text-dark-text" />
           )}
         </button>
-        <Activity className="h-6 w-6 text-brand-500" />
-        <span className="text-lg font-bold text-neutral-text dark:text-dark-text">GutWise</span>
+        <Logo variant="full" size="sm" />
       </div>
 
       <aside
@@ -117,10 +117,7 @@ export default function Sidebar() {
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-neutral-border px-6 py-6 dark:border-dark-border">
-            <div className="flex items-center gap-2">
-              <Activity className="h-8 w-8 text-brand-500" />
-              <span className="text-xl font-bold text-neutral-text dark:text-dark-text">GutWise</span>
-            </div>
+            <Logo variant="full" size="md" />
             <button
               onClick={toggleTheme}
               className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
