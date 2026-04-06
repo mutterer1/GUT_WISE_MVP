@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getLocalDateTimeString } from '../utils/dateFormatters';
 import { getSuccessMessage, getUpdateMessage, getDeleteMessage } from '../utils/copySystem';
 import { saveEventManager } from '../services/saveEventManager';
 import { useLogFeedback } from './useLogFeedback';
+import { useLogHistory } from './useLogHistory';
 import type { SaveEvent } from '../services/saveEventManager';
 
 type LogType = SaveEvent['logType'];
@@ -65,44 +66,21 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
   const [formData, setFormData] = useState<T>(createDefaultFormData);
   const [saving, setSaving] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<Array<T & { id: string }>>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { message, toastVisible, error, showSuccess, showError, clearError, dismissToast } = useLogFeedback();
 
-  const fetchHistory = useCallback(async () => {
-    if (!user?.id) {
-      setHistory([]);
-      return;
-    }
-
-    try {
-      clearError();
-
-      const { data, error: fetchError } = await supabase
-        .from(table)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('logged_at', { ascending: false })
-        .limit(historyLimit);
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setHistory((data || []) as Array<T & { id: string }>);
-    } catch (err) {
-      console.error(`Error fetching history from ${table}:`, err);
-      showError(err instanceof Error ? err.message : 'Failed to load history');
-    }
-  }, [table, user?.id, historyLimit, clearError, showError]);
-
-  useEffect(() => {
-    if (showHistory) {
-      fetchHistory();
-    }
-  }, [showHistory, fetchHistory]);
+  const {
+    showHistory,
+    setShowHistory,
+    history,
+    fetchHistory,
+  } = useLogHistory<T & { id: string }>({
+    table,
+    userId: user?.id,
+    historyLimit,
+    onError: showError,
+  });
 
   const resetForm = useCallback(() => {
     setFormData(createDefaultFormData());
