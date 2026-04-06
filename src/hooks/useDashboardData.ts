@@ -31,34 +31,39 @@ export function useDashboardData() {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setLoading(true);
       const data = await fetchDashboardMetrics(user.id);
-      if (mountedRef.current) {
-        setMetrics(data);
-        setError(null);
-      }
+
+      if (!mountedRef.current) return;
+
+      setMetrics(data);
+      setError(null);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      if (mountedRef.current) {
-        setError('Failed to load dashboard data');
-      }
+
+      if (!mountedRef.current) return;
+
+      setError('Failed to load dashboard data');
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
+      setMetrics(EMPTY_METRICS);
+      setError(null);
       setLoading(false);
       return;
     }
+
     refresh();
-  }, [user, refresh]);
+  }, [user?.id, refresh]);
 
   return { metrics, loading, error, refresh };
 }
