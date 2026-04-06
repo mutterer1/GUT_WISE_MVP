@@ -28,7 +28,7 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   error: string;
   showHistory: boolean;
   setShowHistory: (v: boolean) => void;
-  history: T[];
+  history: Array<T & { id: string }>;
   editingId: string | null;
   setEditingId: React.Dispatch<React.SetStateAction<string | null>>;
   dismissToast: () => void;
@@ -66,7 +66,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
   const [formData, setFormData] = useState<T>(createDefaultFormData);
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<T[]>([]);
+  const [history, setHistory] = useState<Array<T & { id: string }>>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { message, toastVisible, error, showSuccess, showError, clearError, dismissToast } = useLogFeedback();
@@ -91,7 +91,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
         throw fetchError;
       }
 
-      setHistory((data || []) as T[]);
+      setHistory((data || []) as Array<T & { id: string }>);
     } catch (err) {
       console.error(`Error fetching history from ${table}:`, err);
       showError(err instanceof Error ? err.message : 'Failed to load history');
