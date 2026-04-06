@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-
-interface UserProfile {
-  full_name: string;
-  email: string;
-}
+import { UserProfile } from '../types/auth';
 
 export function useUserProfile(userId?: string) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -13,6 +9,7 @@ export function useUserProfile(userId?: string) {
   const fetchUserProfile = useCallback(async () => {
     if (!userId) {
       setProfile(null);
+      setProfileLoading(false);
       return;
     }
 
