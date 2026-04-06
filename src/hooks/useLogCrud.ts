@@ -109,7 +109,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     setEditingId(null);
   }, [createDefaultFormData]);
 
-  function runSaveSideEffects(mode: 'create' | 'update', entryId?: string) {
+  const runSaveSideEffects = useCallback((mode: 'create' | 'update', entryId?: string) => {
     if (mode === 'update') {
       showSuccess(getUpdateMessage());
       saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId });
@@ -117,9 +117,9 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       showSuccess(getSuccessMessage(logType));
       saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
     }
-  }
+  }, [logType, showSuccess]);
 
-  async function saveEntry(): Promise<{ mode: 'create' | 'update' }> {
+  const saveEntry = useCallback(async (): Promise<{ mode: 'create' | 'update' }> => {
     if (!user?.id) {
       throw new Error('You must be signed in to save an entry');
     }
@@ -150,7 +150,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
     runSaveSideEffects('create');
     return { mode: 'create' };
-  }
+  }, [user?.id, formData, editingId, table, buildUpdatePayload, buildInsertPayload, runSaveSideEffects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
