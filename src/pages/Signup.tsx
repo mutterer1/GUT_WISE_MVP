@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Signup() {
@@ -37,8 +36,12 @@ export default function Signup() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        <Link to="/" className="flex justify-center mb-xl group">
-          <Logo variant="full" size="lg" showHoverGlow />
+        <Link to="/" className="flex justify-center mb-xl">
+          <img
+            src="/logos/gutwise-horizontal-dark.svg"
+            alt="GutWise"
+            style={{ height: '72px', width: 'auto' }}
+          />
         </Link>
 
         <Card variant="glass" padding="lg">
