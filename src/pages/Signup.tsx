@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, Lock, Mail, User, Sparkles } from 'lucide-react';
+import { Lock, Mail, User, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Signup() {
@@ -36,14 +37,8 @@ export default function Signup() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-xl group">
-          <div className="relative">
-            <Activity className="h-8 w-8 text-brand-500" />
-            <div className="absolute inset-0 bg-discovery-500/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </div>
-          <span className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
-            Gut<span className="text-brand-500">Wise</span>
-          </span>
+        <Link to="/" className="flex justify-center mb-xl group">
+          <Logo variant="full" size="lg" showHoverGlow />
         </Link>
 
         <Card variant="glass" padding="lg">

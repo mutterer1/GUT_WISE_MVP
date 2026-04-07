@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import gutWiseLogo from '../assets/logos/Frame_8_(1).svg';
+import Logo from '../components/Logo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -46,11 +46,7 @@ export default function Login() {
 
       <div className="w-full max-w-md relative z-10">
         <Link to="/" className="flex justify-center mb-8 group">
-          <img
-            src={gutWiseLogo}
-            alt="GutWise"
-            className="h-16 w-auto object-contain transition-opacity duration-200 group-hover:opacity-80"
-          />
+          <Logo variant="full" size="lg" showHoverGlow />
         </Link>
 
         <div
