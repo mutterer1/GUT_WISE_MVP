@@ -119,11 +119,11 @@ export default function Sidebar() {
         `}
       >
         <div className="flex h-full flex-col">
-          <div className="relative flex items-center justify-center border-b border-neutral-border px-6 py-6 dark:border-dark-border">
+          <div className="relative flex items-center justify-start border-b border-neutral-border px-4 py-6 dark:border-dark-border">
             <img
               src="/logos/gutwise-horizontal-dark.svg"
               alt="GutWise"
-              style={{ height: '72px', width: 'auto' }}
+              style={{ height: '65px', width: 'auto' }}
             />
             <button
               onClick={toggleTheme}
