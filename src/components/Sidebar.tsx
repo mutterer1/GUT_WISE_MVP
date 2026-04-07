@@ -119,15 +119,15 @@ export default function Sidebar() {
         `}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-neutral-border px-6 py-6 dark:border-dark-border">
+          <div className="relative flex items-center justify-center border-b border-neutral-border px-6 py-6 dark:border-dark-border">
             <img
               src="/logos/gutwise-horizontal-dark.svg"
               alt="GutWise"
-              style={{ height: '36px', width: 'auto' }}
+              style={{ height: '72px', width: 'auto' }}
             />
             <button
               onClick={toggleTheme}
-              className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
+              className="absolute right-4 rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {theme === 'dark' ? (
