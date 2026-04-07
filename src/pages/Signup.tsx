@@ -40,7 +40,7 @@ export default function Signup() {
           <img
             src="/logos/gutwise-horizontal-dark.svg"
             alt="GutWise"
-            style={{ height: '72px', width: 'auto' }}
+            style={{ height: '90px', width: 'auto', mixBlendMode: 'screen' }}
           />
         </Link>
 
