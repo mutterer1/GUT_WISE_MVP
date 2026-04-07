@@ -30,31 +30,48 @@ function GutWiseSvgIcon({ size }: { size: number }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="gw-outer-top" x1="20%" y1="0%" x2="80%" y2="100%">
-          <stop offset="0%" stopColor="#9ECFE4" />
-          <stop offset="40%" stopColor="#5A9BB5" />
-          <stop offset="100%" stopColor="#2C617D" />
+        <linearGradient id="gw-g-outer" gradientUnits="userSpaceOnUse" x1="15" y1="15" x2="85" y2="85">
+          <stop offset="0%" stopColor="#183C52" />
+          <stop offset="100%" stopColor="#0C2030" />
         </linearGradient>
-        <linearGradient id="gw-outer-side" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4A8FA8" />
-          <stop offset="100%" stopColor="#183C52" />
+        <linearGradient id="gw-g-mid" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="90" y2="90">
+          <stop offset="0%" stopColor="#2C617D" />
+          <stop offset="45%" stopColor="#3A7A96" />
+          <stop offset="100%" stopColor="#1E4A62" />
         </linearGradient>
-        <linearGradient id="gw-gut-fill" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#B87880" />
+        <linearGradient id="gw-g-face" gradientUnits="userSpaceOnUse" x1="15" y1="15" x2="85" y2="85">
+          <stop offset="0%" stopColor="#7AC8DC" />
+          <stop offset="25%" stopColor="#56ADD0" />
+          <stop offset="60%" stopColor="#4A8FA8" />
+          <stop offset="100%" stopColor="#2E6A84" />
+        </linearGradient>
+        <linearGradient id="gw-g-shine" gradientUnits="userSpaceOnUse" x1="20" y1="15" x2="48" y2="58">
+          <stop offset="0%" stopColor="#A8DCE8" stopOpacity="0.9" />
+          <stop offset="55%" stopColor="#70BDD0" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#4A8FA8" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="gw-gut-shadow" gradientUnits="userSpaceOnUse" x1="25" y1="55" x2="80" y2="55">
+          <stop offset="0%" stopColor="#7A3E48" />
+          <stop offset="50%" stopColor="#9A5060" />
+          <stop offset="100%" stopColor="#8A4855" />
+        </linearGradient>
+        <linearGradient id="gw-gut-main" gradientUnits="userSpaceOnUse" x1="25" y1="44" x2="80" y2="64">
+          <stop offset="0%" stopColor="#B87078" />
           <stop offset="40%" stopColor="#C28F94" />
-          <stop offset="100%" stopColor="#D4A5AA" />
+          <stop offset="100%" stopColor="#D4A8AC" />
         </linearGradient>
-        <linearGradient id="gw-gut-highlight" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E8C4C8" />
-          <stop offset="100%" stopColor="#D4A5AA" />
+        <linearGradient id="gw-gut-shine" gradientUnits="userSpaceOnUse" x1="25" y1="46" x2="80" y2="58">
+          <stop offset="0%" stopColor="#EAC8CC" />
+          <stop offset="60%" stopColor="#D8B0B5" />
+          <stop offset="100%" stopColor="#C8A0A5" />
         </linearGradient>
-        <linearGradient id="gw-purple-accent" x1="0%" y1="50%" x2="100%" y2="50%">
+        <linearGradient id="gw-spine" x1="0%" y1="50%" x2="100%" y2="50%">
           <stop offset="0%" stopColor="#9B85E8" />
-          <stop offset="50%" stopColor="#8070D0" />
+          <stop offset="50%" stopColor="#7C5CFF" />
           <stop offset="100%" stopColor="#9B85E8" />
         </linearGradient>
-        <filter id="gw-shadow" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="1" dy="2" stdDeviation="2.5" floodColor="#183C52" floodOpacity="0.25" />
+        <filter id="gw-drop" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#0A1820" floodOpacity="0.45" />
         </filter>
         <filter id="gw-glow" x="-30%" y="-30%" width="160%" height="160%">
           <feGaussianBlur stdDeviation="1.2" result="blur" />
@@ -65,32 +82,24 @@ function GutWiseSvgIcon({ size }: { size: number }) {
         </filter>
       </defs>
 
-      <g filter="url(#gw-shadow)">
+      <g filter="url(#gw-drop)">
         <path
-          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 67.673 18 50C18 32.327 32.327 18 50 18"
-          stroke="url(#gw-outer-side)"
+          d="M 77 28 A 35 35 0 1 0 82 52 L 67 52"
+          stroke="url(#gw-g-outer)"
+          strokeWidth="20"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M 77 28 A 35 35 0 1 0 82 52 L 67 52"
+          stroke="url(#gw-g-mid)"
           strokeWidth="15"
           strokeLinecap="round"
           fill="none"
         />
         <path
-          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 67.673 18 50C18 32.327 32.327 18 50 18"
-          stroke="url(#gw-outer-top)"
-          strokeWidth="10"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M50 18C67.673 18 82 26 82 40"
-          stroke="url(#gw-outer-side)"
-          strokeWidth="15"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.8"
-        />
-        <path
-          d="M50 18C67.673 18 82 26 82 40"
-          stroke="url(#gw-outer-top)"
+          d="M 77 28 A 35 35 0 1 0 82 52 L 67 52"
+          stroke="url(#gw-g-face)"
           strokeWidth="10"
           strokeLinecap="round"
           fill="none"
@@ -98,29 +107,62 @@ function GutWiseSvgIcon({ size }: { size: number }) {
       </g>
 
       <path
-        d="M26 58C30 44 38 42 46 52C50 57 54 62 60 57C65 53 68 47 72 44"
-        stroke="url(#gw-gut-fill)"
-        strokeWidth="11"
+        d="M 77 28 A 35 35 0 0 0 18 50"
+        stroke="url(#gw-g-shine)"
+        strokeWidth="4.5"
         strokeLinecap="round"
         fill="none"
-      />
-      <path
-        d="M26 56C30 43 38 41 46 51C50 56 54 61 60 56C65 52 68 46 72 43"
-        stroke="url(#gw-gut-highlight)"
-        strokeWidth="6"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.6"
+        opacity="0.75"
       />
 
       <path
-        d="M30 57C34 46 40 44 47 53C51 58 55 62 61 57C66 53 69 47 73 44"
-        stroke="url(#gw-purple-accent)"
-        strokeWidth="2.5"
+        d="M 27 54 C 32 40 43 40 50 50 C 55 57 60 62 66 57 C 71 53 75 46 77 43"
+        stroke="url(#gw-gut-shadow)"
+        strokeWidth="13"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M 27 54 C 32 40 43 40 50 50 C 55 57 60 62 66 57 C 71 53 75 46 77 43"
+        stroke="url(#gw-gut-main)"
+        strokeWidth="10"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M 28 52 C 33 38 44 38 51 48 C 56 55 61 60 67 55 C 72 51 76 44 78 41"
+        stroke="url(#gw-gut-shine)"
+        strokeWidth="5"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.7"
+      />
+
+      <path
+        d="M 31 63 C 38 52 47 54 53 62 C 57 68 63 72 70 66"
+        stroke="url(#gw-gut-shadow)"
+        strokeWidth="9"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.45"
+      />
+      <path
+        d="M 31 63 C 38 52 47 54 53 62 C 57 68 63 72 70 66"
+        stroke="url(#gw-gut-main)"
+        strokeWidth="7"
+        strokeLinecap="round"
+        fill="none"
+        opacity="0.55"
+      />
+
+      <path
+        d="M 29 53 C 34 39 45 39 52 49 C 57 56 62 61 68 56 C 73 52 77 45 79 42"
+        stroke="url(#gw-spine)"
+        strokeWidth="2"
         strokeLinecap="round"
         fill="none"
         filter="url(#gw-glow)"
-        opacity="0.85"
+        opacity="0.8"
       />
     </svg>
   );
