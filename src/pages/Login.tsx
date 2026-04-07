@@ -43,12 +43,12 @@ export default function Login() {
         style={{ background: 'radial-gradient(ellipse at center, rgba(74,143,168,0.06) 0%, transparent 70%)' }}
       />
 
-      <div className="w-full max-w-md relative z-10">
-        <Link to="/" className="flex justify-center mb-8">
+      <div className="w-full max-w-md relative z-10" style={{ display: 'flex', flexDirection: 'column' }}>
+        <Link to="/" className="flex justify-center mb-8" style={{ mixBlendMode: 'lighten' }}>
           <img
             src="/logos/gutwise-horizontal-dark.svg"
             alt="GutWise"
-            style={{ height: '90px', width: 'auto', mixBlendMode: 'screen' }}
+            style={{ height: '90px', width: 'auto' }}
           />
         </Link>
 
