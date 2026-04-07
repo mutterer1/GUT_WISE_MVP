@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
 type LogoVariant = 'full' | 'icon' | 'wordmark';
@@ -128,23 +127,7 @@ function GutWiseSvgIcon({ size }: { size: number }) {
 }
 
 function GutWiseIcon({ size }: { size: number }) {
-  const [imgError, setImgError] = useState(false);
-
-  if (imgError) {
-    return <GutWiseSvgIcon size={size} />;
-  }
-
-  return (
-    <img
-      src="/gutwise-logo.png"
-      alt="GutWise"
-      width={size}
-      height={size}
-      className="object-contain"
-      style={{ width: size, height: size }}
-      onError={() => setImgError(true)}
-    />
-  );
+  return <GutWiseSvgIcon size={size} />;
 }
 
 function GutWiseWordmark({ size, isDark }: { size: LogoSize; isDark: boolean }) {
