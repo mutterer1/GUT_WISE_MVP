@@ -64,7 +64,7 @@ export default function Insights() {
     <div className="flex min-h-screen bg-neutral-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
