@@ -4,12 +4,12 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 bg-neutral-surface/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-neutral-border dark:border-dark-border z-20">
       <nav className="max-w-7xl mx-auto px-md sm:px-lg lg:px-lg" aria-label="Top navigation">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-24">
           <Link to="/" className="flex items-center">
             <img
               src="/logos/gutwise-horizontal-dark.svg"
               alt="GutWise"
-              style={{ height: '40px', width: 'auto' }}
+              style={{ height: '80px', width: 'auto' }}
             />
           </Link>
 

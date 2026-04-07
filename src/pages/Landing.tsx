@@ -53,7 +53,7 @@ export default function Landing() {
     <div className="min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Header />
 
-      <main className="pt-16">
+      <main className="pt-24">
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 gradient-dark-radial dark:opacity-100 opacity-0" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
