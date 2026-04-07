@@ -31,86 +31,97 @@ function GutWiseSvgIcon({ size }: { size: number }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="g-outer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A8D4E6" />
-          <stop offset="50%" stopColor="#5A9BB5" />
+        <linearGradient id="gw-outer-top" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stopColor="#9ECFE4" />
+          <stop offset="40%" stopColor="#5A9BB5" />
           <stop offset="100%" stopColor="#2C617D" />
         </linearGradient>
-        <linearGradient id="g-inner-grad" x1="100%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id="gw-outer-side" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#4A8FA8" />
           <stop offset="100%" stopColor="#183C52" />
         </linearGradient>
-        <linearGradient id="gut-rose-grad" x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stopColor="#E5C4C7" />
-          <stop offset="50%" stopColor="#D4A5AA" />
-          <stop offset="100%" stopColor="#C28F94" />
+        <linearGradient id="gw-gut-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#B87880" />
+          <stop offset="40%" stopColor="#C28F94" />
+          <stop offset="100%" stopColor="#D4A5AA" />
         </linearGradient>
-        <linearGradient id="gut-purple-grad" x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stopColor="#B8A8FF" />
-          <stop offset="50%" stopColor="#9B7FE6" />
-          <stop offset="100%" stopColor="#7C5CFF" />
+        <linearGradient id="gw-gut-highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#E8C4C8" />
+          <stop offset="100%" stopColor="#D4A5AA" />
         </linearGradient>
-        <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
+        <linearGradient id="gw-purple-accent" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#9B85E8" />
+          <stop offset="50%" stopColor="#8070D0" />
+          <stop offset="100%" stopColor="#9B85E8" />
+        </linearGradient>
+        <filter id="gw-shadow" x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="1" dy="2" stdDeviation="2.5" floodColor="#183C52" floodOpacity="0.25" />
+        </filter>
+        <filter id="gw-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="1.2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="2" dy="3" stdDeviation="3" floodOpacity="0.15" />
-        </filter>
       </defs>
 
-      <g filter="url(#shadow)">
+      <g filter="url(#gw-shadow)">
         <path
-          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 72 18 50C18 28 32.327 18 50 18"
-          stroke="url(#g-inner-grad)"
-          strokeWidth="14"
+          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 67.673 18 50C18 32.327 32.327 18 50 18"
+          stroke="url(#gw-outer-side)"
+          strokeWidth="15"
           strokeLinecap="round"
           fill="none"
         />
         <path
-          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 72 18 50C18 28 32.327 18 50 18"
-          stroke="url(#g-outer-grad)"
+          d="M82 50C82 67.673 67.673 82 50 82C32.327 82 18 67.673 18 50C18 32.327 32.327 18 50 18"
+          stroke="url(#gw-outer-top)"
           strokeWidth="10"
           strokeLinecap="round"
           fill="none"
         />
-
         <path
-          d="M50 18C67.673 18 82 24 82 36"
-          stroke="url(#g-inner-grad)"
-          strokeWidth="14"
+          d="M50 18C67.673 18 82 26 82 40"
+          stroke="url(#gw-outer-side)"
+          strokeWidth="15"
           strokeLinecap="round"
           fill="none"
-          opacity="0.7"
+          opacity="0.8"
         />
         <path
-          d="M50 18C67.673 18 82 24 82 36"
-          stroke="url(#g-outer-grad)"
+          d="M50 18C67.673 18 82 26 82 40"
+          stroke="url(#gw-outer-top)"
           strokeWidth="10"
           strokeLinecap="round"
           fill="none"
-          opacity="0.9"
         />
       </g>
 
       <path
-        d="M28 56C35 42 42 48 50 56C58 64 65 58 72 44"
-        stroke="url(#gut-rose-grad)"
-        strokeWidth="9"
+        d="M26 58C30 44 38 42 46 52C50 57 54 62 60 57C65 53 68 47 72 44"
+        stroke="url(#gw-gut-fill)"
+        strokeWidth="11"
         strokeLinecap="round"
         fill="none"
       />
-
       <path
-        d="M32 57C37 46 43 50 50 57C57 64 63 58 68 48"
-        stroke="url(#gut-purple-grad)"
-        strokeWidth="3"
+        d="M26 56C30 43 38 41 46 51C50 56 54 61 60 56C65 52 68 46 72 43"
+        stroke="url(#gw-gut-highlight)"
+        strokeWidth="6"
         strokeLinecap="round"
         fill="none"
-        filter="url(#glow-effect)"
+        opacity="0.6"
+      />
+
+      <path
+        d="M30 57C34 46 40 44 47 53C51 58 55 62 61 57C66 53 69 47 73 44"
+        stroke="url(#gw-purple-accent)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        fill="none"
+        filter="url(#gw-glow)"
+        opacity="0.85"
       />
     </svg>
   );
