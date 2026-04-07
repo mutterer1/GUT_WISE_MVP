@@ -90,7 +90,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-3 border-b border-neutral-border bg-neutral-surface px-4 lg:hidden dark:border-dark-border dark:bg-dark-bg">
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-20 items-center gap-3 border-b border-neutral-border bg-neutral-surface px-4 lg:hidden dark:border-dark-border dark:bg-dark-bg">
         <button
           type="button"
           className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
@@ -106,7 +106,7 @@ export default function Sidebar() {
         <img
           src="/logos/gutwise-horizontal-dark.svg"
           alt="GutWise"
-          style={{ height: '32px', width: 'auto' }}
+          style={{ height: '64px', width: 'auto', imageRendering: 'auto' }}
         />
       </div>
 
