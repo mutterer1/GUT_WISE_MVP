@@ -44,7 +44,7 @@ export default function Login() {
       />
 
       <div className="w-full max-w-md relative z-10" style={{ display: 'flex', flexDirection: 'column' }}>
-        <Link to="/" className="flex justify-center mb-8"
+        <Link to="/" className="flex justify-center mb-8">
           <img
             src="/logos/gutwise-horizontal-dark.svg"
             alt="GutWise"
