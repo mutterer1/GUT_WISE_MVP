@@ -106,7 +106,7 @@ export default function Insights() {
             </div>
           ) : insightCount === 0 ? (
             <div
-              className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm"
+              className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm mt-[50px]"
               style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
             >
               <div
