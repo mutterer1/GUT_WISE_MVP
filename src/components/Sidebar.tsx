@@ -104,7 +104,11 @@ export default function Sidebar() {
             <Menu className="h-6 w-6 text-neutral-text dark:text-dark-text" />
           )}
         </button>
-        <Logo variant="full" size="sm" />
+        <img
+          src="/logos/gutwise-horizontal-dark.svg"
+          alt="GutWise"
+          style={{ height: '32px', width: 'auto' }}
+        />
       </div>
 
       <aside
