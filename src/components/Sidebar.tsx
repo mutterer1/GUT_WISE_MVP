@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import Logo from './Logo';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -121,7 +120,11 @@ export default function Sidebar() {
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-neutral-border px-6 py-6 dark:border-dark-border">
-            <Logo variant="full" size="md" />
+            <img
+              src="/logos/gutwise-horizontal-dark.svg"
+              alt="GutWise"
+              style={{ height: '36px', width: 'auto' }}
+            />
             <button
               onClick={toggleTheme}
               className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
