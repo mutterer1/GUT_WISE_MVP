@@ -48,6 +48,13 @@ const successMessages: Record<string, string[]> = {
     'Logged. Staying on top of your regimen.',
     'Tracked. One less thing to remember.',
   ],
+  exercise: [
+    'Workout logged. Movement is medicine.',
+    'Exercise recorded. Your body appreciates it.',
+    'Got it. Every session builds the picture.',
+    'Tracked. Active days, healthier insights.',
+    'Logged. Your movement timeline is growing.',
+  ],
   generic: [
     'Saved successfully.',
     'Entry recorded.',
@@ -108,6 +115,11 @@ const emptyStateMessages: Record<string, { title: string; subtitle: string; hint
     title: 'No medications logged',
     subtitle: 'Your medication tracker is standing by.',
     hint: 'Add medications to monitor your adherence and timing.',
+  },
+  exercise: {
+    title: 'No exercise logged yet',
+    subtitle: 'Your activity tracker is ready to move.',
+    hint: 'Log a workout to start tracking how movement affects your gut health.',
   },
   insights: {
     title: 'Your Insights Are Brewing',

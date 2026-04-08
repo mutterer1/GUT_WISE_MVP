@@ -18,6 +18,7 @@ import StressLog from './pages/StressLog';
 import HydrationLog from './pages/HydrationLog';
 import MedicationLog from './pages/MedicationLog';
 import MenstrualCycleLog from './pages/MenstrualCycleLog';
+import ExerciseLog from './pages/ExerciseLog';
 import Reports from './pages/Reports';
 import Trends from './pages/Trends';
 import Settings from './pages/Settings';
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/hydration-log" element={<HydrationLog />} />
           <Route path="/medication-log" element={<MedicationLog />} />
           <Route path="/menstrual-cycle-log" element={<MenstrualCycleLog />} />
+          <Route path="/exercise-log" element={<ExerciseLog />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/trends" element={<Trends />} />
           <Route path="/settings" element={<Settings />} />

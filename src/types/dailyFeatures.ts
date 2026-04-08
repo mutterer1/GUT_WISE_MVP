@@ -45,5 +45,10 @@ export interface UserDailyFeatures {
   cycle_day: number | null;
   cycle_phase: string | null;
 
+  exercise_minutes_total: number;
+  exercise_sessions_count: number;
+  moderate_vigorous_minutes: number;
+  movement_low_day: boolean;
+
   timezone: string | null;
 }

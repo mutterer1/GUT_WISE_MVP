@@ -7,6 +7,7 @@ import type {
   StressLogRow,
   MedicationLogRow,
   MenstrualCycleLogRow,
+  ExerciseLogRow,
 } from '../types/logs';
 import type { CanonicalEvent, EventType } from '../types/canonicalEvents';
 import { EVENT_TYPE_TO_SOURCE_TABLE } from '../types/canonicalEvents';
@@ -192,6 +193,20 @@ export function normalizeMenstrualCycleEvent(row: MenstrualCycleLogRow): Canonic
   };
 }
 
+export function normalizeExerciseEvent(row: ExerciseLogRow): CanonicalEvent {
+  return {
+    ...baseEvent(row, 'exercise'),
+    payload: {
+      exercise_type: row.exercise_type,
+      duration_minutes: row.duration_minutes,
+      intensity_level: row.intensity_level,
+      ...(row.perceived_exertion != null && { perceived_exertion: row.perceived_exertion }),
+      ...(row.indoor_outdoor != null && { indoor_outdoor: row.indoor_outdoor }),
+      ...(row.notes != null && { notes: row.notes }),
+    },
+  };
+}
+
 type LogRowUnion =
   | BMLogRow
   | SymptomLogRow
@@ -200,7 +215,8 @@ type LogRowUnion =
   | SleepLogRow
   | StressLogRow
   | MedicationLogRow
-  | MenstrualCycleLogRow;
+  | MenstrualCycleLogRow
+  | ExerciseLogRow;
 
 const NORMALIZERS: Record<EventType, (row: never) => CanonicalEvent> = {
   bm: normalizeBMEvent as (row: never) => CanonicalEvent,
@@ -211,6 +227,7 @@ const NORMALIZERS: Record<EventType, (row: never) => CanonicalEvent> = {
   stress: normalizeStressEvent as (row: never) => CanonicalEvent,
   medication: normalizeMedicationEvent as (row: never) => CanonicalEvent,
   menstrual_cycle: normalizeMenstrualCycleEvent as (row: never) => CanonicalEvent,
+  exercise: normalizeExerciseEvent as (row: never) => CanonicalEvent,
 };
 
 export function normalizeLogRowToCanonicalEvent(

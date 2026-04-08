@@ -2,7 +2,7 @@ type SaveEventListener = (event: SaveEvent) => void;
 
 export interface SaveEvent {
   type: 'save' | 'update' | 'delete';
-  logType: 'bm' | 'food' | 'symptoms' | 'sleep' | 'stress' | 'hydration' | 'medication' | 'menstrual-cycle';
+  logType: 'bm' | 'food' | 'symptoms' | 'sleep' | 'stress' | 'hydration' | 'medication' | 'menstrual-cycle' | 'exercise';
   timestamp: number;
   entryId?: string;
 }

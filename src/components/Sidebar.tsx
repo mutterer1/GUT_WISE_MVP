@@ -19,6 +19,7 @@ import {
   Heart,
   BookOpen,
   Sun,
+  Dumbbell,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -41,6 +42,7 @@ const loggingSubmenu = [
   { name: 'Hydration', href: '/hydration-log', icon: Droplet },
   { name: 'Menstrual Cycle', href: '/menstrual-cycle-log', icon: Heart },
   { name: 'Medication', href: '/medication-log', icon: Pill },
+  { name: 'Exercise', href: '/exercise-log', icon: Dumbbell },
 ];
 
 export default function Sidebar() {

@@ -6,7 +6,8 @@ export type EventType =
   | 'sleep'
   | 'stress'
   | 'medication'
-  | 'menstrual_cycle';
+  | 'menstrual_cycle'
+  | 'exercise';
 
 export interface CanonicalEvent {
   id: string;
@@ -30,4 +31,5 @@ export const EVENT_TYPE_TO_SOURCE_TABLE: Record<EventType, string> = {
   stress: 'stress_logs',
   medication: 'medication_logs',
   menstrual_cycle: 'menstrual_cycle_logs',
+  exercise: 'exercise_logs',
 };

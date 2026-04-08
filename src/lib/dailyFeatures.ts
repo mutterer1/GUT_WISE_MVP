@@ -218,6 +218,30 @@ function aggregateMedication(events: CanonicalEvent[]) {
   };
 }
 
+function aggregateExercise(events: CanonicalEvent[]) {
+  let totalMinutes = 0;
+  let moderateVigorousMinutes = 0;
+
+  for (const e of events) {
+    const dur = payloadNum(e.payload, 'duration_minutes');
+    const intensity = payloadNum(e.payload, 'intensity_level');
+
+    if (dur !== null) {
+      totalMinutes += dur;
+      if (intensity !== null && intensity >= 3) {
+        moderateVigorousMinutes += dur;
+      }
+    }
+  }
+
+  return {
+    exercise_minutes_total: totalMinutes,
+    exercise_sessions_count: events.length,
+    moderate_vigorous_minutes: moderateVigorousMinutes,
+    movement_low_day: totalMinutes < 20,
+  };
+}
+
 function aggregateMenstrualCycle(events: CanonicalEvent[]) {
   const latest = lastEventByOccurredAt(events);
 
@@ -299,6 +323,7 @@ export function buildDailyFeaturesForGroup(
   const stress = aggregateStress(filterByType(events, 'stress'));
   const medication = aggregateMedication(filterByType(events, 'medication'));
   const cycle = aggregateMenstrualCycle(filterByType(events, 'menstrual_cycle'));
+  const exercise = aggregateExercise(filterByType(events, 'exercise'));
 
   return {
     user_id: userId,
@@ -313,6 +338,7 @@ export function buildDailyFeaturesForGroup(
     ...stress,
     ...medication,
     ...cycle,
+    ...exercise,
     timezone: resolveTimezone(events),
   };
 }

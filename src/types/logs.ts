@@ -6,7 +6,8 @@ export type LogType =
   | 'stress'
   | 'hydration'
   | 'medication'
-  | 'menstrual';
+  | 'menstrual'
+  | 'exercise';
 
 export interface BaseLogEntry {
   id?: string;
@@ -110,6 +111,16 @@ export interface MenstrualCycleLogRow extends BaseLogEntry, NormalizedTimestampM
   sexual_activity?: boolean;
   sleep_quality?: number | null;
   energy_level?: number | null;
+  notes?: string | null;
+}
+
+export interface ExerciseLogRow extends BaseLogEntry, NormalizedTimestampMeta {
+  user_id: string;
+  exercise_type: string;
+  duration_minutes: number;
+  intensity_level: number;
+  perceived_exertion?: number | null;
+  indoor_outdoor?: 'indoor' | 'outdoor' | null;
   notes?: string | null;
 }
 
