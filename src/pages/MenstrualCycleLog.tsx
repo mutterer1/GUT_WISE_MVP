@@ -391,7 +391,7 @@ export default function MenstrualCycleLog() {
                   id="contraceptive_method"
                   value={formData.contraceptive_method}
                   onChange={(e) => setFormData({ ...formData, contraceptive_method: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                 >
                   {contraceptiveOptions.map((option) => (
                     <option key={option} value={option}>{option}</option>
