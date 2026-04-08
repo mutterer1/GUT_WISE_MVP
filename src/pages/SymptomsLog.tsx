@@ -279,7 +279,7 @@ export default function SymptomsLog() {
                     onClick={() => toggleTrigger(trigger)}
                     className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
   formData.triggers.includes(trigger)
-    ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:border-teal-300 bg-teal-50 dark:text-gray-900 dark:hover:border-teal-300 bg-teal-50 text-gray-900 '
+    ? 'border-gray-300 bg-teal-50 text-gray-900 shadow-md dark:border-teal-300 bg-teal-50 dark:text-gray-900 dark:hover:border-teal-300 bg-teal-50 text-gray-900 '
     : 'border-gray-300 bg-teal-50 text-gray-900 hover:border-teal-300 dark:border-gray-200 dark:text-gray-900 dark:hover:border-gray-300 text-gray-900'
 }`}
                   >
