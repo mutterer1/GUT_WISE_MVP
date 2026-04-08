@@ -161,7 +161,7 @@ export default function SymptomsLog() {
                     }
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.symptom_type === symptom
-                        ? 'border-teal-500 bg-teal-50 shadow-md'
+                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark: text-dark-text border-dark-border text-gray-900'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
