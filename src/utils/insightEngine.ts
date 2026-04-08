@@ -279,7 +279,7 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
 
   lowHydrationDays.forEach((hydrationLog: HydrationLog) => {
     const followingBMs = bmLogs.filter((bm: any) =>
-      isWithinTimeWindow(bm.logged_at, hydrationLog.logged_at, 12, 24) && bm.bristol_scale <= 2
+      isWithinTimeWindow(bm.logged_at, hydrationLog.logged_at, 12, 24) && bm.bristol_type <= 2
     );
 
     if (followingBMs.length > 0) {
@@ -414,7 +414,7 @@ export async function analyzeTemporalPattern(userId: string): Promise<Insight[]>
 
   const { data: bmLogs } = await supabase
     .from('bm_logs')
-    .select('logged_at, urgency_level')
+    .select('logged_at, urgency')
     .eq('user_id', userId)
     .gte('logged_at', thirtyDaysAgo.toISOString())
     .order('logged_at', { ascending: true });
