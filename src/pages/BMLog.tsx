@@ -189,7 +189,7 @@ export default function BMLog() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-900">
+              <label className="mb-3 block text-sm font-medium text-gray-700">
                 Amount
               </label>
 
