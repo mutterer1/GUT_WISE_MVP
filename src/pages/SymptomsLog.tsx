@@ -161,8 +161,8 @@ export default function SymptomsLog() {
                     }
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.symptom_type === symptom
-                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-border'
-                        : 'border-teal-500 text-gray-900 bg-teal-50 hover:border-teal-300 bg-teal-50 text-gray-900'
+                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:border-teal-500 bg-teal-50 dark:text-gray-300 dark:hover:border-teal-500 bg-teal-50 text-gray-900'
+                        : 'border-gray-500 text-gray-900 bg-gray-200 hover:border-teal-300 bg-teal-50 text-gray-900'
                     }`}
                   >
                     {symptom}
