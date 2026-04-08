@@ -279,7 +279,7 @@ export default function SymptomsLog() {
                     onClick={() => toggleTrigger(trigger)}
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.triggers.includes(trigger)
-                        ? 'border-orange-500 bg-orange-50 shadow-md'
+                        ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border text-dark-text dark:hover: dark-text-muted '
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
