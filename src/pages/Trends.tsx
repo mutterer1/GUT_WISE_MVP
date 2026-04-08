@@ -134,7 +134,7 @@ export default function Trends() {
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-bg">
+    <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
 
       <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
