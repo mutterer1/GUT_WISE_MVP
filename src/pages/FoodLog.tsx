@@ -349,7 +349,7 @@ export default function FoodLog() {
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-800"
+                      className="inline-flex items-center rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800"
                     >
                       <Tag className="mr-1 h-3 w-3" />
                       {tag}
