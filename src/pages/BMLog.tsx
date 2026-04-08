@@ -245,7 +245,7 @@ export default function BMLog() {
                     mucus_present: !formData.mucus_present,
                   })
                 }
-                activeClass="bg-yellow-500"
+                activeClass="bg-orange-500"
               />
             </div>
 
