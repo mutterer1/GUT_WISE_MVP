@@ -465,7 +465,7 @@ export default function FoodLog() {
 
                     {log.tags?.length > 0 && (
                       <div className="mb-3">
-                        <div className="mb-1 text-xs text-gray-500">Tags:</div>
+                        <div className="mb-1 text-xs text-gray-900">Tags:</div>
                         <div className="flex flex-wrap gap-1">
                           {log.tags.map((tag, idx) => (
                             <span
