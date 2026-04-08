@@ -202,7 +202,7 @@ export default function BMLog() {
                     className={`rounded-lg border-2 p-4 capitalize transition-all ${
                       formData.amount === size
                         ? 'border-teal-500 bg-teal-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-gray-200 hover:border-gray-900'
                     }`}
                   >
                     {size}
