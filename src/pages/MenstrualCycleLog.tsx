@@ -320,7 +320,7 @@ export default function MenstrualCycleLog() {
                     onClick={() => toggleSymptom(symptom)}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.symptoms.includes(symptom)
-                        ? 'border-rose-500 bg-rose-50 shadow-md dark:border-gray-900 text-dark-text'
+                        ? 'border-rose-500 bg-rose-50 text-gray-900 shadow-md dark:border-gray-300 text-gray-900'
                         : 'border-gray-900 hover:border-gray-300'
                     }`}
                   >
