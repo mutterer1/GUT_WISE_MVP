@@ -57,7 +57,6 @@ function AppContent() {
           <Route path="/menstrual-cycle-log" element={<MenstrualCycleLog />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/trends" element={<Trends />} />
-          <Route path="/community" element={<Community />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/profile" element={<ProfileSettings />} />
           <Route path="/settings/notifications" element={<NotificationsSettings />} />
