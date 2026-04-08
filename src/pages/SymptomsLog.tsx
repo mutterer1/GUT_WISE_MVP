@@ -147,7 +147,7 @@ export default function SymptomsLog() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-700">
+              <label className="mb-3 block text-sm font-medium text-gray-900">
                 Symptom Type
               </label>
 
