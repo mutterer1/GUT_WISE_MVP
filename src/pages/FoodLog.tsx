@@ -425,7 +425,7 @@ export default function FoodLog() {
                         <div className="text-sm font-medium text-gray-900">
                           {formatDateTime(log.logged_at)}
                         </div>
-                        <div className="mt-1 text-xs capitalize text-gray-500">
+                        <div className="mt-1 text-xs capitalize text-gray-900">
                           {log.meal_type} • {log.portion_size}
                           {logCalories > 0 ? ` • ${logCalories} cal` : ''}
                         </div>
