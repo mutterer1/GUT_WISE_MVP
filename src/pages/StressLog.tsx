@@ -181,7 +181,7 @@ export default function StressLog() {
                     onClick={() => setFormData({ ...formData, coping_methods: toggleItem(formData.coping_methods, method) })}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.coping_methods.includes(method)
-                        ? 'border-teal-500 bg-teal-50 text-neutral-text shadow-md dark:border-dark-border dark:text-neutral-text dark:hover:border-dark-muted'
+                        ? 'border-teal-500 bg-teal-50 text-neutral-text shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-muted'
                         : 'border-gray-200 text-gray-900 hover:border-gray-300'
                     }`}
                   >
