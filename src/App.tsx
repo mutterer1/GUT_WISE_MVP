@@ -20,7 +20,6 @@ import MedicationLog from './pages/MedicationLog';
 import MenstrualCycleLog from './pages/MenstrualCycleLog';
 import Reports from './pages/Reports';
 import Trends from './pages/Trends';
-import Community from './pages/Community';
 import Settings from './pages/Settings';
 import Account from './pages/Account';
 import Privacy from './pages/Privacy';
