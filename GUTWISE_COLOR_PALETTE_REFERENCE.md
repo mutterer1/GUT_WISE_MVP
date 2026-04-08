@@ -81,7 +81,7 @@ Neutral-border  #E2E8F0  ▢ Borders & Dividers (light)
 - Card backgrounds: `bg-neutral-surface`
 - Headlines: `text-neutral-text`
 - Body text: `text-neutral-text`
-- Secondary text: `text-neutral-muted`
+- Secondary text: `text-neutral-text`
 - Borders: `border-neutral-border`
 - Placeholder text: `placeholder:text-neutral-muted`
 
