@@ -321,7 +321,7 @@ export default function MenstrualCycleLog() {
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.symptoms.includes(symptom)
                         ? 'border-rose-500 bg-rose-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-gray-900 hover:border-gray-300'
                     }`}
                   >
                     {symptom}
