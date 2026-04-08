@@ -449,7 +449,7 @@ function ToggleField({
         }`}
       >
         <span
-          className={`inline-block h-4 w-4 rounded-full bg-gray transition-transform ${
+          className={`inline-block h-4 w-4 rounded-full bg-dark transition-transform ${
             active ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
