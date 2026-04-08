@@ -29,7 +29,6 @@ const mainNavigation = [
   { name: 'Health Insights', href: '/insights', icon: Brain },
   { name: 'Trends & Analytics', href: '/trends', icon: TrendingUp },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Community', href: '/community', icon: Users },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
