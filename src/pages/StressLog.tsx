@@ -203,7 +203,7 @@ export default function StressLog() {
                     onClick={() => setFormData({ ...formData, physical_symptoms: toggleItem(formData.physical_symptoms, symptom) })}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.physical_symptoms.includes(symptom)
-                        ? 'border-orange-500 bg-orange-50 shadow-md dark:border-dark-border dark:text-neutral-text dark:hover:border-dark-muted'
+                        ? 'border-orange-500 bg-orange-50 shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-muted'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
