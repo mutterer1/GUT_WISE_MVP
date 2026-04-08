@@ -154,7 +154,7 @@ export default function StressLog() {
                     onClick={() => setFormData({ ...formData, triggers: toggleItem(formData.triggers, trigger) })}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.triggers.includes(trigger)
-                        ? 'border-red-500 bg-red-50 shadow-md dark:border-text-gray-900'
+                        ? 'border-red-500 bg-red-50 shadow-md dark:border-dark-border dark:text-gray-900 dark:hover:border-dark-muted'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
