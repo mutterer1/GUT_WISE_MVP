@@ -436,7 +436,7 @@ function ToggleField({
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-dark-surface">
-      <span className="text-sm font-medium text-neutral-text dark:text-dark-text">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{label}</span>
 
       <button
         type="button"
