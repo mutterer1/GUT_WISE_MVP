@@ -439,13 +439,13 @@ function ToggleField({
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-dark-surface">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-900">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-700">{label}</span>
 
       <button
         type="button"
         onClick={onToggle}
         className={`relative inline-flex h-3 w-11 items-center rounded-full transition-colors ${
-          active ? activeClass : 'bg-gray-300 dark:bg-dark-border'
+          active ? activeClass : 'bg-gray-700 dark:bg-dark-border'
         }`}
       >
         <span
