@@ -67,7 +67,7 @@ export default function Landing() {
 
               <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-lg leading-tight">
                 Understand What Your
-                <span className="block text-signal-500">Body<span className="block">Is Telling<span className="block text-discovery-500">You</span>
+                <span className="block text-signal-500">Body<span className="block">Is Telling<span className="block text-discovery-500">You
               </h1>
 
               <p className="text-body-lg text-neutral-muted dark:text-dark-muted mb-lg max-w-2xl mx-auto leading-relaxed">
