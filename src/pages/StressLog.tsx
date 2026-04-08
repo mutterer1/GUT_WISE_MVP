@@ -192,7 +192,7 @@ export default function StressLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-900 mb-3">
                 Physical Symptoms (Optional)
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
