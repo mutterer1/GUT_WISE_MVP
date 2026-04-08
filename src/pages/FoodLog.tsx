@@ -454,7 +454,7 @@ export default function FoodLog() {
                           {log.food_items.map((item, idx) => (
                             <span
                               key={`${item.name}-${idx}`}
-                              className="inline-flex items-center rounded-full bg-teal-100 px-2 py-1 text-xs text-teal-800"
+                              className="inline-flex items-center rounded-full bg-teal-600 px-2 py-1 text-xs text-teal-800"
                             >
                               {item.name}
                             </span>
