@@ -138,7 +138,7 @@ export default function Trends() {
       <Sidebar />
 
       <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
-        <div className="mx-auto max-w-7xl space-y-6">
+        <div className="mx-auto max-w-7xl space-y-6 pt-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-center gap-4">
               <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 p-3 shadow-sm">
