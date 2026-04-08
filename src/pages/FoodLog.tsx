@@ -332,7 +332,7 @@ export default function FoodLog() {
                     onClick={() => toggleTag(tag)}
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.tags.includes(tag)
-                        ? 'border-teal-700 bg-teal-100 text-gray-900 shadow-md dark:border-dark-border text-gray-900 dark:hover:border-dark-border text-gray-900'
+                        ? 'border-teal-900 bg-teal-300 text-gray-900 shadow-md dark:border-dark-border text-gray-900 dark:hover:border-dark-border text-gray-900'
                         : 'border-gray-200 hover:hover:border-gray-300 dark:border-gray-300 dark:text-gray-900 dark:hover:border-gray-300'
                     }`}
                   >
