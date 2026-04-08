@@ -397,7 +397,7 @@ export default function SymptomsLog() {
                         {log.triggers.map((trigger, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center rounded-full border-teal-700 bg-teal-50 px-2 py-1 text-xs text-gray-700"
+                            className="inline-flex items-center rounded-full border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-900"
                           >
                             <AlertCircle className="mr-1 h-3 w-3" />
                             {trigger}
