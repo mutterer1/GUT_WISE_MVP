@@ -281,7 +281,7 @@ export default function SymptomsLog() {
   formData.triggers.includes(trigger)
     ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border dark:text-gray-900 dark:hover:border-dark-muted'
     : 'border-gray-400 text-gray-900 hover:border-gray-500 dark:border-gray-600 dark:text-gray-900 dark:hover:border-gray-500'
-}`
+}`}
                   >
                     {trigger}
                   </button>
