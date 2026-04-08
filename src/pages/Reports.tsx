@@ -173,8 +173,8 @@ export default function Reports() {
           <div className="mb-6 print:hidden">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Clinical Report</h1>
-                <p className="text-gray-600">Professional digestive health documentation for healthcare consultation</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Clinical Report</h1>
+                <p className="text-gray-600 dark:text-gray-400">Professional digestive health documentation for healthcare consultation</p>
               </div>
               <div className="flex gap-2">
                 <Button
