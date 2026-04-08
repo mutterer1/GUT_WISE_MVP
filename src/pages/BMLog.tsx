@@ -222,7 +222,6 @@ export default function BMLog() {
       })
     }
     activeClass="bg-teal-500"
-    className="border border-gray-200"
     labelClassName="text-gray-900"
   />
 
@@ -236,7 +235,6 @@ export default function BMLog() {
       })
     }
     activeClass="bg-red-500"
-    className="border border-gray-200"
     labelClassName="text-gray-900"
   />
 
@@ -250,7 +248,6 @@ export default function BMLog() {
       })
     }
     activeClass="bg-orange-500"
-    className="border border-gray-200"
     labelClassName="text-gray-900"
   />
 </div>
