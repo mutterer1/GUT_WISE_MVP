@@ -201,8 +201,8 @@ export default function BMLog() {
                     onClick={() => setFormData({ ...formData, amount: size })}
                     className={`rounded-lg border-2 p-4 capitalize transition-all ${
                       formData.amount === size
-                        ? 'border-teal-500 bg-teal-50 shadow-md'
-                        : 'border-gray-600 hover:border-gray-900'
+                        ? 'border-teal-500 bg-teal-50 text-neutral-text shadow-md dark:bg-brand-900/30 dark:text-dark-text'
+                        : 'border-gray-600 text-neutral-text hover:border-gray-900 dark:border-dark-border dark:text-dark-text dark:hover:border-dark-muted'
                     }`}
                   >
                     {size}
@@ -435,14 +435,14 @@ function ToggleField({
   activeClass: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-dark-surface">
+      <span className="text-sm font-medium text-neutral-text dark:text-dark-text">{label}</span>
 
       <button
         type="button"
         onClick={onToggle}
         className={`relative inline-flex h-3 w-11 items-center rounded-full transition-colors ${
-          active ? activeClass : 'bg-gray-300'
+          active ? activeClass : 'bg-gray-300 dark:bg-dark-border'
         }`}
       >
         <span
