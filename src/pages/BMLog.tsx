@@ -201,7 +201,7 @@ export default function BMLog() {
                     onClick={() => setFormData({ ...formData, amount: size })}
                     className={`rounded-lg border-2 p-4 capitalize transition-all ${
                       formData.amount === size
-                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:bg-brand-900/30 dark:text-gray-900'
+                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:? 'border-teal-500 bg-teal-50 shadow-md'
                         : 'border-gray-600 text-gray-900 hover:border-gray-900 dark:border-dark-border dark:text-gray-900 dark:hover:border-dark-muted'
                     }`}
                   >
