@@ -162,7 +162,7 @@ export default function SymptomsLog() {
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.symptom_type === symptom
                         ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-border'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300 text-gray-900'
+                        : 'border-teal-500 text-gray-900 bg-teal-50 hover:border-teal-300 bg-teal-50 text-gray-900'
                     }`}
                   >
                     {symptom}
