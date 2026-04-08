@@ -144,30 +144,25 @@ export default function StressLog() {
 
             <div>
               <label className="block text-sm font-medium text-neutral-text dark:text-dark-text mb-2">
-  Triggers (Optional)
-</label>
-
-<div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-  {commonTriggers.map((trigger) => (
-    <button
-      key={trigger}
-      type="button"
-      onClick={() =>
-        setFormData({
-          ...formData,
-          triggers: toggleItem(formData.triggers, trigger),
-        })
-      }
-      className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
-        formData.triggers.includes(trigger)
-          ? 'border-red-500 bg-red-50 text-neutral-text shadow-md dark:border-dark-border dark:text-neutral-text dark:hover:border-dark-muted'
-          : 'border-gray-200 text-neutral-text hover:border-gray-300'
-      }`}
-    >
-      {trigger}
-    </button>
-  ))}
-</div>
+                Triggers (Optional)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {commonTriggers.map((trigger) => (
+                  <button
+                    key={trigger}
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        triggers: toggleItem(formData.triggers, trigger),
+                      })
+                    }
+                    className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                      formData.triggers.includes(trigger)
+                        ? 'border-red-500 bg-red-50 text-neutral-text shadow-md dark:border-dark-border dark:text-neutral-text dark:hover:border-dark-muted'
+                        : 'border-gray-200 text-neutral-text hover:border-gray-300'
+                    }`}
+                  >
                     {trigger}
                   </button>
                 ))}
