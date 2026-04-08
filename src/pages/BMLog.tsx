@@ -444,8 +444,8 @@ function ToggleField({
       <button
         type="button"
         onClick={onToggle}
-        className={`relative inline-flex h-3 w-11 items-center rounded-full transition-colors ${
-          active ? activeClass : 'bg-gray-700 dark:bg-dark-border'
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          active ? activeClass : 'bg-gray-300 dark:bg-dark-border'
         }`}
       >
         <span
