@@ -143,7 +143,7 @@ export default function StressLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-text dark:text-dark-text mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Triggers (Optional)
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
