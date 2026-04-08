@@ -208,8 +208,8 @@ export default function MedicationLog() {
                     onClick={() => toggleSideEffect(effect)}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.side_effects.includes(effect)
-                        ? 'border-red-500 bg-red-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-red-500 bg-red-50 text-gray-900 shadow-md'
+                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
                     }`}
                   >
                     {effect}
