@@ -211,43 +211,49 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <ToggleField
-                label="Incomplete Evacuation"
-                active={formData.incomplete_evacuation}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    incomplete_evacuation: !formData.incomplete_evacuation,
-                  })
-                }
-                activeClass="bg-teal-500"
-              />
+           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+  <ToggleField
+    label="Incomplete Evacuation"
+    active={formData.incomplete_evacuation}
+    onToggle={() =>
+      setFormData({
+        ...formData,
+        incomplete_evacuation: !formData.incomplete_evacuation,
+      })
+    }
+    activeClass="bg-teal-500"
+    className="border border-gray-200"
+    labelClassName="text-gray-900"
+  />
 
-              <ToggleField
-                label="Blood Present"
-                active={formData.blood_present}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    blood_present: !formData.blood_present,
-                  })
-                }
-                activeClass="bg-red-500"
-              />
+  <ToggleField
+    label="Blood Present"
+    active={formData.blood_present}
+    onToggle={() =>
+      setFormData({
+        ...formData,
+        blood_present: !formData.blood_present,
+      })
+    }
+    activeClass="bg-red-500"
+    className="border border-gray-200"
+    labelClassName="text-gray-900"
+  />
 
-              <ToggleField
-                label="Mucus Present"
-                active={formData.mucus_present}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    mucus_present: !formData.mucus_present,
-                  })
-                }
-                activeClass="bg-orange-500"
-              />
-            </div>
+  <ToggleField
+    label="Mucus Present"
+    active={formData.mucus_present}
+    onToggle={() =>
+      setFormData({
+        ...formData,
+        mucus_present: !formData.mucus_present,
+      })
+    }
+    activeClass="bg-orange-500"
+    className="border border-gray-200"
+    labelClassName="text-gray-900"
+  />
+</div>
 
             <div>
               <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
