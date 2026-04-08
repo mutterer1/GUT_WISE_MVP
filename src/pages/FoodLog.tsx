@@ -333,7 +333,7 @@ export default function FoodLog() {
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.tags.includes(tag)
                         ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border text-gray-900 dark:hover:border-dark-border text-gray-900'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-gray-200 hover:hover:border-gray-500 dark:border-gray-600 dark:text-gray-900 dark:hover:border-gray-500'
                     }`}
                   >
                     <span className="inline-flex items-center">
