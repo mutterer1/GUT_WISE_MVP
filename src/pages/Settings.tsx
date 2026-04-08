@@ -50,9 +50,9 @@ export default function Settings() {
     <div className="flex min-h-screen bg-neutral-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
+          <div className="mb-8 pt-2">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
             <p className="text-gray-600">Manage your account and preferences</p>
           </div>
@@ -88,24 +88,24 @@ export default function Settings() {
             })}
           </div>
 
-          <Card>
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <HelpCircle className="h-6 w-6 text-blue-600" />
+          <Card padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                <HelpCircle className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Help?</h3>
-                <p className="text-gray-600 text-sm mb-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-gray-900">Need Help?</h3>
+                <p className="text-gray-600 text-xs">
                   Our support team is here to assist you with any questions or concerns
                 </p>
-                <div className="flex gap-3">
-                  <Button variant="outline" size="sm">
-                    Contact Support
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    View Documentation
-                  </Button>
-                </div>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button variant="outline" size="sm">
+                  Contact Support
+                </Button>
+                <Button variant="outline" size="sm">
+                  View Docs
+                </Button>
               </div>
             </div>
           </Card>
