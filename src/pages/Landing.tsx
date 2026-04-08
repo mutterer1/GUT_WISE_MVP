@@ -67,7 +67,7 @@ export default function Landing() {
 
               <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-lg leading-tight">
                 Understand What Your
-                <span className="block text-Rose-500">Body<span className="block text-brand-500">Is Telling<span className="block text-discovery-500">You</<h1>
+                <span className="block text-Rose-500">Body<span className="block text-brand-500">Is Telling<span className="block text-discovery-500">You<h1>
 
               <p className="text-body-lg text-neutral-muted dark:text-dark-muted mb-lg max-w-2xl mx-auto leading-relaxed">
                 GutWise transforms scattered health logs into clear insights.
