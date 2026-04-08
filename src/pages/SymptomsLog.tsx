@@ -267,7 +267,7 @@ export default function SymptomsLog() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-700">
+              <label className="mb-3 block text-sm font-medium text-gray-900">
                 Potential Triggers
               </label>
 
@@ -279,7 +279,7 @@ export default function SymptomsLog() {
                     onClick={() => toggleTrigger(trigger)}
                     className={`rounded-lg border-2 p-3 text-sm transition-all ${
                       formData.triggers.includes(trigger)
-                        ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border text-gray-900 dark:hover: dark-border-dark dark-text-muted'
+                        ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border dark-text-dark text-gray-900 dark:hover: dark-border-dark dark-text-muted'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
