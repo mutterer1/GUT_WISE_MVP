@@ -428,8 +428,8 @@ export default function MenstrualCycleLog() {
                     onClick={() => toggleOvulationIndicator(indicator)}
                     className={`p-3 rounded-lg border-2 transition-all text-sm ${
                       formData.ovulation_indicators.includes(indicator)
-                        ? 'border-amber-500 bg-amber-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-amber-500 bg-amber-50 text-gray-900 shadow-md'
+                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
                     }`}
                   >
                     {indicator}
