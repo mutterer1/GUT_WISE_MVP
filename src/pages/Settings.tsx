@@ -53,8 +53,8 @@ export default function Settings() {
       <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 pt-2">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-            <p className="text-gray-600">Manage your account and preferences</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage your account and preferences</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -64,14 +64,14 @@ export default function Settings() {
                 <Card key={section.title} padding="md">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="flex-shrink-0 w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                        <Icon className="h-6 w-6 text-teal-600" />
+                      <div className="flex-shrink-0 w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
+                        <Icon className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                           {section.title}
                         </h3>
-                        <p className="text-gray-600 text-sm">{section.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">{section.description}</p>
                       </div>
                     </div>
                     <Button
@@ -90,12 +90,12 @@ export default function Settings() {
 
           <Card padding="sm">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
-                <HelpCircle className="h-5 w-5 text-blue-600" />
+              <div className="flex-shrink-0 w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900">Need Help?</h3>
-                <p className="text-gray-600 text-xs">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Need Help?</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-xs">
                   Our support team is here to assist you with any questions or concerns
                 </p>
               </div>
@@ -110,32 +110,32 @@ export default function Settings() {
             </div>
           </Card>
 
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
+          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-white/[0.08]">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Actions</h3>
             <div className="space-y-3">
-              <Card padding="md" className="border-yellow-200 bg-yellow-50">
+              <Card padding="md" className="border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-yellow-900">Pause Your Account</p>
-                    <p className="text-sm text-yellow-700 mt-1">
+                    <p className="font-medium text-yellow-900 dark:text-yellow-200">Pause Your Account</p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                       Temporarily disable your account without losing data
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" className="border-yellow-300 text-yellow-700 hover:bg-yellow-100">
+                  <Button variant="outline" size="sm" className="border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
                     Pause
                   </Button>
                 </div>
               </Card>
 
-              <Card padding="md" className="border-red-200 bg-red-50">
+              <Card padding="md" className="border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-red-900">Delete Account</p>
-                    <p className="text-sm text-red-700 mt-1">
+                    <p className="font-medium text-red-900 dark:text-red-200">Delete Account</p>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                       Permanently delete your account and all associated data
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-100">
+                  <Button variant="outline" size="sm" className="border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30">
                     Delete
                   </Button>
                 </div>

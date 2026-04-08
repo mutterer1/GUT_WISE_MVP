@@ -92,18 +92,18 @@ export default function InsightCard({ insight }: InsightCardProps) {
 
   return (
     <div
-      className={`rounded-2xl border border-gray-200 border-l-4 bg-white p-6 shadow-sm transition-all hover:shadow-md ${config.accent}`}
+      className={`rounded-2xl border border-gray-200 dark:border-white/[0.08] border-l-4 bg-white dark:bg-white/[0.04] p-6 shadow-sm transition-all hover:shadow-md ${config.accent}`}
     >
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="mb-2 flex items-center gap-2 text-gray-600">
+          <div className="mb-2 flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <ConfidenceIcon className="h-4 w-4" />
             <span className="text-sm font-medium">
               {getInsightTypeLabel(insight.insight_type)}
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold text-gray-900 leading-snug">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-snug">
             {insight.summary}
           </h3>
         </div>
@@ -132,19 +132,19 @@ export default function InsightCard({ insight }: InsightCardProps) {
         </div>
 
         <div>
-          <h4 className="mb-2 text-sm font-semibold text-gray-900">Evidence</h4>
+          <h4 className="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Evidence</h4>
 
-          <div className="space-y-2 text-sm text-gray-700">
+          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             {insight.evidence.frequency && (
               <p>
-                <span className="font-medium text-gray-900">Frequency:</span>{' '}
+                <span className="font-medium text-gray-900 dark:text-white">Frequency:</span>{' '}
                 {insight.evidence.frequency}
               </p>
             )}
 
             {insight.evidence.correlation && (
               <p>
-                <span className="font-medium text-gray-900">Correlation:</span>{' '}
+                <span className="font-medium text-gray-900 dark:text-white">Correlation:</span>{' '}
                 {insight.evidence.correlation}
               </p>
             )}
@@ -152,19 +152,19 @@ export default function InsightCard({ insight }: InsightCardProps) {
 
           {observedDates.length > 0 && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-medium text-gray-900">Observed on</p>
+              <p className="mb-2 text-sm font-medium text-gray-900 dark:text-white">Observed on</p>
               <div className="flex flex-wrap gap-2">
                 {observedDates.slice(0, 5).map((date, index) => (
                   <span
                     key={`${date}-${index}`}
-                    className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700"
+                    className="rounded-full bg-gray-100 dark:bg-white/[0.08] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300"
                   >
                     {formatObservedDate(date)}
                   </span>
                 ))}
 
                 {observedDates.length > 5 && (
-                  <span className="rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-500">
+                  <span className="rounded-full bg-gray-50 dark:bg-white/[0.04] px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400">
                     +{observedDates.length - 5} more
                   </span>
                 )}
@@ -173,20 +173,20 @@ export default function InsightCard({ insight }: InsightCardProps) {
           )}
         </div>
 
-        <div className="rounded-xl bg-teal-50 p-4">
+        <div className="rounded-xl bg-teal-50 dark:bg-teal-900/20 p-4">
           <div className="mb-2 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-teal-700" />
-            <h4 className="text-sm font-semibold text-teal-900">
+            <CheckCircle2 className="h-4 w-4 text-teal-700 dark:text-teal-400" />
+            <h4 className="text-sm font-semibold text-teal-900 dark:text-teal-200">
               Suggested next step
             </h4>
           </div>
-          <p className="text-sm leading-relaxed text-teal-800">
+          <p className="text-sm leading-relaxed text-teal-800 dark:text-teal-300">
             {getSuggestedNextStep(insight.insight_type)}
           </p>
         </div>
 
-        <div className="border-t border-gray-100 pt-3">
-          <p className="text-xs text-gray-500">
+        <div className="border-t border-gray-100 dark:border-white/[0.06] pt-3">
+          <p className="text-xs text-gray-500 dark:text-gray-500">
             Confidence reflects how often this pattern appears in your logged data.
           </p>
         </div>
@@ -205,12 +205,12 @@ function InfoTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-gray-50 p-3">
-      <div className="mb-1 flex items-center gap-2 text-gray-500">
+    <div className="rounded-xl bg-gray-50 dark:bg-white/[0.04] p-3">
+      <div className="mb-1 flex items-center gap-2 text-gray-500 dark:text-gray-400">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-sm font-semibold text-gray-900">{value}</p>
+      <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
