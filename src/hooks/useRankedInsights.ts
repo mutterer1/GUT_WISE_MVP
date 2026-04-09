@@ -46,7 +46,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runId = useRef(0);
-  const lastInsightKeysRef = useRef<string>('');
+  const lastFingerprintRef = useRef<string>('');
 
   const [explanationResult, setExplanationResult] = useState<ExplanationInvocationResponse | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
@@ -75,8 +75,8 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           input_day_count: 0,
           has_medical_context: false,
         });
-        if (lastInsightKeysRef.current !== '') {
-          lastInsightKeysRef.current = '';
+        if (lastFingerprintRef.current !== '') {
+          lastFingerprintRef.current = '';
           setExplanationResult(null);
           setExplanationError(null);
         }
@@ -113,9 +113,20 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         has_medical_context: hasMedicalContext,
       });
 
-      const newKeyFingerprint = annotatedCandidates.map(c => c.insight_key).sort().join(',');
-      if (newKeyFingerprint !== lastInsightKeysRef.current) {
-        lastInsightKeysRef.current = newKeyFingerprint;
+      const newFingerprint = annotatedCandidates
+        .map((c, idx) =>
+          [
+            idx,
+            c.insight_key,
+            c.priority_score.toFixed(4),
+            c.priority_tier,
+            c.medical_context_modifier_applied ? '1' : '0',
+            c.medical_context_score_delta.toFixed(4),
+          ].join(':')
+        )
+        .join('|');
+      if (newFingerprint !== lastFingerprintRef.current) {
+        lastFingerprintRef.current = newFingerprint;
         setExplanationResult(null);
         setExplanationError(null);
       }
