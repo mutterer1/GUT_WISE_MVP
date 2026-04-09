@@ -2,9 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import Button from '../components/Button';
 import InsightCard from '../components/InsightCard';
-import { Brain, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import RankedCandidateCard from '../components/insights/RankedCandidateCard';
+import { Brain, RefreshCw, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../utils/insightEngine';
+import { useRankedInsights } from '../hooks/useRankedInsights';
+import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
 
 export default function Insights() {
   const { user } = useAuth();
@@ -12,6 +15,26 @@ export default function Insights() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const {
+    insights: rankedInsights,
+    loading: rankedLoading,
+    error: rankedError,
+    explanationResult,
+    explanationLoading,
+    explanationError,
+    generateExplanations,
+  } = useRankedInsights();
+
+  const explanationMap = useCallback((): Map<string, LLMPerItemExplanation> => {
+    const map = new Map<string, LLMPerItemExplanation>();
+    if (explanationResult?.success && explanationResult.explanation_output) {
+      for (const item of explanationResult.explanation_output.explanations) {
+        map.set(item.insight_key, item);
+      }
+    }
+    return map;
+  }, [explanationResult]);
 
   const loadInsights = useCallback(async () => {
     if (!user) return;
@@ -59,6 +82,8 @@ export default function Insights() {
   };
 
   const insightCount = insights.length;
+  const rankedCandidates = rankedInsights?.candidates ?? [];
+  const exMap = explanationMap();
 
   return (
     <div className="flex min-h-screen bg-dark-bg">
@@ -100,11 +125,74 @@ export default function Insights() {
             </div>
           )}
 
+          {rankedCandidates.length > 0 && (
+            <section className="mb-10">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ranked Pattern Candidates</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {rankedInsights?.input_day_count ?? 0} days analyzed
+                    {rankedInsights?.medical_context_applied ? ' · Medical context applied' : ''}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {explanationError && (
+                    <div className="flex items-center gap-1.5 text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Explanation failed</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={generateExplanations}
+                    disabled={explanationLoading}
+                    className="flex items-center gap-2 rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/05 dark:bg-[#7C5CFF]/10 px-4 py-2 text-sm font-medium text-[#7C5CFF] dark:text-[#B8A8FF] transition-colors hover:bg-[#7C5CFF]/10 dark:hover:bg-[#7C5CFF]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {explanationLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generate explanations
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {rankedLoading ? (
+                <div className="flex h-32 items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#4A8FA8]" />
+                </div>
+              ) : rankedError ? (
+                <div className="flex items-start gap-3 rounded-lg border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">{rankedError}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  {rankedCandidates.map((candidate, i) => (
+                    <RankedCandidateCard
+                      key={candidate.insight_key}
+                      candidate={candidate}
+                      explanation={exMap.get(candidate.insight_key)}
+                      rank={i + 1}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           {loading ? (
             <div className="flex h-64 items-center justify-center">
               <RefreshCw className="h-8 w-8 animate-spin text-teal-600" />
             </div>
-          ) : insightCount === 0 ? (
+          ) : insightCount === 0 && rankedCandidates.length === 0 ? (
             <div
               className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[100px]"
               style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
@@ -132,7 +220,7 @@ export default function Insights() {
                 {generating ? 'Analyzing...' : 'Analyze Latest Data'}
               </Button>
             </div>
-          ) : (
+          ) : insightCount > 0 ? (
             <>
               <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
@@ -164,7 +252,7 @@ export default function Insights() {
                 ))}
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </main>
     </div>
