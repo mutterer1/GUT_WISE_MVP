@@ -7,6 +7,7 @@ import { buildRankedExplanationBundle } from '../lib/insightCandidates/buildRank
 import { buildLLMExplanationInput } from '../lib/insightCandidates/buildLLMExplanationInput';
 import { fetchMedicalContextSummary } from '../services/medicalContextService';
 import { invokeExplanationGeneration } from '../services/explanationInvocationService';
+import { loadPersistedExplanation, persistExplanation } from '../services/explanationPersistenceService';
 import type { MedicalContextAnnotatedCandidate } from '../types/insightCandidates';
 import type { RankedExplanationBundle } from '../types/explanationBundle';
 import type { LLMExplanationInput } from '../types/llmExplanationContract';
@@ -125,11 +126,21 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           ].join(':')
         )
         .join('|');
+
       if (newFingerprint !== lastFingerprintRef.current) {
         lastFingerprintRef.current = newFingerprint;
         setExplanationResult(null);
         setExplanationError(null);
+
+        if (newFingerprint !== '') {
+          const cached = await loadPersistedExplanation(user.id, newFingerprint);
+          if (currentRun === runId.current && cached) {
+            setExplanationResult(cached);
+          }
+        }
       }
+
+      if (currentRun !== runId.current) return;
 
       setInsights({
         candidates: annotatedCandidates,
@@ -171,12 +182,16 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         setExplanationError(result.error ?? 'Explanation generation failed');
       }
       setExplanationResult(result);
+
+      if (result.success && result.validation.is_safe_to_use && user?.id && lastFingerprintRef.current) {
+        persistExplanation(user.id, lastFingerprintRef.current, result).catch(() => undefined);
+      }
     } catch (err) {
       setExplanationError(err instanceof Error ? err.message : 'Failed to generate explanations');
     } finally {
       setExplanationLoading(false);
     }
-  }, [insights]);
+  }, [insights, user?.id]);
 
   useEffect(() => {
     run();
