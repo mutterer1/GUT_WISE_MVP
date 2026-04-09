@@ -6,9 +6,11 @@ import { applyMedicalContextModifiers } from '../lib/insightCandidates/applyMedi
 import { buildRankedExplanationBundle } from '../lib/insightCandidates/buildRankedExplanationBundle';
 import { buildLLMExplanationInput } from '../lib/insightCandidates/buildLLMExplanationInput';
 import { fetchMedicalContextSummary } from '../services/medicalContextService';
+import { invokeExplanationGeneration } from '../services/explanationInvocationService';
 import type { MedicalContextAnnotatedCandidate } from '../types/insightCandidates';
 import type { RankedExplanationBundle } from '../types/explanationBundle';
 import type { LLMExplanationInput } from '../types/llmExplanationContract';
+import type { ExplanationInvocationResponse } from '../types/explanationInvocation';
 
 export interface AnnotatedInsightResult {
   candidates: MedicalContextAnnotatedCandidate[];
@@ -25,6 +27,10 @@ export interface RankedInsightsState {
   loading: boolean;
   error: string | null;
   refresh: () => void;
+  explanationResult: ExplanationInvocationResponse | null;
+  explanationLoading: boolean;
+  explanationError: string | null;
+  generateExplanations: () => Promise<void>;
 }
 
 export interface UseRankedInsightsOptions {
@@ -40,6 +46,10 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runId = useRef(0);
+
+  const [explanationResult, setExplanationResult] = useState<ExplanationInvocationResponse | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
 
   const run = useCallback(async () => {
     if (!user?.id || !enabled) return;
@@ -114,9 +124,48 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
     }
   }, [user?.id, lookbackDays, enabled]);
 
+  const generateExplanations = useCallback(async () => {
+    const llmInput = insights?.llmInput ?? null;
+    if (!llmInput) {
+      setExplanationError('No llmInput available. Run ranked insights first.');
+      return;
+    }
+
+    const session = await import('../lib/supabase').then(m => m.supabase.auth.getSession());
+    const accessToken = session.data.session?.access_token;
+    if (!accessToken) {
+      setExplanationError('No active session. Please sign in.');
+      return;
+    }
+
+    setExplanationLoading(true);
+    setExplanationError(null);
+
+    try {
+      const result = await invokeExplanationGeneration(llmInput, accessToken);
+      if (!result.success) {
+        setExplanationError(result.error ?? 'Explanation generation failed');
+      }
+      setExplanationResult(result);
+    } catch (err) {
+      setExplanationError(err instanceof Error ? err.message : 'Failed to generate explanations');
+    } finally {
+      setExplanationLoading(false);
+    }
+  }, [insights]);
+
   useEffect(() => {
     run();
   }, [run]);
 
-  return { insights, loading, error, refresh: run };
+  return {
+    insights,
+    loading,
+    error,
+    refresh: run,
+    explanationResult,
+    explanationLoading,
+    explanationError,
+    generateExplanations,
+  };
 }
