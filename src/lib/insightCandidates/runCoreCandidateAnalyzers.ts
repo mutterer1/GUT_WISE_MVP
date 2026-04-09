@@ -5,6 +5,7 @@ import { analyzeSleepSymptomCandidate } from './sleepSymptomCandidate';
 import { analyzeStressUrgencyCandidate } from './stressUrgencyCandidate';
 import { analyzeHydrationStoolConsistencyCandidate } from './hydrationStoolConsistencyCandidate';
 import { analyzeFoodLateMealNextDayBmShiftCandidate } from './foodLateMealNextDayBmShiftCandidate';
+import { analyzeFoodCaffeineSameDaySymptomBurdenCandidate } from './foodCaffeineSameDaySymptomBurdenCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -16,6 +17,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeStressUrgencyCandidate,
   analyzeHydrationStoolConsistencyCandidate,
   analyzeFoodLateMealNextDayBmShiftCandidate,
+  analyzeFoodCaffeineSameDaySymptomBurdenCandidate,
 ];
 
 export function runCoreCandidateAnalyzers(
