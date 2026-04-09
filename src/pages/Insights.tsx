@@ -144,12 +144,22 @@ export default function Insights() {
             </div>
           )}
 
-          {/* Ranked fallback notice — shown only when ranked pipeline errored and legacy is active */}
+          {/* Ranked fallback notice — error path */}
           {useLegacyFallback && rankedError && (
             <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/30 bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/06 px-4 py-3">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8] dark:text-[#8EBFD8]" />
               <p className="text-sm text-[#2C617D] dark:text-[#8EBFD8]">
                 Advanced pattern analysis was unavailable. Showing standard insights instead.
+              </p>
+            </div>
+          )}
+
+          {/* Ranked fallback notice — no candidates yet path */}
+          {useLegacyFallback && !rankedError && (
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/20 bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/04 px-4 py-3">
+              <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8]/70 dark:text-[#8EBFD8]/70" />
+              <p className="text-sm text-[#2C617D]/80 dark:text-[#8EBFD8]/80">
+                Pattern insights are not ready yet. Keep logging daily to unlock them. Standard insights are shown below.
               </p>
             </div>
           )}
