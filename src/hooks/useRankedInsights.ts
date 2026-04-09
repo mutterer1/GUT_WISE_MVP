@@ -29,6 +29,7 @@ export interface RankedInsightsState {
   insights: AnnotatedInsightResult | null;
   loading: boolean;
   error: string | null;
+  firstRunCompleted: boolean;
   refresh: () => void;
   explanationResult: ExplanationInvocationResponse | null;
   explanationLoading: boolean;
@@ -49,6 +50,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const [insights, setInsights] = useState<AnnotatedInsightResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [firstRunCompleted, setFirstRunCompleted] = useState(false);
   const runId = useRef(0);
   const lastFingerprintRef = useRef<string>('');
 
@@ -162,7 +164,10 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
       if (currentRun !== runId.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load insights');
     } finally {
-      if (currentRun === runId.current) setLoading(false);
+      if (currentRun === runId.current) {
+        setLoading(false);
+        setFirstRunCompleted(true);
+      }
     }
   }, [user?.id, lookbackDays, enabled]);
 
@@ -211,6 +216,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
     insights,
     loading,
     error,
+    firstRunCompleted,
     refresh: run,
     explanationResult,
     explanationLoading,

@@ -22,6 +22,7 @@ export default function Insights() {
     insights: rankedInsights,
     loading: rankedLoading,
     error: rankedError,
+    firstRunCompleted: rankedFirstRunCompleted,
     explanationResult,
     explanationLoading,
     explanationError,
@@ -75,7 +76,7 @@ export default function Insights() {
   };
 
   const rankedCandidates = rankedInsights?.candidates ?? [];
-  const rankedSettled = !rankedLoading && rankedInsights !== null;
+  const rankedSettled = rankedFirstRunCompleted && !rankedLoading;
   const hasRankedCandidates = rankedCandidates.length > 0;
   const useLegacyFallback = rankedSettled && !hasRankedCandidates;
 
