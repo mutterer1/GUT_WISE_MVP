@@ -75,7 +75,7 @@ export default function Insights() {
   };
 
   const rankedCandidates = rankedInsights?.candidates ?? [];
-  const rankedSettled = !rankedLoading;
+  const rankedSettled = !rankedLoading && rankedInsights !== null;
   const hasRankedCandidates = rankedCandidates.length > 0;
   const useLegacyFallback = rankedSettled && !hasRankedCandidates;
 
