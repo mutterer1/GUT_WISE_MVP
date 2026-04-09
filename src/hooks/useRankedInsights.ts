@@ -46,6 +46,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runId = useRef(0);
+  const lastInsightKeysRef = useRef<string>('');
 
   const [explanationResult, setExplanationResult] = useState<ExplanationInvocationResponse | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
@@ -74,6 +75,11 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           input_day_count: 0,
           has_medical_context: false,
         });
+        if (lastInsightKeysRef.current !== '') {
+          lastInsightKeysRef.current = '';
+          setExplanationResult(null);
+          setExplanationError(null);
+        }
         setInsights({
           candidates: [],
           explanationBundle: emptyBundle,
@@ -106,6 +112,13 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         input_day_count: pipelineResult.input_day_count,
         has_medical_context: hasMedicalContext,
       });
+
+      const newKeyFingerprint = annotatedCandidates.map(c => c.insight_key).sort().join(',');
+      if (newKeyFingerprint !== lastInsightKeysRef.current) {
+        lastInsightKeysRef.current = newKeyFingerprint;
+        setExplanationResult(null);
+        setExplanationError(null);
+      }
 
       setInsights({
         candidates: annotatedCandidates,

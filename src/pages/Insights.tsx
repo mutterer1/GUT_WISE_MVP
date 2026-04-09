@@ -83,7 +83,16 @@ export default function Insights() {
 
   const insightCount = insights.length;
   const rankedCandidates = rankedInsights?.candidates ?? [];
-  const exMap = explanationMap();
+
+  const validation = explanationResult?.validation ?? null;
+  const isSafeToUse = validation?.is_safe_to_use === true;
+  const validationStatus = validation?.status ?? null;
+
+  const distinctWarningFlags = validationStatus === 'valid_with_warnings'
+    ? [...new Set((validation?.flags ?? []).map(f => f.type))]
+    : [];
+
+  const exMap = isSafeToUse ? explanationMap() : new Map();
 
   return (
     <div className="flex min-h-screen bg-dark-bg">
@@ -174,16 +183,36 @@ export default function Insights() {
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">{rankedError}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  {rankedCandidates.map((candidate, i) => (
-                    <RankedCandidateCard
-                      key={candidate.insight_key}
-                      candidate={candidate}
-                      explanation={exMap.get(candidate.insight_key)}
-                      rank={i + 1}
-                    />
-                  ))}
-                </div>
+                <>
+                  {validationStatus === 'invalid' && (
+                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-[#C28F94]/30 bg-[#C28F94]/06 dark:bg-[#C28F94]/08 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8D5D62] dark:text-[#D9B3B7]" />
+                      <p className="text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
+                        AI explanations could not be verified and are not shown. Candidates are still displayed below.
+                      </p>
+                    </div>
+                  )}
+
+                  {validationStatus === 'valid_with_warnings' && distinctWarningFlags.length > 0 && (
+                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        Explanations shown with minor issues: {distinctWarningFlags.join(', ')}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {rankedCandidates.map((candidate, i) => (
+                      <RankedCandidateCard
+                        key={candidate.insight_key}
+                        candidate={candidate}
+                        explanation={exMap.get(candidate.insight_key)}
+                        rank={i + 1}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </section>
           )}
