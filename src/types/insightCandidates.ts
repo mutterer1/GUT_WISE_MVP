@@ -49,3 +49,11 @@ export interface InsightCandidate {
   created_from_start_date: string;
   created_from_end_date: string;
 }
+
+export type PriorityTier = 'low' | 'medium' | 'high';
+
+export interface PrioritizedInsightCandidate extends InsightCandidate {
+  priority_score: number;
+  priority_tier: PriorityTier;
+  ranking_reasons: string[];
+}
