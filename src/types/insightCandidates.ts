@@ -3,6 +3,7 @@ export type CandidateCategory =
   | 'stress'
   | 'hydration'
   | 'food'
+  | 'gut'
   | 'routine'
   | 'cycle'
   | 'exercise'
