@@ -425,41 +425,42 @@ function validateLLMExplanationOutput(
 
 // ── Model invocation ───────────────────────────────────────────────────────────
 
-const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-3-5-sonnet-20241022";
+const MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-4o";
 
-async function callAnthropic(
+async function callOpenAI(
   system: string,
   user: string,
 ): Promise<string> {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4096,
-      system,
-      messages: [{ role: "user", content: user }],
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
     }),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Anthropic API error ${response.status}: ${text}`);
+    throw new Error(`OpenAI API error ${response.status}: ${text}`);
   }
 
   const data = await response.json();
-  const content = data?.content?.[0];
-  if (content?.type !== "text" || typeof content.text !== "string") {
-    throw new Error("Unexpected Anthropic response shape");
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") {
+    throw new Error("Unexpected OpenAI response shape");
   }
-  return content.text;
+  return content;
 }
 
 function parseModelOutput(raw: string): LLMExplanationOutput {
@@ -507,7 +508,7 @@ Deno.serve(async (req: Request) => {
 
     const { system, user } = serializeLLMExplanationPrompt(llmInput);
 
-    const rawText = await callAnthropic(system, user);
+    const rawText = await callOpenAI(system, user);
 
     let parsed: LLMExplanationOutput;
     try {
