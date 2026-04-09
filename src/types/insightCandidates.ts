@@ -4,6 +4,7 @@ export type CandidateCategory =
   | 'hydration'
   | 'food'
   | 'gut'
+  | 'symptom'
   | 'routine'
   | 'cycle'
   | 'exercise'
