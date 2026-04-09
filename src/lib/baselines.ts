@@ -9,6 +9,7 @@ import type {
   RoutineBaseline,
   DataQualityBaseline,
   ExerciseBaseline,
+  CycleBaseline,
   BaselineWindowOptions,
 } from '../types/baselines';
 
@@ -187,6 +188,37 @@ function computeDataQualityBaseline(days: UserDailyFeatures[]): DataQualityBasel
   };
 }
 
+const CYCLE_MIN_DAYS = 3;
+
+function computeCycleBaseline(days: UserDailyFeatures[]): CycleBaseline {
+  const menstrualDays = days.filter((d) => d.cycle_phase === 'menstrual');
+  const lutealDays = days.filter((d) => d.cycle_phase === 'luteal');
+
+  const mOk = menstrualDays.length >= CYCLE_MIN_DAYS;
+  const lOk = lutealDays.length >= CYCLE_MIN_DAYS;
+
+  return {
+    menstrual_phase_symptom_burden_median: mOk
+      ? median(menstrualDays.map((d) => d.symptom_burden_score))
+      : null,
+    luteal_phase_symptom_burden_median: lOk
+      ? median(lutealDays.map((d) => d.symptom_burden_score))
+      : null,
+    menstrual_phase_bm_count_median: mOk
+      ? median(menstrualDays.map((d) => d.bm_count))
+      : null,
+    luteal_phase_bm_count_median: lOk
+      ? median(lutealDays.map((d) => d.bm_count))
+      : null,
+    menstrual_phase_loose_stool_rate: mOk
+      ? proportionTrue(menstrualDays, (d) => d.loose_stool_count > 0)
+      : null,
+    luteal_phase_loose_stool_rate: lOk
+      ? proportionTrue(lutealDays, (d) => d.loose_stool_count > 0)
+      : null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Core API
 // ---------------------------------------------------------------------------
@@ -211,6 +243,7 @@ export function computeUserBaselines(featuresForOneUser: UserDailyFeatures[]): U
     routine: computeRoutineBaseline(sorted),
     data_quality: computeDataQualityBaseline(sorted),
     exercise: computeExerciseBaseline(sorted),
+    cycle: computeCycleBaseline(sorted),
 
     timezone: selectStableTimezone(sorted),
   };

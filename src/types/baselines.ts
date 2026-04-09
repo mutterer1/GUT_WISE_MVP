@@ -48,6 +48,15 @@ export interface ExerciseBaseline {
   low_movement_day_rate: number | null;
 }
 
+export interface CycleBaseline {
+  menstrual_phase_symptom_burden_median: number | null;
+  luteal_phase_symptom_burden_median: number | null;
+  menstrual_phase_bm_count_median: number | null;
+  luteal_phase_bm_count_median: number | null;
+  menstrual_phase_loose_stool_rate: number | null;
+  luteal_phase_loose_stool_rate: number | null;
+}
+
 export interface UserBaselineSet {
   user_id: string;
   computed_from_start_date: string;
@@ -62,6 +71,7 @@ export interface UserBaselineSet {
   routine: RoutineBaseline;
   data_quality: DataQualityBaseline;
   exercise: ExerciseBaseline;
+  cycle: CycleBaseline;
 
   timezone: string | null;
 }
