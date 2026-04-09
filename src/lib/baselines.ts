@@ -8,6 +8,7 @@ import type {
   BowelMovementBaseline,
   RoutineBaseline,
   DataQualityBaseline,
+  ExerciseBaseline,
   BaselineWindowOptions,
 } from '../types/baselines';
 
@@ -164,6 +165,18 @@ function computeRoutineBaseline(days: UserDailyFeatures[]): RoutineBaseline {
   };
 }
 
+function computeExerciseBaseline(days: UserDailyFeatures[]): ExerciseBaseline {
+  const exerciseMinutes = days.map((d) => d.exercise_minutes_total);
+  const modVigMinutes = days.map((d) => d.moderate_vigorous_minutes);
+
+  return {
+    median_exercise_minutes: median(exerciseMinutes),
+    median_moderate_vigorous_minutes: median(modVigMinutes),
+    active_day_rate: proportionTrue(days, (d) => d.exercise_minutes_total > 0),
+    low_movement_day_rate: proportionTrue(days, (d) => d.movement_low_day),
+  };
+}
+
 function computeDataQualityBaseline(days: UserDailyFeatures[]): DataQualityBaseline {
   const eventCounts = days.map((d) => d.event_count);
   const completeness = filterNonNull(days.map((d) => d.logging_completeness_score));
@@ -197,6 +210,7 @@ export function computeUserBaselines(featuresForOneUser: UserDailyFeatures[]): U
     bowel_movement: computeBowelMovementBaseline(sorted),
     routine: computeRoutineBaseline(sorted),
     data_quality: computeDataQualityBaseline(sorted),
+    exercise: computeExerciseBaseline(sorted),
 
     timezone: selectStableTimezone(sorted),
   };

@@ -41,6 +41,13 @@ export interface DataQualityBaseline {
   average_logging_completeness_score: number | null;
 }
 
+export interface ExerciseBaseline {
+  median_exercise_minutes: number | null;
+  median_moderate_vigorous_minutes: number | null;
+  active_day_rate: number | null;
+  low_movement_day_rate: number | null;
+}
+
 export interface UserBaselineSet {
   user_id: string;
   computed_from_start_date: string;
@@ -54,6 +61,7 @@ export interface UserBaselineSet {
   bowel_movement: BowelMovementBaseline;
   routine: RoutineBaseline;
   data_quality: DataQualityBaseline;
+  exercise: ExerciseBaseline;
 
   timezone: string | null;
 }
