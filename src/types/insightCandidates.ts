@@ -57,3 +57,9 @@ export interface PrioritizedInsightCandidate extends InsightCandidate {
   priority_tier: PriorityTier;
   ranking_reasons: string[];
 }
+
+export interface MedicalContextAnnotatedCandidate extends PrioritizedInsightCandidate {
+  medical_context_annotations: string[];
+  medical_context_modifier_applied: boolean;
+  medical_context_score_delta: number;
+}
