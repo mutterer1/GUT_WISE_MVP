@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { User, Bell, Lock, CreditCard, Shield, Globe, HelpCircle, HeartPulse } from 'lucide-react';
+import { User, Bell, Lock, CreditCard, Shield, Globe, HelpCircle, HeartPulse, FileUp } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -49,6 +49,12 @@ export default function Settings() {
       icon: HeartPulse,
       description: 'Add confirmed medical information to personalize insights',
       path: '/settings/medical-context',
+    },
+    {
+      title: 'Document Intake & Review',
+      icon: FileUp,
+      description: 'Upload medical documents and review candidate facts before activation',
+      path: '/settings/document-intake',
     },
   ];
 

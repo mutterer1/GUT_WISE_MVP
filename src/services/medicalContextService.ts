@@ -14,6 +14,9 @@ import type {
   AllergyIntoleranceFact,
   DietGuidanceFact,
   RedFlagHistoryFact,
+  CandidateMedicalFactRow,
+  CandidateReviewStatus,
+  MedicalDocumentIntakeRow,
 } from '../types/medicalContext';
 
 function rowToFact(row: MedicalFactRow): MedicalFact {
@@ -276,4 +279,211 @@ export async function deactivateMedicalFact(
 
   if (error) throw error;
   await syncProfileCounters(userId);
+}
+
+export async function createDocumentIntake(
+  userId: string,
+  input: { file_name: string; file_type: string; file_size_bytes: number; document_notes?: string }
+): Promise<MedicalDocumentIntakeRow> {
+  const { data, error } = await supabase
+    .from('medical_document_intakes')
+    .insert({
+      user_id: userId,
+      file_name: input.file_name,
+      file_type: input.file_type,
+      file_size_bytes: input.file_size_bytes,
+      document_notes: input.document_notes || null,
+      intake_status: 'uploaded',
+    })
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as MedicalDocumentIntakeRow;
+}
+
+export async function fetchDocumentIntakes(
+  userId: string
+): Promise<MedicalDocumentIntakeRow[]> {
+  const { data, error } = await supabase
+    .from('medical_document_intakes')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as MedicalDocumentIntakeRow[];
+}
+
+export async function updateIntakeStatus(
+  userId: string,
+  intakeId: string,
+  status: MedicalDocumentIntakeRow['intake_status']
+): Promise<void> {
+  const { error } = await supabase
+    .from('medical_document_intakes')
+    .update({ intake_status: status, updated_at: new Date().toISOString() })
+    .eq('id', intakeId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
+export async function seedCandidateFromIntake(
+  userId: string,
+  intakeId: string,
+  candidate: { category: MedicalFactCategory; detail: Record<string, unknown>; extraction_notes?: string }
+): Promise<CandidateMedicalFactRow> {
+  const { data, error } = await supabase
+    .from('candidate_medical_facts')
+    .insert({
+      user_id: userId,
+      category: candidate.category,
+      detail: candidate.detail,
+      extraction_source: 'document_extraction',
+      source_document_id: intakeId,
+      extraction_confidence: null,
+      extraction_notes: candidate.extraction_notes || null,
+      review_status: 'pending_review',
+    })
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+
+  await supabase
+    .from('medical_document_intakes')
+    .update({
+      candidate_count: (await fetchCandidatesForIntake(userId, intakeId)).length,
+      intake_status: 'review_ready',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', intakeId)
+    .eq('user_id', userId);
+
+  return data as CandidateMedicalFactRow;
+}
+
+export async function fetchPendingCandidates(
+  userId: string
+): Promise<CandidateMedicalFactRow[]> {
+  const { data, error } = await supabase
+    .from('candidate_medical_facts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('review_status', 'pending_review')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as CandidateMedicalFactRow[];
+}
+
+export async function fetchCandidatesForIntake(
+  userId: string,
+  intakeId: string
+): Promise<CandidateMedicalFactRow[]> {
+  const { data, error } = await supabase
+    .from('candidate_medical_facts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('source_document_id', intakeId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as CandidateMedicalFactRow[];
+}
+
+export async function fetchAllCandidates(
+  userId: string,
+  statusFilter?: CandidateReviewStatus
+): Promise<CandidateMedicalFactRow[]> {
+  let query = supabase
+    .from('candidate_medical_facts')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (statusFilter) {
+    query = query.eq('review_status', statusFilter);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CandidateMedicalFactRow[];
+}
+
+export async function acceptCandidate(
+  userId: string,
+  candidateId: string
+): Promise<MedicalFact> {
+  const { data: candidate, error: fetchErr } = await supabase
+    .from('candidate_medical_facts')
+    .select('*')
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .eq('review_status', 'pending_review')
+    .maybeSingle();
+
+  if (fetchErr) throw fetchErr;
+  if (!candidate) throw new Error('Candidate not found or already reviewed');
+
+  const row = candidate as CandidateMedicalFactRow;
+  const now = new Date().toISOString();
+
+  await ensureMedicalContextProfile(userId);
+
+  const { data: newFact, error: insertErr } = await supabase
+    .from('medical_facts')
+    .insert({
+      user_id: userId,
+      category: row.category,
+      confirmation_state: 'confirmed',
+      detail: row.detail,
+      provenance_source: 'document_extraction',
+      provenance_entered_at: row.created_at,
+      provenance_confirmed_at: now,
+      provenance_source_document_id: row.source_document_id,
+      provenance_notes: row.extraction_notes,
+      is_active: true,
+    })
+    .select()
+    .maybeSingle();
+
+  if (insertErr) throw insertErr;
+
+  const promoted = newFact as MedicalFactRow;
+
+  const { error: updateErr } = await supabase
+    .from('candidate_medical_facts')
+    .update({
+      review_status: 'accepted',
+      reviewed_at: now,
+      promoted_fact_id: promoted.id,
+      updated_at: now,
+    })
+    .eq('id', candidateId)
+    .eq('user_id', userId);
+
+  if (updateErr) throw updateErr;
+
+  await syncProfileCounters(userId);
+  return rowToFact(promoted);
+}
+
+export async function rejectCandidate(
+  userId: string,
+  candidateId: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('candidate_medical_facts')
+    .update({
+      review_status: 'rejected',
+      reviewed_at: now,
+      updated_at: now,
+    })
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .eq('review_status', 'pending_review');
+
+  if (error) throw error;
 }
