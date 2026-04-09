@@ -163,3 +163,49 @@ export type ConfirmedFactFilter = {
   active_only?: boolean;
   confirmed_only?: boolean;
 };
+
+export type ProfileStatus = 'empty' | 'partial' | 'reviewed';
+
+export interface MedicalContextProfileRow {
+  id: string;
+  user_id: string;
+  profile_status: ProfileStatus;
+  last_reviewed_at: string | null;
+  has_red_flags: boolean;
+  active_fact_count: number;
+  caution_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ExtractionSource =
+  | 'document_extraction'
+  | 'clinician_shared'
+  | 'inference';
+
+export type CandidateReviewStatus =
+  | 'pending_review'
+  | 'accepted'
+  | 'rejected'
+  | 'merged';
+
+export interface CandidateMedicalFactRow {
+  id: string;
+  user_id: string;
+  category: MedicalFactCategory;
+  detail: Record<string, unknown>;
+  extraction_source: ExtractionSource;
+  source_document_id: string | null;
+  extraction_confidence: number | null;
+  extraction_notes: string | null;
+  review_status: CandidateReviewStatus;
+  reviewed_at: string | null;
+  promoted_fact_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MedicalContextProfile extends MedicalContextProfileRow {
+  summary: MedicalContextSummary;
+  pending_candidates_count: number;
+}
