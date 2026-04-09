@@ -3,6 +3,9 @@ import type { ExplanationInvocationResponse } from '../types/explanationInvocati
 import type { LLMExplanationOutput } from '../types/llmExplanationOutput';
 import type { ValidationStatus } from '../types/llmExplanationOutput';
 
+const CACHE_MAX_AGE_DAYS = 7;
+const CACHE_MAX_AGE_MS = CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
 const SAFE_STATUSES: ValidationStatus[] = ['valid', 'valid_with_warnings'];
 
 export async function loadPersistedExplanation(
@@ -11,7 +14,7 @@ export async function loadPersistedExplanation(
 ): Promise<ExplanationInvocationResponse | null> {
   const { data, error } = await supabase
     .from('ranked_explanation_cache')
-    .select('fingerprint, explanation_output, validation_status, item_count')
+    .select('fingerprint, explanation_output, validation_status, item_count, updated_at')
     .eq('user_id', userId)
     .eq('fingerprint', fingerprint)
     .maybeSingle();
@@ -20,6 +23,9 @@ export async function loadPersistedExplanation(
 
   const status = data.validation_status as ValidationStatus;
   if (!SAFE_STATUSES.includes(status)) return null;
+
+  const ageMs = Date.now() - new Date(data.updated_at as string).getTime();
+  if (ageMs > CACHE_MAX_AGE_MS) return null;
 
   return {
     success: true,
@@ -40,6 +46,7 @@ export async function persistExplanation(
   if (!result.success || !result.validation.is_safe_to_use || !result.explanation_output) return;
 
   const { explanation_output, validation } = result;
+  const now = new Date().toISOString();
 
   await supabase.from('ranked_explanation_cache').upsert(
     {
@@ -48,8 +55,15 @@ export async function persistExplanation(
       explanation_output,
       validation_status: validation.status,
       item_count: explanation_output.meta.item_count,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     },
     { onConflict: 'user_id,fingerprint' },
   );
+
+  const cutoff = new Date(Date.now() - CACHE_MAX_AGE_MS).toISOString();
+  await supabase
+    .from('ranked_explanation_cache')
+    .delete()
+    .eq('user_id', userId)
+    .lt('updated_at', cutoff);
 }
