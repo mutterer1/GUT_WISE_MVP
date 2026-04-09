@@ -9,6 +9,8 @@ import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../
 import { useRankedInsights } from '../hooks/useRankedInsights';
 import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
 
+type InsightSource = 'ranked_primary' | 'legacy_fallback';
+
 export default function Insights() {
   const { user } = useAuth();
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -23,6 +25,7 @@ export default function Insights() {
     explanationResult,
     explanationLoading,
     explanationError,
+    explanationOrigin,
     generateExplanations,
   } = useRankedInsights();
 
@@ -76,6 +79,8 @@ export default function Insights() {
   const hasRankedCandidates = rankedCandidates.length > 0;
   const useLegacyFallback = rankedSettled && !hasRankedCandidates;
 
+  const insightSource: InsightSource = rankedSettled && hasRankedCandidates ? 'ranked_primary' : 'legacy_fallback';
+
   useEffect(() => {
     if (user && useLegacyFallback) {
       loadInsights();
@@ -96,7 +101,11 @@ export default function Insights() {
     <div className="flex min-h-screen bg-dark-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0">
+      <main
+        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0"
+        data-insight-source={insightSource}
+        data-explanation-origin={explanationOrigin}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

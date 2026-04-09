@@ -23,6 +23,8 @@ export interface AnnotatedInsightResult {
   medical_context_applied: boolean;
 }
 
+export type ExplanationOrigin = 'none' | 'cache' | 'live_generation';
+
 export interface RankedInsightsState {
   insights: AnnotatedInsightResult | null;
   loading: boolean;
@@ -31,6 +33,7 @@ export interface RankedInsightsState {
   explanationResult: ExplanationInvocationResponse | null;
   explanationLoading: boolean;
   explanationError: string | null;
+  explanationOrigin: ExplanationOrigin;
   generateExplanations: () => Promise<void>;
 }
 
@@ -52,6 +55,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const [explanationResult, setExplanationResult] = useState<ExplanationInvocationResponse | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
   const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [explanationOrigin, setExplanationOrigin] = useState<ExplanationOrigin>('none');
 
   const run = useCallback(async () => {
     if (!user?.id || !enabled) return;
@@ -80,6 +84,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           lastFingerprintRef.current = '';
           setExplanationResult(null);
           setExplanationError(null);
+          setExplanationOrigin('none');
         }
         setInsights({
           candidates: [],
@@ -131,11 +136,13 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         lastFingerprintRef.current = newFingerprint;
         setExplanationResult(null);
         setExplanationError(null);
+        setExplanationOrigin('none');
 
         if (newFingerprint !== '') {
           const cached = await loadPersistedExplanation(user.id, newFingerprint);
           if (currentRun === runId.current && cached) {
             setExplanationResult(cached);
+            setExplanationOrigin('cache');
           }
         }
       }
@@ -182,6 +189,9 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         setExplanationError(result.error ?? 'Explanation generation failed');
       }
       setExplanationResult(result);
+      if (result.success) {
+        setExplanationOrigin('live_generation');
+      }
 
       if (result.success && result.validation.is_safe_to_use && user?.id && lastFingerprintRef.current) {
         persistExplanation(user.id, lastFingerprintRef.current, result).catch(() => undefined);
@@ -205,6 +215,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
     explanationResult,
     explanationLoading,
     explanationError,
+    explanationOrigin,
     generateExplanations,
   };
 }
