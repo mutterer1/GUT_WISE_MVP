@@ -4,13 +4,16 @@ import { assembleRankedInsightInputs } from '../services/rankedInsightsAssembler
 import { runRankedInsightPipeline } from '../lib/insightCandidates/runRankedInsightPipeline';
 import { applyMedicalContextModifiers } from '../lib/insightCandidates/applyMedicalContextModifiers';
 import { buildRankedExplanationBundle } from '../lib/insightCandidates/buildRankedExplanationBundle';
+import { buildLLMExplanationInput } from '../lib/insightCandidates/buildLLMExplanationInput';
 import { fetchMedicalContextSummary } from '../services/medicalContextService';
 import type { MedicalContextAnnotatedCandidate } from '../types/insightCandidates';
 import type { RankedExplanationBundle } from '../types/explanationBundle';
+import type { LLMExplanationInput } from '../types/llmExplanationContract';
 
 export interface AnnotatedInsightResult {
   candidates: MedicalContextAnnotatedCandidate[];
   explanationBundle: RankedExplanationBundle;
+  llmInput: LLMExplanationInput;
   input_day_count: number;
   analyzed_from: string | null;
   analyzed_to: string | null;
@@ -54,15 +57,17 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
       if (currentRun !== runId.current) return;
 
       if (!inputs) {
+        const emptyBundle = buildRankedExplanationBundle([], {
+          top_n: 0,
+          analyzed_from: null,
+          analyzed_to: null,
+          input_day_count: 0,
+          has_medical_context: false,
+        });
         setInsights({
           candidates: [],
-          explanationBundle: buildRankedExplanationBundle([], {
-            top_n: 0,
-            analyzed_from: null,
-            analyzed_to: null,
-            input_day_count: 0,
-            has_medical_context: false,
-          }),
+          explanationBundle: emptyBundle,
+          llmInput: buildLLMExplanationInput(emptyBundle),
           input_day_count: 0,
           analyzed_from: null,
           analyzed_to: null,
@@ -95,6 +100,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
       setInsights({
         candidates: annotatedCandidates,
         explanationBundle,
+        llmInput: buildLLMExplanationInput(explanationBundle),
         input_day_count: pipelineResult.input_day_count,
         analyzed_from: pipelineResult.analyzed_from,
         analyzed_to: pipelineResult.analyzed_to,
