@@ -31,6 +31,7 @@ import PrivacySecuritySettings from './pages/settings/PrivacySecuritySettings';
 import BillingSettings from './pages/settings/BillingSettings';
 import DataManagementSettings from './pages/settings/DataManagementSettings';
 import PreferencesSettings from './pages/settings/PreferencesSettings';
+import MedicalContextSettings from './pages/settings/MedicalContextSettings';
 
 function AppContent() {
   useSaveEventHandler();
@@ -66,6 +67,7 @@ function AppContent() {
           <Route path="/settings/billing" element={<BillingSettings />} />
           <Route path="/settings/data-management" element={<DataManagementSettings />} />
           <Route path="/settings/preferences" element={<PreferencesSettings />} />
+          <Route path="/settings/medical-context" element={<MedicalContextSettings />} />
           <Route path="/account" element={<Account />} />
         </Route>
       </Routes>

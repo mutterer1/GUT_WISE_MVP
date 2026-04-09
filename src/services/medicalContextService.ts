@@ -203,3 +203,77 @@ export async function fetchPendingCandidatesCount(userId: string): Promise<numbe
   if (error) throw error;
   return count ?? 0;
 }
+
+export interface CreateMedicalFactInput {
+  category: MedicalFactCategory;
+  detail: Record<string, unknown>;
+  notes?: string;
+}
+
+export async function createMedicalFact(
+  userId: string,
+  input: CreateMedicalFactInput
+): Promise<MedicalFact> {
+  await ensureMedicalContextProfile(userId);
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('medical_facts')
+    .insert({
+      user_id: userId,
+      category: input.category,
+      confirmation_state: 'user_reported',
+      detail: input.detail,
+      provenance_source: 'manual_entry',
+      provenance_entered_at: now,
+      provenance_notes: input.notes || null,
+      is_active: true,
+    })
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  await syncProfileCounters(userId);
+  return rowToFact(data as MedicalFactRow);
+}
+
+export async function updateMedicalFact(
+  userId: string,
+  factId: string,
+  input: Partial<CreateMedicalFactInput>
+): Promise<MedicalFact> {
+  const updates: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (input.detail !== undefined) updates.detail = input.detail;
+  if (input.notes !== undefined) updates.provenance_notes = input.notes || null;
+
+  const { data, error } = await supabase
+    .from('medical_facts')
+    .update(updates)
+    .eq('id', factId)
+    .eq('user_id', userId)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return rowToFact(data as MedicalFactRow);
+}
+
+export async function deactivateMedicalFact(
+  userId: string,
+  factId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('medical_facts')
+    .update({
+      is_active: false,
+      deactivated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', factId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  await syncProfileCounters(userId);
+}
