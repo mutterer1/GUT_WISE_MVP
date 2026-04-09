@@ -10,6 +10,7 @@ import { analyzeBmUrgencyRollingElevationCandidate } from './bmUrgencyRollingEle
 import { analyzeSymptomTypePersistenceCandidate } from './symptomTypePersistenceCandidate';
 import { analyzeExerciseMovementBmRegularityCandidate } from './exerciseMovementBmRegularityCandidate';
 import { analyzeCyclePhaseSymptomShiftCandidate } from './cyclePhaseSymptomShiftCandidate';
+import { analyzeCyclePhaseBmShiftCandidate } from './cyclePhaseBmShiftCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -26,6 +27,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeSymptomTypePersistenceCandidate,
   analyzeExerciseMovementBmRegularityCandidate,
   analyzeCyclePhaseSymptomShiftCandidate,
+  analyzeCyclePhaseBmShiftCandidate,
 ];
 
 export function runCoreCandidateAnalyzers(
