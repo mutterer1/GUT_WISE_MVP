@@ -3,11 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { assembleRankedInsightInputs } from '../services/rankedInsightsAssembler';
 import { runRankedInsightPipeline } from '../lib/insightCandidates/runRankedInsightPipeline';
 import { applyMedicalContextModifiers } from '../lib/insightCandidates/applyMedicalContextModifiers';
+import { buildRankedExplanationBundle } from '../lib/insightCandidates/buildRankedExplanationBundle';
 import { fetchMedicalContextSummary } from '../services/medicalContextService';
 import type { MedicalContextAnnotatedCandidate } from '../types/insightCandidates';
+import type { RankedExplanationBundle } from '../types/explanationBundle';
 
 export interface AnnotatedInsightResult {
   candidates: MedicalContextAnnotatedCandidate[];
+  explanationBundle: RankedExplanationBundle;
   input_day_count: number;
   analyzed_from: string | null;
   analyzed_to: string | null;
@@ -53,6 +56,13 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
       if (!inputs) {
         setInsights({
           candidates: [],
+          explanationBundle: buildRankedExplanationBundle([], {
+            top_n: 0,
+            analyzed_from: null,
+            analyzed_to: null,
+            input_day_count: 0,
+            has_medical_context: false,
+          }),
           input_day_count: 0,
           analyzed_from: null,
           analyzed_to: null,
@@ -73,12 +83,22 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         medicalContext
       );
 
+      const hasMedicalContext = medicalContext !== null && medicalContext.has_confirmed_facts;
+
+      const explanationBundle = buildRankedExplanationBundle(annotatedCandidates, {
+        analyzed_from: pipelineResult.analyzed_from,
+        analyzed_to: pipelineResult.analyzed_to,
+        input_day_count: pipelineResult.input_day_count,
+        has_medical_context: hasMedicalContext,
+      });
+
       setInsights({
         candidates: annotatedCandidates,
+        explanationBundle,
         input_day_count: pipelineResult.input_day_count,
         analyzed_from: pipelineResult.analyzed_from,
         analyzed_to: pipelineResult.analyzed_to,
-        medical_context_applied: medicalContext !== null && medicalContext.has_confirmed_facts,
+        medical_context_applied: hasMedicalContext,
       });
     } catch (err) {
       if (currentRun !== runId.current) return;
