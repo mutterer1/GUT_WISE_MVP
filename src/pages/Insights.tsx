@@ -12,7 +12,7 @@ import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
 export default function Insights() {
   const { user } = useAuth();
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +38,6 @@ export default function Insights() {
 
   const loadInsights = useCallback(async () => {
     if (!user) return;
-
     try {
       setLoading(true);
       setError(null);
@@ -52,21 +51,12 @@ export default function Insights() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      loadInsights();
-    }
-  }, [user, loadInsights]);
-
   const handleGenerateInsights = async () => {
     if (!user) return;
-
     try {
       setGenerating(true);
       setError(null);
-
       const newInsights = await generateAllInsights(user.id);
-
       if (newInsights.length > 0) {
         await saveInsights(newInsights);
         await loadInsights();
@@ -81,8 +71,16 @@ export default function Insights() {
     }
   };
 
-  const insightCount = insights.length;
   const rankedCandidates = rankedInsights?.candidates ?? [];
+  const rankedSettled = !rankedLoading;
+  const hasRankedCandidates = rankedCandidates.length > 0;
+  const useLegacyFallback = rankedSettled && !hasRankedCandidates;
+
+  useEffect(() => {
+    if (user && useLegacyFallback) {
+      loadInsights();
+    }
+  }, [user, useLegacyFallback, loadInsights]);
 
   const validation = explanationResult?.validation ?? null;
   const isSafeToUse = validation?.is_safe_to_use === true;
@@ -108,23 +106,25 @@ export default function Insights() {
               </p>
             </div>
 
-            <Button
-              onClick={handleGenerateInsights}
-              disabled={generating}
-              className="flex items-center gap-2"
-            >
-              {generating ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Refresh Insights
-                </>
-              )}
-            </Button>
+            {useLegacyFallback && (
+              <Button
+                onClick={handleGenerateInsights}
+                disabled={generating}
+                className="flex items-center gap-2"
+              >
+                {generating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Refresh Insights
+                  </>
+                )}
+              </Button>
+            )}
           </div>
 
           {error && (
@@ -134,11 +134,16 @@ export default function Insights() {
             </div>
           )}
 
-          {rankedCandidates.length > 0 && (
+          {/* Primary: Ranked insight pipeline */}
+          {rankedLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#4A8FA8]" />
+            </div>
+          ) : hasRankedCandidates ? (
             <section className="mb-10">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Ranked Pattern Candidates</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your Insights</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {rankedInsights?.input_day_count ?? 0} days analyzed
                     {rankedInsights?.medical_context_applied ? ' · Medical context applied' : ''}
@@ -173,11 +178,7 @@ export default function Insights() {
                 </div>
               </div>
 
-              {rankedLoading ? (
-                <div className="flex h-32 items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#4A8FA8]" />
-                </div>
-              ) : rankedError ? (
+              {rankedError ? (
                 <div className="flex items-start gap-3 rounded-lg border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
                   <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">{rankedError}</p>
@@ -215,73 +216,74 @@ export default function Insights() {
                 </>
               )}
             </section>
-          )}
-
-          {loading ? (
-            <div className="flex h-64 items-center justify-center">
-              <RefreshCw className="h-8 w-8 animate-spin text-teal-600" />
-            </div>
-          ) : insightCount === 0 && rankedCandidates.length === 0 ? (
-            <div
-              className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[100px]"
-              style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
-            >
+          ) : (
+            /* Fallback: legacy insights path */
+            loading ? (
+              <div className="flex h-64 items-center justify-center">
+                <RefreshCw className="h-8 w-8 animate-spin text-teal-600" />
+              </div>
+            ) : insights.length === 0 ? (
               <div
-                className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-50 dark:bg-teal-900/30"
-                style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
+                className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[100px]"
+                style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
-                <Brain className="h-10 w-10 text-teal-400" />
-              </div>
-
-              <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                Your Insights Are Brewing
-              </h3>
-
-              <p className="mx-auto mb-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                We need a few days of data to identify meaningful patterns. The more consistently you log, the better your insights become.
-              </p>
-
-              <p className="mx-auto mb-8 max-w-sm text-xs text-gray-400 dark:text-gray-500">
-                Logging meals, symptoms, hydration, sleep, and stress creates the strongest analysis.
-              </p>
-
-              <Button onClick={handleGenerateInsights} disabled={generating}>
-                {generating ? 'Analyzing...' : 'Analyze Latest Data'}
-              </Button>
-            </div>
-          ) : insightCount > 0 ? (
-            <>
-              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Insights</p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{insightCount}</p>
+                <div
+                  className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-50 dark:bg-teal-900/30"
+                  style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
+                >
+                  <Brain className="h-10 w-10 text-teal-400" />
                 </div>
 
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Analysis Style</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Rule-based and transparent</p>
-                </div>
+                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+                  Your Insights Are Brewing
+                </h3>
 
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Best Results</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Consistent multi-category logging</p>
-                </div>
-              </div>
-
-              <div className="mb-6 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/20 p-4">
-                <h3 className="mb-1 font-semibold text-blue-900 dark:text-blue-200">How Insights Work</h3>
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  Insights are generated using transparent rules based on repeated patterns in your data. Confidence improves when the same pattern appears consistently over time.
+                <p className="mx-auto mb-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                  We need a few days of data to identify meaningful patterns. The more consistently you log, the better your insights become.
                 </p>
-              </div>
 
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {insights.map((insight) => (
-                  <InsightCard key={insight.id} insight={insight} />
-                ))}
+                <p className="mx-auto mb-8 max-w-sm text-xs text-gray-400 dark:text-gray-500">
+                  Logging meals, symptoms, hydration, sleep, and stress creates the strongest analysis.
+                </p>
+
+                <Button onClick={handleGenerateInsights} disabled={generating}>
+                  {generating ? 'Analyzing...' : 'Analyze Latest Data'}
+                </Button>
               </div>
-            </>
-          ) : null}
+            ) : (
+              <>
+                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Active Insights</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{insights.length}</p>
+                  </div>
+
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Analysis Style</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Rule-based and transparent</p>
+                  </div>
+
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Best Results</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Consistent multi-category logging</p>
+                  </div>
+                </div>
+
+                <div className="mb-6 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/20 p-4">
+                  <h3 className="mb-1 font-semibold text-blue-900 dark:text-blue-200">How Insights Work</h3>
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    Insights are generated using transparent rules based on repeated patterns in your data. Confidence improves when the same pattern appears consistently over time.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  {insights.map((insight) => (
+                    <InsightCard key={insight.id} insight={insight} />
+                  ))}
+                </div>
+              </>
+            )
+          )}
         </div>
       </main>
     </div>
