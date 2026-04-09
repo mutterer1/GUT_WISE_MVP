@@ -4,6 +4,7 @@ import type { InsightCandidate, DataSufficiency } from '../../types/insightCandi
 import { analyzeSleepSymptomCandidate } from './sleepSymptomCandidate';
 import { analyzeStressUrgencyCandidate } from './stressUrgencyCandidate';
 import { analyzeHydrationStoolConsistencyCandidate } from './hydrationStoolConsistencyCandidate';
+import { analyzeFoodLateMealNextDayBmShiftCandidate } from './foodLateMealNextDayBmShiftCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -14,6 +15,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeSleepSymptomCandidate,
   analyzeStressUrgencyCandidate,
   analyzeHydrationStoolConsistencyCandidate,
+  analyzeFoodLateMealNextDayBmShiftCandidate,
 ];
 
 export function runCoreCandidateAnalyzers(
