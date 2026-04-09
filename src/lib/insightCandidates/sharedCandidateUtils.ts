@@ -2,6 +2,32 @@ import type {
   CandidateStatus,
   DataSufficiency,
 } from '../../types/insightCandidates';
+import type { UserDailyFeatures } from '../../types/dailyFeatures';
+
+export interface RollingWindow {
+  days: UserDailyFeatures[];
+  startDate: string;
+  endDate: string;
+  count: number;
+}
+
+export function buildRollingWindows(
+  orderedDays: UserDailyFeatures[],
+  windowSize: number
+): RollingWindow[] {
+  if (windowSize < 1 || orderedDays.length < windowSize) return [];
+  const windows: RollingWindow[] = [];
+  for (let i = 0; i <= orderedDays.length - windowSize; i++) {
+    const slice = orderedDays.slice(i, i + windowSize);
+    windows.push({
+      days: slice,
+      startDate: slice[0].date,
+      endDate: slice[slice.length - 1].date,
+      count: slice.length,
+    });
+  }
+  return windows;
+}
 
 export function safeRate(count: number, total: number): number | null {
   if (total === 0) return null;
