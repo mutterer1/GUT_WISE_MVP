@@ -81,7 +81,7 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
       role="dialog"
       aria-modal="true"
       aria-labelledby="gut-intelligence-modal-title"
-      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 py-6 transition-all duration-300 ${
         isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       }`}
     >
@@ -95,11 +95,12 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
 
       <div
         ref={modalRef}
-        className={`relative w-full max-w-lg transition-all duration-300 ${
+        className={`relative w-full max-w-lg flex flex-col transition-all duration-300 ${
           isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
         }`}
         style={{
-          background: 'rgba(15, 23, 42, 0.85)',
+          maxHeight: 'min(90vh, 680px)',
+          background: 'rgba(15, 23, 42, 0.88)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(124, 92, 255, 0.2)',
@@ -108,44 +109,51 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
         }}
       >
         <div
-          className="absolute inset-0 rounded-[24px] pointer-events-none"
+          className="absolute inset-0 rounded-[24px] pointer-events-none flex-shrink-0"
           style={{
-            background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 92, 255, 0.12) 0%, transparent 65%)',
+            background: 'radial-gradient(ellipse at 50% 0%, rgba(124, 92, 255, 0.12) 0%, transparent 60%)',
           }}
         />
 
-        <div className="relative p-8">
-          <button
-            ref={closeButtonRef}
-            onClick={onClose}
-            aria-label="Close modal"
-            className="absolute top-5 right-5 flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          <div className="flex items-center gap-3 mb-6">
+        <div className="relative flex-shrink-0 flex items-start justify-between gap-4 px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3">
             <div
-              className="flex items-center justify-center w-10 h-10 rounded-xl"
+              className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0"
               style={{
                 background: 'rgba(124, 92, 255, 0.15)',
                 border: '1px solid rgba(124, 92, 255, 0.25)',
               }}
             >
-              <Brain className="w-5 h-5 text-discovery-500" />
+              <Brain className="w-4 h-4 text-discovery-500" />
             </div>
             <div>
               <h2
                 id="gut-intelligence-modal-title"
-                className="font-sora font-semibold text-white text-lg leading-tight"
+                className="font-sora font-semibold text-white text-base leading-tight"
               >
                 How GutWise Intelligence Works
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">Pattern detection, not diagnosis</p>
             </div>
           </div>
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            aria-label="Close modal"
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent mt-0.5"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          <div className="space-y-4 mb-7">
+        <div
+          className="relative flex-1 overflow-y-auto px-6 pb-6"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(124, 92, 255, 0.2) transparent',
+          }}
+        >
+          <div className="space-y-3 mb-5">
             <p className="text-sm leading-relaxed text-slate-300">
               GutWise combines signals from your bowel movements, food, hydration, sleep, stress, symptoms, medication, exercise, and optional medical context to detect structured patterns across your health history.
             </p>
@@ -161,17 +169,17 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
           </div>
 
           <div
-            className="rounded-2xl p-5"
+            className="rounded-2xl p-4 mb-5"
             style={{
               background: 'rgba(255, 255, 255, 0.03)',
               border: '1px solid rgba(255, 255, 255, 0.07)',
             }}
           >
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <Layers className="w-4 h-4 text-brand-300" />
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Signals analyzed</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4">
               {SIGNAL_ITEMS.map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-discovery-500/60 flex-shrink-0" />
@@ -181,18 +189,25 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-5 pt-5 border-t border-white/[0.06]">
-            <TrendingUp className="w-4 h-4 text-brand-400 flex-shrink-0" />
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Insights emerge from patterns over days and weeks — the more consistently you log, the more meaningful the intelligence becomes.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 mt-3">
-            <ShieldCheck className="w-4 h-4 text-brand-400 flex-shrink-0" />
-            <p className="text-xs text-slate-500 leading-relaxed">
-              All pattern detection runs against your data only. Nothing is shared or used for model training.
-            </p>
+          <div
+            className="rounded-xl p-4 space-y-3"
+            style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <TrendingUp className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Insights emerge from patterns over days and weeks — the more consistently you log, the more meaningful the intelligence becomes.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-500 leading-relaxed">
+                All pattern detection runs against your data only. Nothing is shared or used for model training.
+              </p>
+            </div>
           </div>
         </div>
       </div>
