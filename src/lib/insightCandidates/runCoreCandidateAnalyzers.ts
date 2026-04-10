@@ -20,6 +20,7 @@ import { analyzeFlareSymptomBurdenEpisodeCandidate } from './flareSymptomBurdenE
 import { analyzeFlareRecoveryPatternCandidate } from './flareRecoveryPatternCandidate';
 import { analyzeFoodMealRegularitySymptomBurdenCandidate } from './foodMealRegularitySymptomBurdenCandidate';
 import { analyzeStressHighDaySymptomBurdenCandidate } from './stressHighDaySymptomBurdenCandidate';
+import { analyzeHydrationLowSameDaySymptomBurdenCandidate } from './hydrationLowSameDaySymptomBurdenCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -46,6 +47,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeFlareRecoveryPatternCandidate,
   analyzeFoodMealRegularitySymptomBurdenCandidate,
   analyzeStressHighDaySymptomBurdenCandidate,
+  analyzeHydrationLowSameDaySymptomBurdenCandidate,
 ];
 
 export function runCoreCandidateAnalyzers(
