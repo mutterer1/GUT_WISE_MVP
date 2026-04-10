@@ -116,10 +116,6 @@ export default function TodaySummaryWidget({
     if (hydrationMl > 0) {
       parts.push(`${hydrationLiters}L water`);
     }
-    if (sleepHours !== null) {
-      parts.push(`${sleepHours}h sleep`);
-    }
-
     if (parts.length === 0) {
       return 'Nothing logged yet today. Add your first entry to get started.';
     }

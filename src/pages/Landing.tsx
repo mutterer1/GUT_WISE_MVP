@@ -174,7 +174,7 @@ export default function Landing() {
               that matter specifically to you.
             </p>
             <Link to="/signup">
-              <Button size="lg" className="bg-white text-brand-700 hover:bg-brand-50">
+              <Button size="lg" className="!bg-white !text-brand-700 hover:!bg-brand-50">
                 Begin Your Journey
               </Button>
             </Link>
