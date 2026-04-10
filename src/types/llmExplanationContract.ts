@@ -17,6 +17,7 @@ export interface LLMEvidenceSummary {
   exposed_rate: number | null;
   lift: number | null;
   contradiction_level: ContradictionLevel;
+  statistics?: Record<string, unknown>;
 }
 
 export interface LLMInsightItem {

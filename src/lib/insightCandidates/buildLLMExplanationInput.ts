@@ -60,6 +60,7 @@ function buildEvidenceSummary(item: ExplanationInsightItem): LLMEvidenceSummary 
     exposed_rate: item.evidence.exposed_rate,
     lift: item.evidence.lift,
     contradiction_level: item.evidence.contradiction.level,
+    ...(item.evidence.statistics !== undefined ? { statistics: item.evidence.statistics } : {}),
   };
 }
 

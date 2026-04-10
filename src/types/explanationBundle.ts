@@ -21,6 +21,7 @@ export interface ExplanationEvidenceSummary {
   exposed_rate: number | null;
   lift: number | null;
   contradiction: ContradictionSummary;
+  statistics?: Record<string, unknown>;
 }
 
 export interface ExplanationInsightItem {

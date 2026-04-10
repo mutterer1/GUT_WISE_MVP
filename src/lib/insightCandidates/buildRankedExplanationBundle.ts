@@ -42,7 +42,7 @@ function buildContradictionSummary(
 function buildEvidenceSummary(
   c: MedicalContextAnnotatedCandidate
 ): ExplanationEvidenceSummary {
-  const { support_count, exposure_count, contradiction_count, baseline_rate, exposed_rate, lift } =
+  const { support_count, exposure_count, contradiction_count, baseline_rate, exposed_rate, lift, statistics } =
     c.evidence;
   return {
     support_count,
@@ -51,6 +51,7 @@ function buildEvidenceSummary(
     exposed_rate,
     lift,
     contradiction: buildContradictionSummary(contradiction_count, exposure_count),
+    ...(statistics !== undefined ? { statistics } : {}),
   };
 }
 
