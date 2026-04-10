@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Calendar, CheckCircle } from 'lucide-react';
+import { Sun, Moon, Calendar, CheckCircle, Activity, Utensils, Droplet, AlertCircle } from 'lucide-react';
 import Card from '../Card';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -10,8 +10,15 @@ interface TodaySummaryWidgetProps {
   snacksCount: number;
   hydrationMl: number;
   sleepHours: number | null;
+  symptomsCount: number;
   loading: boolean;
   userName?: string;
+}
+
+interface Domain {
+  label: string;
+  logged: boolean;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 export default function TodaySummaryWidget({
@@ -20,6 +27,7 @@ export default function TodaySummaryWidget({
   snacksCount,
   hydrationMl,
   sleepHours,
+  symptomsCount,
   loading,
   userName,
 }: TodaySummaryWidgetProps) {
@@ -92,7 +100,17 @@ export default function TodaySummaryWidget({
   };
 
   const totalFood = mealsCount + snacksCount;
-  const hydrationLiters = (hydrationMl / 1000).toFixed(1);
+
+  const domains: Domain[] = [
+    { label: 'BM', logged: bmCount > 0, icon: Activity },
+    { label: 'Food', logged: totalFood > 0, icon: Utensils },
+    { label: 'Hydration', logged: hydrationMl > 0, icon: Droplet },
+    { label: 'Sleep', logged: sleepHours !== null, icon: Moon },
+    { label: 'Symptoms', logged: symptomsCount > 0, icon: AlertCircle },
+  ];
+
+  const loggedCount = domains.filter((d) => d.logged).length;
+  const totalDomains = domains.length;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -104,44 +122,42 @@ export default function TodaySummaryWidget({
   const greeting = getGreeting();
   const GreetingIcon = greeting.icon;
 
-  const getTodayNarrative = () => {
-    const parts: string[] = [];
+  const getStatusHeadline = () => {
+    if (loggedCount === 0) return 'Your health picture starts here';
+    if (loggedCount === totalDomains) return 'Today\'s picture is complete';
+    if (loggedCount >= 3) return 'Good progress today';
+    return 'Building today\'s picture';
+  };
 
-    if (bmCount > 0) {
-      parts.push(`${bmCount} bowel movement${bmCount !== 1 ? 's' : ''}`);
+  const getStatusDetail = () => {
+    if (loggedCount === 0) {
+      return 'Log your first entry to activate your daily snapshot.';
     }
-    if (totalFood > 0) {
-      parts.push(`${totalFood} meal${totalFood !== 1 ? 's' : ''}`);
+    const nextUnlogged = domains.find((d) => !d.logged);
+    if (nextUnlogged) {
+      return `${loggedCount} of ${totalDomains} areas tracked\u2002\u00b7\u2002${nextUnlogged.label} not yet logged`;
     }
-    if (hydrationMl > 0) {
-      parts.push(`${hydrationLiters}L water`);
-    }
-    if (parts.length === 0) {
-      return 'Nothing logged yet today. Add your first entry to get started.';
-    }
-
-    if (parts.length === 1) {
-      return `You've logged ${parts[0]} today.`;
-    }
-
-    const lastPart = parts.pop();
-    return `You've logged ${parts.join(', ')} and ${lastPart} today.`;
+    return `All ${totalDomains} key areas tracked today`;
   };
 
   if (loading) {
     return (
       <Card variant="elevated">
-        <div className="animate-pulse">
+        <div className="animate-pulse space-y-4">
           <div className="flex items-start justify-between">
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
-                <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-48"></div>
-              </div>
-              <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-3/4"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-neutral-border dark:bg-dark-border rounded-lg flex-shrink-0" />
+              <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-36" />
             </div>
-            <div className="ml-4 h-10 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
+            <div className="h-8 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0" />
           </div>
+          <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-64" />
+          <div className="flex gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-7 w-20 bg-neutral-border dark:bg-dark-border rounded-full" />
+            ))}
+          </div>
+          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-56" />
         </div>
       </Card>
     );
@@ -152,52 +168,69 @@ export default function TodaySummaryWidget({
       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/08 dark:to-transparent pointer-events-none" />
       <div className="glass-sheen-overlay" aria-hidden="true" />
 
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 flex-shrink-0">
-                <GreetingIcon className="h-5 w-5 text-brand-500" />
-              </div>
-              <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                {greeting.text}{userName ? `, ${userName}` : ''}
-              </h2>
-            </div>
-            <p className="text-body-md text-neutral-muted dark:text-dark-muted max-w-xl">
-              {getTodayNarrative()}
-            </p>
+      <div className="relative space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GreetingIcon className="h-4 w-4 text-neutral-muted dark:text-dark-muted flex-shrink-0" />
+            <span className="text-body-sm text-neutral-muted dark:text-dark-muted">
+              {greeting.text}{userName ? `, ${userName}` : ''}
+            </span>
           </div>
 
-          <div className="flex-shrink-0 ml-4">
+          <div className="flex-shrink-0">
             {streakLoading ? (
-              <div className="animate-pulse">
-                <div className="h-10 w-24 bg-neutral-border dark:bg-dark-border rounded-xl" />
-              </div>
+              <div className="animate-pulse h-8 w-20 bg-neutral-border dark:bg-dark-border rounded-xl" />
             ) : streakDays > 0 || loggedToday ? (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20 dark:border-brand-500/25">
-                <div className="text-right">
-                  <p className="text-h4 font-sora font-semibold text-brand-500 leading-none">
-                    {streakDays}
-                  </p>
-                  <p className="text-xs text-brand-700 dark:text-brand-300 mt-0.5">
-                    day streak
-                  </p>
-                </div>
-                {loggedToday && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-brand-500/20 dark:bg-brand-500/25 rounded-lg">
-                    <CheckCircle className="h-3 w-3 text-brand-500" />
-                  </div>
-                )}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20 dark:border-brand-500/25">
+                {loggedToday && <CheckCircle className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
+                <span className="text-xs font-semibold text-brand-600 dark:text-brand-300 font-sora">
+                  {streakDays}d streak
+                </span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-bg dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
-                <Calendar className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
-                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Start your streak</p>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-bg dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
+                <Calendar className="h-3.5 w-3.5 text-neutral-muted dark:text-dark-muted" />
+                <span className="text-xs text-neutral-muted dark:text-dark-muted">Start streak</span>
               </div>
             )}
           </div>
         </div>
 
+        <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
+          {getStatusHeadline()}
+        </h2>
+
+        <div className="flex flex-wrap gap-2">
+          {domains.map((domain) => {
+            const Icon = domain.icon;
+            return (
+              <div
+                key={domain.label}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                  domain.logged
+                    ? 'bg-brand-500/12 dark:bg-brand-500/18 border border-brand-500/25 dark:border-brand-500/30 text-brand-700 dark:text-brand-300'
+                    : 'bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted',
+                ].join(' ')}
+              >
+                <Icon
+                  className={[
+                    'h-3 w-3 flex-shrink-0',
+                    domain.logged ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted',
+                  ].join(' ')}
+                />
+                {domain.label}
+                {domain.logged && (
+                  <CheckCircle className="h-3 w-3 text-brand-500 flex-shrink-0" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+          {getStatusDetail()}
+        </p>
       </div>
     </Card>
   );

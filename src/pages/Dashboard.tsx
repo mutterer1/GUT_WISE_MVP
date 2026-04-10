@@ -84,6 +84,7 @@ export default function Dashboard() {
             snacksCount={metrics.todayFood.snacks}
             hydrationMl={metrics.todayHydration.total_ml}
             sleepHours={sleepHours}
+            symptomsCount={metrics.todaySymptoms.length}
             loading={loading}
             userName={userName}
           />
