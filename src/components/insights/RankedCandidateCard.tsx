@@ -56,9 +56,9 @@ const tierBorder: Record<string, string> = {
 };
 
 const tierPill: Record<string, string> = {
-  high: 'bg-[#4A8FA8]/10 text-[#2C617D] dark:text-[#8EBFD8] border border-[#4A8FA8]/20',
-  medium: 'bg-[#C28F94]/10 text-[#8D5D62] dark:text-[#D9B3B7] border border-[#C28F94]/20',
-  low: 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08]',
+  high: 'bg-[#4A8FA8]/08 text-[#2C617D] dark:text-[#8EBFD8] border border-[#4A8FA8]/18',
+  medium: 'bg-[#C28F94]/08 text-[#8D5D62] dark:text-[#D9B3B7] border border-[#C28F94]/18',
+  low: 'bg-gray-100 dark:bg-white/[0.05] text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08]',
 };
 
 const tierLabel: Record<string, string> = {
@@ -157,9 +157,9 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
 
   return (
     <div
-      className={`rounded-2xl border border-gray-200 dark:border-white/[0.08] border-l-4 bg-white dark:bg-white/[0.04] p-6 shadow-sm transition-all hover:shadow-md ${tierBorder[candidate.priority_tier] ?? tierBorder.low}`}
+      className={`rounded-2xl border border-gray-200 dark:border-white/[0.07] border-l-4 bg-white dark:bg-white/[0.035] p-6 shadow-sm transition-shadow hover:shadow-md ${tierBorder[candidate.priority_tier] ?? tierBorder.low}`}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${pt.bg} ${pt.color} ${pt.border}`}
@@ -171,23 +171,23 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           </span>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${tierPill[candidate.priority_tier] ?? tierPill.low}`}
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${tierPill[candidate.priority_tier] ?? tierPill.low}`}
         >
           {tierLabel[candidate.priority_tier] ?? 'Weak signal'}
         </span>
       </div>
 
-      <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-white leading-snug">
+      <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-white leading-snug">
         {title}
       </h3>
 
-      <div className="mb-4 flex items-center gap-1.5 text-sm flex-wrap">
+      <div className="mb-5 flex items-center gap-1.5 text-sm flex-wrap">
         <span className="font-medium text-gray-700 dark:text-gray-300">{triggerLabels.join(', ')}</span>
         <span className="text-gray-400 dark:text-gray-500">&rarr;</span>
         <span className="text-gray-500 dark:text-gray-400">{outcomeLabels.join(', ')}</span>
       </div>
 
-      <div className="mb-1 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${status.dotColor}`} />
           <span className={`font-medium ${status.textColor}`}>{status.label}</span>
@@ -199,26 +199,25 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
       </div>
 
       {status.tentative && (
-        <p className="mb-4 text-xs text-gray-400 dark:text-gray-500 italic leading-relaxed">
-          This is a tentative observation. More consistent logging over time will help confirm or dismiss it.
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+          Tentative observation — consistent logging will help confirm or dismiss this over time.
         </p>
       )}
-      {!status.tentative && <div className="mb-4" />}
 
       {candidate.medical_context_annotations.length > 0 && (
-        <div className="mb-4 rounded-xl bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/10 border border-[#4A8FA8]/15 p-3">
-          <p className="mb-0.5 text-xs font-semibold text-[#2C617D] dark:text-[#8EBFD8]">Medical context</p>
-          <p className="text-xs text-[#2C617D]/80 dark:text-[#8EBFD8]/80 leading-relaxed">
+        <div className={`rounded-xl bg-[#4A8FA8]/04 dark:bg-[#4A8FA8]/08 border border-[#4A8FA8]/12 px-3.5 py-3 ${status.tentative ? 'mt-3' : 'mt-4'}`}>
+          <p className="mb-1 text-xs font-medium text-[#2C617D] dark:text-[#8EBFD8]">Medical context</p>
+          <p className="text-xs text-[#2C617D]/75 dark:text-[#8EBFD8]/75 leading-relaxed">
             {candidate.medical_context_annotations.join(' · ')}
           </p>
         </div>
       )}
 
       {explanation && (
-        <div className="mt-4 border-t border-gray-100 dark:border-white/[0.06] pt-4 space-y-3">
+        <div className="mt-5 border-t border-gray-100 dark:border-white/[0.06] pt-5 space-y-4">
           <div className="flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-[#7C5CFF]" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-[#7C5CFF] dark:text-[#B8A8FF]">
+            <span className="text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF] tracking-wide">
               AI Interpretation
             </span>
           </div>
@@ -228,8 +227,8 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           </p>
 
           {explanation.evidence_statement && (
-            <div className="space-y-0.5">
-              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">What we observed</p>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500">What we observed</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 {explanation.evidence_statement}
               </p>
@@ -237,8 +236,8 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           )}
 
           {explanation.uncertainty_statement && (
-            <div className="space-y-0.5">
-              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Keep in mind</p>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500">Keep in mind</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
                 {explanation.uncertainty_statement}
               </p>
@@ -246,7 +245,7 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           )}
 
           {explanation.caution_statement && (
-            <div className="rounded-lg bg-[#C28F94]/08 dark:bg-[#C28F94]/10 border border-[#C28F94]/20 px-3 py-2">
+            <div className="rounded-xl bg-[#C28F94]/06 dark:bg-[#C28F94]/10 border border-[#C28F94]/18 px-3.5 py-3">
               <p className="text-xs text-[#8D5D62] dark:text-[#D9B3B7] leading-relaxed">
                 {explanation.caution_statement}
               </p>

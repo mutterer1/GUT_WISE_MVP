@@ -112,10 +112,10 @@ export default function Insights() {
         data-explanation-origin={explanationOrigin}
       >
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Health Insights</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h1 className="mb-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Health Insights</h1>
+              <p className="text-gray-500 dark:text-gray-400">
                 Pattern-based analysis of your digestive health data.
               </p>
             </div>
@@ -142,15 +142,15 @@ export default function Insights() {
           </div>
 
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
               <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
-              <p className="text-yellow-800 dark:text-yellow-200">{error}</p>
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">{error}</p>
             </div>
           )}
 
           {/* Ranked fallback notice — error path */}
           {useLegacyFallback && rankedError && (
-            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/30 bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/06 px-4 py-3">
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#2C617D]/25 bg-[#4A8FA8]/06 dark:bg-[#4A8FA8]/06 px-4 py-3.5">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8] dark:text-[#8EBFD8]" />
               <p className="text-sm text-[#2C617D] dark:text-[#8EBFD8]">
                 Pattern analysis ran into a problem. Showing available insights instead.
@@ -160,11 +160,11 @@ export default function Insights() {
 
           {/* Ranked fallback notice — no candidates yet path */}
           {useLegacyFallback && !rankedError && (
-            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/20 bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/04 px-4 py-3">
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#2C617D]/18 bg-[#4A8FA8]/04 dark:bg-[#4A8FA8]/04 px-4 py-3.5">
               <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8]/70 dark:text-[#8EBFD8]/70" />
               <div>
                 <p className="text-sm text-[#2C617D]/90 dark:text-[#8EBFD8]/90 font-medium">Your patterns are still building</p>
-                <p className="mt-0.5 text-sm text-[#2C617D]/70 dark:text-[#8EBFD8]/70">
+                <p className="mt-0.5 text-sm text-[#2C617D]/65 dark:text-[#8EBFD8]/65">
                   Keep logging consistently and GutWise will surface personalized patterns over time. Earlier insights are shown below.
                 </p>
               </div>
@@ -173,18 +173,18 @@ export default function Insights() {
 
           {/* Primary: Ranked insight pipeline */}
           {rankedLoading ? (
-            <div className="flex h-64 flex-col items-center justify-center gap-3">
+            <div className="flex h-72 flex-col items-center justify-center gap-3">
               <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
               <p className="text-sm text-gray-400 dark:text-gray-500">Looking for patterns in your data…</p>
             </div>
           ) : hasRankedCandidates ? (
             <section className="mb-10">
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Insights</h2>
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">Pattern Insights</h2>
                     {explanationOrigin !== 'none' && !explanationError && (
-                      <span className="rounded-full bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/12 border border-[#7C5CFF]/20 px-2 py-0.5 text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF]">
+                      <span className="rounded-full bg-[#7C5CFF]/07 dark:bg-[#7C5CFF]/12 border border-[#7C5CFF]/18 px-2.5 py-0.5 text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF]">
                         AI explained
                       </span>
                     )}
@@ -209,7 +209,7 @@ export default function Insights() {
                   <button
                     onClick={generateExplanations}
                     disabled={explanationLoading}
-                    className="flex items-center gap-2 rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/05 dark:bg-[#7C5CFF]/10 px-4 py-2 text-sm font-medium text-[#7C5CFF] dark:text-[#B8A8FF] transition-colors hover:bg-[#7C5CFF]/10 dark:hover:bg-[#7C5CFF]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 rounded-2xl border border-[#7C5CFF]/25 bg-[#7C5CFF]/05 dark:bg-[#7C5CFF]/08 px-4 py-2 text-sm font-medium text-[#7C5CFF] dark:text-[#B8A8FF] transition-colors hover:bg-[#7C5CFF]/10 dark:hover:bg-[#7C5CFF]/16 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {explanationLoading ? (
                       <>
@@ -227,14 +227,14 @@ export default function Insights() {
               </div>
 
               {rankedError ? (
-                <div className="flex items-start gap-3 rounded-lg border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+                <div className="flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
                   <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">{rankedError}</p>
                 </div>
               ) : (
                 <>
                   {validationStatus === 'invalid' && (
-                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-[#C28F94]/30 bg-[#C28F94]/06 dark:bg-[#C28F94]/08 p-3">
+                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#C28F94]/25 bg-[#C28F94]/05 dark:bg-[#C28F94]/08 p-3.5">
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8D5D62] dark:text-[#D9B3B7]" />
                       <p className="text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
                         AI explanations couldn't be verified and won't be shown. Your patterns are still displayed below.
@@ -243,7 +243,7 @@ export default function Insights() {
                   )}
 
                   {validationStatus === 'valid_with_warnings' && distinctWarningFlags.length > 0 && (
-                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10 p-3">
+                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10 p-3.5">
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
                         Some explanations may be incomplete. Patterns are still shown below.
@@ -251,7 +251,7 @@ export default function Insights() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     {rankedCandidates.map((candidate, i) => (
                       <RankedCandidateCard
                         key={candidate.insight_key}
@@ -267,23 +267,23 @@ export default function Insights() {
           ) : (
             /* Fallback: legacy insights path */
             loading ? (
-              <div className="flex h-64 flex-col items-center justify-center gap-3">
+              <div className="flex h-72 flex-col items-center justify-center gap-3">
                 <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
                 <p className="text-sm text-gray-400 dark:text-gray-500">Loading your insights…</p>
               </div>
             ) : insights.length === 0 ? (
               <div
-                className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm"
+                className="rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.035] p-14 text-center shadow-sm"
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/12"
+                  className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4A8FA8]/07 dark:bg-[#4A8FA8]/12"
                   style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
                 >
                   <Brain className="h-8 w-8 text-[#4A8FA8] dark:text-[#8EBFD8]" />
                 </div>
 
-                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="mb-2.5 text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
                   Your patterns are still forming
                 </h3>
 
@@ -291,7 +291,7 @@ export default function Insights() {
                   GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
                 </p>
 
-                <p className="mx-auto mb-8 max-w-sm text-xs text-gray-400 dark:text-gray-500">
+                <p className="mx-auto mb-9 max-w-sm text-xs text-gray-400 dark:text-gray-500">
                   Check back after a few more days of logging to see your first patterns.
                 </p>
 
@@ -307,14 +307,14 @@ export default function Insights() {
                   <span>Based on repeated observations in your logs</span>
                 </div>
 
-                <div className="mb-6 rounded-xl border border-[#2C617D]/20 bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/06 px-4 py-3">
-                  <p className="text-sm text-[#2C617D]/90 dark:text-[#8EBFD8]/90 leading-relaxed">
+                <div className="mb-7 rounded-2xl border border-[#2C617D]/18 bg-[#4A8FA8]/04 dark:bg-[#4A8FA8]/05 px-4 py-3.5">
+                  <p className="text-sm text-[#2C617D]/85 dark:text-[#8EBFD8]/85 leading-relaxed">
                     <span className="font-medium">How patterns are found: </span>
                     GutWise identifies patterns by comparing days with a given factor against days without it. Confidence grows the more consistently the same signal appears.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                   {insights.map((insight) => (
                     <InsightCard key={insight.id} insight={insight} />
                   ))}
