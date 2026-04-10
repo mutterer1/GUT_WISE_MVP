@@ -88,7 +88,8 @@ export default function Dashboard() {
             userName={userName}
           />
 
-          <Card variant="elevated" padding="sm">
+          <Card variant="elevated" padding="sm" className="relative overflow-hidden">
+            <div className="glass-sheen-overlay" aria-hidden="true" style={{ animationDelay: '4s' }} />
             <div className="flex items-center justify-between mb-4 px-2 pt-1">
               <div>
                 <h2 className="text-body-md font-sora font-semibold text-neutral-text dark:text-dark-text">

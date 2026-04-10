@@ -150,6 +150,7 @@ export default function TodaySummaryWidget({
   return (
     <Card variant="elevated" className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/08 dark:to-transparent pointer-events-none" />
+      <div className="glass-sheen-overlay" aria-hidden="true" />
 
       <div className="relative">
         <div className="flex items-start justify-between">
