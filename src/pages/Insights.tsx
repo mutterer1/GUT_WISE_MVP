@@ -181,7 +181,7 @@ export default function Insights() {
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Insights</h2>
                     {explanationOrigin !== 'none' && !explanationError && (
                       <span className="rounded-full bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/12 border border-[#7C5CFF]/20 px-2 py-0.5 text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF]">
-                        {explanationOrigin === 'cache' ? 'Explanations cached' : 'Explanations generated'}
+                        AI explained
                       </span>
                     )}
                   </div>
@@ -190,7 +190,7 @@ export default function Insights() {
                     {rankedInsights?.analyzed_from && rankedInsights?.analyzed_to
                       ? ` · ${formatShortDate(rankedInsights.analyzed_from)} – ${formatShortDate(rankedInsights.analyzed_to)}`
                       : ''}
-                    {rankedInsights?.medical_context_applied ? ' · Medical context applied' : ''}
+                    {rankedInsights?.medical_context_applied ? ' · Personalized to your profile' : ''}
                   </p>
                 </div>
 
@@ -242,7 +242,7 @@ export default function Insights() {
                     <div className="mb-4 flex items-start gap-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10 p-3">
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        Explanations shown with minor issues: {distinctWarningFlags.join(', ')}
+                        Some explanations may be incomplete. Patterns are still shown below.
                       </p>
                     </div>
                   )}

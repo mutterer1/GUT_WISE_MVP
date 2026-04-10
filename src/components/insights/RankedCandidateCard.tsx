@@ -62,9 +62,9 @@ const tierPill: Record<string, string> = {
 };
 
 const tierLabel: Record<string, string> = {
-  high: 'High priority',
-  medium: 'Medium priority',
-  low: 'Lower priority',
+  high: 'Strong signal',
+  medium: 'Moderate signal',
+  low: 'Weak signal',
 };
 
 const subtypeLabels: Record<string, string> = {
@@ -90,26 +90,28 @@ const subtypeLabels: Record<string, string> = {
   symptom_type_persistence: 'Persistent recurring symptom type detected',
 };
 
-const statusConfig: Record<string, { label: string; dotColor: string; textColor: string }> = {
+const statusConfig: Record<string, { label: string; dotColor: string; textColor: string; tentative?: boolean }> = {
   reliable: {
-    label: 'Reliable pattern',
+    label: 'Consistent pattern',
     dotColor: 'bg-emerald-500',
     textColor: 'text-emerald-600 dark:text-emerald-400',
   },
   emerging: {
-    label: 'Emerging',
+    label: 'Pattern building',
     dotColor: 'bg-[#4A8FA8]',
     textColor: 'text-[#2C617D] dark:text-[#8EBFD8]',
   },
   exploratory: {
-    label: 'Early signal',
+    label: 'Tentative signal',
     dotColor: 'bg-gray-400 dark:bg-gray-500',
     textColor: 'text-gray-500 dark:text-gray-400',
+    tentative: true,
   },
   insufficient: {
-    label: 'Low data',
+    label: 'Not enough data yet',
     dotColor: 'bg-gray-300 dark:bg-gray-600',
     textColor: 'text-gray-400 dark:text-gray-500',
+    tentative: true,
   },
 };
 
@@ -150,7 +152,6 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
   const title = subtypeLabels[candidate.subtype] ?? candidate.subtype.replace(/_/g, ' ');
   const windowDays = getWindowDays(candidate.created_from_start_date, candidate.created_from_end_date);
   const supportDays = candidate.evidence.sample_dates.length;
-  const liftPct = candidate.evidence.lift !== null ? Math.round(candidate.evidence.lift * 100) : null;
   const triggerLabels = candidate.trigger_factors.map(formatFactorLabel);
   const outcomeLabels = candidate.target_outcomes.map(formatFactorLabel);
 
@@ -166,13 +167,13 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
             {pt.label}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            #{rank} &middot; {categoryLabel}
+            {categoryLabel}
           </span>
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${tierPill[candidate.priority_tier] ?? tierPill.low}`}
         >
-          {tierLabel[candidate.priority_tier] ?? 'Lower priority'}
+          {tierLabel[candidate.priority_tier] ?? 'Weak signal'}
         </span>
       </div>
 
@@ -186,19 +187,23 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
         <span className="text-gray-500 dark:text-gray-400">{outcomeLabels.join(', ')}</span>
       </div>
 
-      <div className="mb-4 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+      <div className="mb-1 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${status.dotColor}`} />
           <span className={`font-medium ${status.textColor}`}>{status.label}</span>
         </div>
         {supportDays > 0 && (
-          <span>{supportDays} supporting {supportDays === 1 ? 'day' : 'days'}</span>
+          <span>Seen on {supportDays} {supportDays === 1 ? 'day' : 'days'}</span>
         )}
-        {liftPct !== null && liftPct > 0 && (
-          <span>{liftPct}% more likely on exposure days</span>
-        )}
-        <span>{windowDays}-day window</span>
+        <span>{windowDays}-day lookback</span>
       </div>
+
+      {status.tentative && (
+        <p className="mb-4 text-xs text-gray-400 dark:text-gray-500 italic leading-relaxed">
+          This is a tentative observation. More consistent logging over time will help confirm or dismiss it.
+        </p>
+      )}
+      {!status.tentative && <div className="mb-4" />}
 
       {candidate.medical_context_annotations.length > 0 && (
         <div className="mb-4 rounded-xl bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/10 border border-[#4A8FA8]/15 p-3">
@@ -223,15 +228,21 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           </p>
 
           {explanation.evidence_statement && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              {explanation.evidence_statement}
-            </p>
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">What we observed</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                {explanation.evidence_statement}
+              </p>
+            </div>
           )}
 
           {explanation.uncertainty_statement && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 italic leading-relaxed">
-              {explanation.uncertainty_statement}
-            </p>
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Keep in mind</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+                {explanation.uncertainty_statement}
+              </p>
+            </div>
           )}
 
           {explanation.caution_statement && (
