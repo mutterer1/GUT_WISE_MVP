@@ -187,7 +187,7 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
             ) : (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200">
                 <Calendar className="h-4 w-4 text-gray-400" />
-                <p className="text-body-sm text-neutral-muted">No streak yet</p>
+                <p className="text-body-sm text-neutral-muted">Start your streak today</p>
               </div>
             )}
 
@@ -205,7 +205,7 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
 
         {!streakLoading && !showOnboarding && (
           <p className="mt-2 text-body-sm text-neutral-muted">
-            {celebration || 'Keep logging daily to grow your streak.'}
+            {celebration || 'Log something each day to keep your streak going.'}
           </p>
         )}
 

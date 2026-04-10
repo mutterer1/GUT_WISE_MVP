@@ -200,7 +200,7 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
 
       {status.tentative && (
         <p className="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-          Tentative observation — consistent logging will help confirm or dismiss this over time.
+          This pattern is still building. More consistent logging will help confirm or rule it out over time.
         </p>
       )}
 
@@ -218,7 +218,7 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
           <div className="flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-[#7C5CFF]" />
             <span className="text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF] tracking-wide">
-              AI Interpretation
+              Pattern explanation
             </span>
           </div>
 

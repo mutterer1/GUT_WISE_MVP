@@ -28,7 +28,7 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
   const getStatus = () => {
     if (count === 0) {
       return {
-        message: 'No movements logged yet today',
+        message: 'Nothing logged yet today',
         color: 'text-neutral-muted dark:text-dark-muted',
         icon: Minus,
         bgColor: 'bg-neutral-bg dark:bg-dark-surface',

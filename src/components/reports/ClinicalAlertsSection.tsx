@@ -101,11 +101,11 @@ export default function ClinicalAlertsSection({ alerts }: ClinicalAlertsSectionP
       ) : (
         <div className="space-y-3">
           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-1 pb-3 border-b border-gray-50 dark:border-white/[0.04]">
-            <div><span className="font-medium text-[#8D5D62] dark:text-[#C28F94]">Critical / High</span> — discuss with clinician soon</div>
+            <div><span className="font-medium text-[#8D5D62] dark:text-[#C28F94]">Critical / High</span> — share with your doctor soon</div>
             <div className="text-gray-300 dark:text-white/20 select-none">·</div>
-            <div><span className="font-medium text-amber-600 dark:text-amber-400">Medium</span> — raise at next appointment</div>
+            <div><span className="font-medium text-amber-600 dark:text-amber-400">Medium</span> — mention at your next appointment</div>
             <div className="text-gray-300 dark:text-white/20 select-none">·</div>
-            <div><span className="font-medium text-[#4A8FA8]">Low</span> — awareness only</div>
+            <div><span className="font-medium text-[#4A8FA8]">Low</span> — for your awareness</div>
           </div>
 
           {alerts.map((alert, idx) => {
@@ -153,7 +153,7 @@ export default function ClinicalAlertsSection({ alerts }: ClinicalAlertsSectionP
 
                     {alert.severity === 'critical' && (
                       <p className="text-xs text-[#8D5D62] dark:text-[#C28F94] font-medium mt-2">
-                        Discuss this finding with your clinician promptly.
+                        Share this with your healthcare provider promptly.
                       </p>
                     )}
                   </div>

@@ -195,7 +195,7 @@ export default function Reports() {
                 Health Summary Report
               </h1>
               <p className="text-body-sm text-neutral-muted dark:text-dark-muted mt-0.5">
-                Patient-reported data compiled for clinical review
+                A summary of your tracked data, ready to share with your care team
               </p>
             </div>
             <div className="flex gap-2 flex-shrink-0 ml-4">

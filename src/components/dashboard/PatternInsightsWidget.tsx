@@ -162,11 +162,8 @@ export default function PatternInsightsWidget({
             <Brain className="h-5 w-5 text-discovery-500" />
           </div>
           <div>
-            <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text flex items-center gap-2">
-              What Your Body is Showing
-              <span className="px-2 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded-full border border-discovery-500/15">
-                AI
-              </span>
+            <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+              Today's Patterns
             </h3>
             <p className="text-xs text-neutral-muted dark:text-dark-muted mt-0.5">
               Patterns based on your recent logs

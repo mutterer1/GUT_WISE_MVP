@@ -121,7 +121,7 @@ export default function TodaySummaryWidget({
     }
 
     if (parts.length === 0) {
-      return "No logs yet today. Start tracking to see your body's story unfold.";
+      return 'Nothing logged yet today. Add your first entry to get started.';
     }
 
     if (parts.length === 1) {
@@ -200,7 +200,7 @@ export default function TodaySummaryWidget({
             ) : (
               <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-bg dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
                 <Calendar className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
-                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Start logging</p>
+                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Start your streak</p>
               </div>
             )}
           </div>

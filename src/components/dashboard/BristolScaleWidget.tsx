@@ -62,7 +62,7 @@ export default function BristolScaleWidget({
         </div>
         <div className="bg-neutral-bg dark:bg-dark-surface px-4 py-3 rounded-xl">
           <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-            No BM data logged yet today
+            No entries recorded yet today
           </p>
         </div>
       </Card>
