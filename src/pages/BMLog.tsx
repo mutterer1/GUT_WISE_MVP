@@ -1,4 +1,5 @@
-import { Save, Clock, AlertCircle, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Clock, AlertCircle, Activity, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -63,7 +64,21 @@ const bmConfig = {
   }),
 };
 
+function hasNonDefaultDetails(formData: BMFormData): boolean {
+  return (
+    formData.urgency > 1 ||
+    formData.pain_level > 1 ||
+    formData.difficulty_level > 1 ||
+    formData.incomplete_evacuation ||
+    formData.blood_present ||
+    formData.mucus_present ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function BMLog() {
+  const [showDetails, setShowDetails] = useState(false);
+
   const {
     formData,
     setFormData,
@@ -81,6 +96,17 @@ export default function BMLog() {
     handleDelete,
     resetForm,
   } = useLogCrud<BMFormData>(bmConfig);
+
+  useEffect(() => {
+    if (editingId && hasNonDefaultDetails(formData)) {
+      setShowDetails(true);
+    }
+  }, [editingId]);
+
+  const handleReset = () => {
+    resetForm();
+    setShowDetails(false);
+  };
 
   return (
     <LogPageShell
@@ -102,6 +128,22 @@ export default function BMLog() {
 
       {!showHistory ? (
         <Card>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
@@ -153,41 +195,6 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <SliderField
-                label="Urgency Level"
-                value={formData.urgency}
-                onChange={(value) =>
-                  setFormData({ ...formData, urgency: value })
-                }
-                accent="accent-brand-500"
-                low="Low"
-                high="High"
-              />
-
-              <SliderField
-                label="Pain Level"
-                value={formData.pain_level}
-                onChange={(value) =>
-                  setFormData({ ...formData, pain_level: value })
-                }
-                accent="accent-signal-500"
-                low="None"
-                high="Severe"
-              />
-
-              <SliderField
-                label="Difficulty Level"
-                value={formData.difficulty_level}
-                onChange={(value) =>
-                  setFormData({ ...formData, difficulty_level: value })
-                }
-                accent="accent-orange-500"
-                low="Easy"
-                high="Hard"
-              />
-            </div>
-
             <div>
               <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Amount
@@ -211,59 +218,115 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <ToggleField
-                label="Incomplete Evacuation"
-                active={formData.incomplete_evacuation}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    incomplete_evacuation: !formData.incomplete_evacuation,
-                  })
-                }
-                activeClass="bg-brand-500"
-              />
+            <div className="border-t border-neutral-border dark:border-dark-border pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex w-full items-center justify-between py-2 text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                <span className="font-medium">
+                  Details
+                  <span className="ml-1.5 font-normal opacity-60">(optional)</span>
+                </span>
+                {showDetails ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
 
-              <ToggleField
-                label="Blood Present"
-                active={formData.blood_present}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    blood_present: !formData.blood_present,
-                  })
-                }
-                activeClass="bg-signal-500"
-              />
+              {showDetails && (
+                <div className="mt-4 space-y-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <SliderField
+                      label="Urgency Level"
+                      value={formData.urgency}
+                      onChange={(value) =>
+                        setFormData({ ...formData, urgency: value })
+                      }
+                      accent="accent-brand-500"
+                      low="Low"
+                      high="High"
+                    />
 
-              <ToggleField
-                label="Mucus Present"
-                active={formData.mucus_present}
-                onToggle={() =>
-                  setFormData({
-                    ...formData,
-                    mucus_present: !formData.mucus_present,
-                  })
-                }
-                activeClass="bg-orange-500"
-              />
-            </div>
+                    <SliderField
+                      label="Pain Level"
+                      value={formData.pain_level}
+                      onChange={(value) =>
+                        setFormData({ ...formData, pain_level: value })
+                      }
+                      accent="accent-signal-500"
+                      low="None"
+                      high="Severe"
+                    />
 
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Notes
-                <span className="ml-1 font-normal text-neutral-muted dark:text-dark-muted opacity-60">(optional)</span>
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                rows={3}
-                placeholder="Any additional observations..."
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
-              />
+                    <SliderField
+                      label="Difficulty Level"
+                      value={formData.difficulty_level}
+                      onChange={(value) =>
+                        setFormData({ ...formData, difficulty_level: value })
+                      }
+                      accent="accent-orange-500"
+                      low="Easy"
+                      high="Hard"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <ToggleField
+                      label="Incomplete Evacuation"
+                      active={formData.incomplete_evacuation}
+                      onToggle={() =>
+                        setFormData({
+                          ...formData,
+                          incomplete_evacuation: !formData.incomplete_evacuation,
+                        })
+                      }
+                      activeClass="bg-brand-500"
+                    />
+
+                    <ToggleField
+                      label="Blood Present"
+                      active={formData.blood_present}
+                      onToggle={() =>
+                        setFormData({
+                          ...formData,
+                          blood_present: !formData.blood_present,
+                        })
+                      }
+                      activeClass="bg-signal-500"
+                    />
+
+                    <ToggleField
+                      label="Mucus Present"
+                      active={formData.mucus_present}
+                      onToggle={() =>
+                        setFormData({
+                          ...formData,
+                          mucus_present: !formData.mucus_present,
+                        })
+                      }
+                      activeClass="bg-orange-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Notes
+                    </label>
+                    <textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
+                      rows={3}
+                      placeholder="Any additional observations..."
+                      className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-1">
@@ -277,7 +340,7 @@ export default function BMLog() {
               </Button>
 
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                <Button type="button" variant="outline" size="lg" onClick={handleReset}>
                   Cancel
                 </Button>
               )}
