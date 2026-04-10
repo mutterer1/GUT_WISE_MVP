@@ -82,6 +82,8 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     }
   }
 
+  if (exposureCount < 3) return null;
+
   const exposedRate = safeRate(supportCount, exposureCount);
   const baselineRate = safeRate(nonExposedElevatedCount, nonExposedCount);
   const lift = computeLift(exposedRate, baselineRate);
