@@ -113,6 +113,9 @@ export function prioritizeInsightCandidates(
     const statusOrder: Record<string, number> = { reliable: 0, emerging: 1, exploratory: 2 };
     const statusDiff = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
     if (statusDiff !== 0) return statusDiff;
+    const aRecent = a.evidence.sample_dates[0] ?? '';
+    const bRecent = b.evidence.sample_dates[0] ?? '';
+    if (bRecent !== aRecent) return bRecent.localeCompare(aRecent);
     return a.insight_key.localeCompare(b.insight_key);
   });
 }
