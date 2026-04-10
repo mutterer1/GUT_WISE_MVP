@@ -23,16 +23,16 @@ export default function BristolDistributionSection({ distribution }: BristolDist
   const isPredominallyNormal = normalPercentage > 60;
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+    <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mb-5 print:border-gray-300">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
         Bristol Stool Scale Distribution
-      </h2>
+      </p>
 
       {!hasData ? (
-        <p className="text-gray-600 italic">No stool type data recorded during this period.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">No stool type data recorded during this period.</p>
       ) : (
         <>
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3 mb-5">
             {[1, 2, 3, 4, 5, 6, 7].map(type => {
               const data = distribution.find(d => d.type === type);
               const percentage = data?.percentage || 0;
@@ -42,67 +42,65 @@ export default function BristolDistributionSection({ distribution }: BristolDist
 
               return (
                 <div key={type} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-900">
-                      {bristolDescriptions[type].label}
-                    </span>
-                    <span className="text-gray-600">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800 dark:text-gray-200">
+                        {bristolDescriptions[type].label}
+                      </span>
+                      <span className="text-gray-400 dark:text-gray-500 italic">
+                        {bristolDescriptions[type].clinical}
+                      </span>
+                    </div>
+                    <span className="text-gray-500 dark:text-gray-400 tabular-nums ml-4 flex-shrink-0">
                       {count} ({percentage.toFixed(1)}%)
                     </span>
                   </div>
-                  <div className="h-6 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-5 bg-gray-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all ${
                         isNormal
-                          ? 'bg-green-500'
+                          ? 'bg-[#4A8FA8]'
                           : type < 3
-                          ? 'bg-amber-500'
-                          : 'bg-orange-500'
+                          ? 'bg-amber-400 dark:bg-amber-500'
+                          : 'bg-[#C28F94]'
                       }`}
                       style={{ width: `${barWidth}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-600 italic">
-                    {bristolDescriptions[type].clinical}
-                  </p>
                 </div>
               );
             })}
           </div>
 
-          <div className="bg-gray-50 border-l-4 border-gray-600 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Clinical Assessment</h3>
-            <p className="text-sm text-gray-800 leading-relaxed">
+          <div className="bg-[#4A8FA8]/8 dark:bg-[#4A8FA8]/10 border border-[#4A8FA8]/20 rounded-xl p-4 mb-4">
+            <h3 className="text-xs font-semibold text-[#2C617D] dark:text-[#8EBFD8] uppercase tracking-wide mb-1.5">Observation</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
               {isPredominallyNormal ? (
                 <>
-                  Stool consistency predominantly within normal parameters (Types 3-4: {normalPercentage.toFixed(1)}%).
-                  Bristol Scale distribution suggests adequate hydration, fiber intake, and normal colonic transit time.
-                  Continue current management regimen.
+                  Stool consistency is predominantly within normal parameters (Types 3–4: {normalPercentage.toFixed(0)}%).
+                  Distribution suggests adequate hydration and fiber intake with normal colonic transit.
                 </>
               ) : (
                 <>
-                  Stool consistency demonstrates deviation from optimal Bristol Types 3-4 ({normalPercentage.toFixed(1)}% normal).
-                  Consider comprehensive evaluation of dietary fiber intake, fluid balance, medication effects, and
-                  underlying gastrointestinal motility disorders. Therapeutic intervention may be warranted.
+                  Normal consistency (Types 3–4) accounts for {normalPercentage.toFixed(0)}% of logged entries.
+                  A distribution pattern leaning toward firmer or looser stools may reflect dietary, hydration, or motility factors worth discussing with a clinician.
                 </>
               )}
             </p>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center gap-6 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className="text-gray-700">Normal (Types 3-4)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-amber-500 rounded"></div>
-                <span className="text-gray-700">Constipation (Types 1-2)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                <span className="text-gray-700">Diarrhea (Types 5-7)</span>
-              </div>
+          <div className="flex items-center gap-5 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 bg-[#4A8FA8] rounded"></div>
+              <span>Normal (3–4)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 bg-amber-400 dark:bg-amber-500 rounded"></div>
+              <span>Constipation (1–2)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 bg-[#C28F94] rounded"></div>
+              <span>Loose (5–7)</span>
             </div>
           </div>
         </>

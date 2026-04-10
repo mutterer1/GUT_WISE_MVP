@@ -26,16 +26,16 @@ export default function MedicationCorrelationSection({ correlations }: Medicatio
   }, {} as { [key: string]: MedicationCorrelation[] });
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-        Medication Correlation Timeline
-      </h2>
+    <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mb-5 print:border-gray-300">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
+        Medication Correlation
+      </p>
 
       {!hasData ? (
-        <p className="text-gray-600 italic">No medication data recorded during this period.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">No medication data recorded during this period.</p>
       ) : (
         <>
-          <div className="space-y-6">
+          <div className="space-y-5">
             {Object.entries(medicationGroups).map(([medicationName, meds]) => {
               const responses = meds.map(m => getMedicationResponse(m.symptomSeverityBefore, m.symptomSeverityAfter));
               const positiveResponses = responses.filter(r => r.type === 'positive').length;
@@ -45,31 +45,33 @@ export default function MedicationCorrelationSection({ correlations }: Medicatio
                 .reduce((sum, r) => sum + r.change, 0) / Math.max(1, responses.filter(r => r.type !== 'unknown').length);
 
               return (
-                <div key={medicationName} className="border border-gray-200 rounded-lg p-4">
+                <div key={medicationName} className="border border-gray-100 dark:border-white/[0.06] rounded-xl p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Pill className="h-6 w-6 text-blue-600" />
+                      <div className="w-8 h-8 bg-[#4A8FA8]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Pill className="h-4 w-4 text-[#4A8FA8]" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{medicationName}</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-0.5">{medicationName}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {meds.length} administration{meds.length !== 1 ? 's' : ''} recorded
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        positiveResponses > negativeResponses ? 'bg-green-100 text-green-800' :
-                        negativeResponses > positiveResponses ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <div className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                        positiveResponses > negativeResponses
+                          ? 'bg-[#4A8FA8]/10 text-[#2C617D] dark:text-[#8EBFD8]'
+                          : negativeResponses > positiveResponses
+                          ? 'bg-[#C28F94]/10 text-[#8D5D62] dark:text-[#C28F94]'
+                          : 'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400'
                       }`}>
-                        {positiveResponses > negativeResponses ? 'Therapeutic Benefit' :
-                         negativeResponses > positiveResponses ? 'Limited Efficacy' :
-                         'Variable Response'}
+                        {positiveResponses > negativeResponses ? 'Benefit observed' :
+                         negativeResponses > positiveResponses ? 'Limited benefit' :
+                         'Variable response'}
                       </div>
                       {avgChange !== 0 && (
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                           Avg change: {avgChange > 0 ? '+' : ''}{avgChange.toFixed(1)}
                         </p>
                       )}
@@ -81,51 +83,51 @@ export default function MedicationCorrelationSection({ correlations }: Medicatio
                       const response = getMedicationResponse(med.symptomSeverityBefore, med.symptomSeverityAfter);
 
                       return (
-                        <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-gray-900">
+                        <div key={idx} className="bg-gray-50 dark:bg-white/[0.03] rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
                                 {new Date(med.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
-                              <span className="text-sm text-gray-600">{med.timeTaken}</span>
-                              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">{med.timeTaken}</span>
+                              <span className="text-xs bg-gray-200 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
                                 {med.dosage}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               {response.type === 'positive' && (
                                 <>
-                                  <TrendingDown className="h-4 w-4 text-green-600" />
-                                  <span className="text-sm font-semibold text-green-700">
-                                    {Math.abs(response.change).toFixed(1)} improvement
+                                  <TrendingDown className="h-3.5 w-3.5 text-[#4A8FA8]" />
+                                  <span className="text-xs font-semibold text-[#2C617D] dark:text-[#8EBFD8]">
+                                    -{Math.abs(response.change).toFixed(1)}
                                   </span>
                                 </>
                               )}
                               {response.type === 'negative' && (
                                 <>
-                                  <TrendingUp className="h-4 w-4 text-red-600" />
-                                  <span className="text-sm font-semibold text-red-700">
-                                    +{Math.abs(response.change).toFixed(1)} worsening
+                                  <TrendingUp className="h-3.5 w-3.5 text-[#8D5D62] dark:text-[#C28F94]" />
+                                  <span className="text-xs font-semibold text-[#8D5D62] dark:text-[#C28F94]">
+                                    +{Math.abs(response.change).toFixed(1)}
                                   </span>
                                 </>
                               )}
                               {response.type === 'neutral' && (
                                 <>
-                                  <Minus className="h-4 w-4 text-gray-600" />
-                                  <span className="text-sm font-semibold text-gray-700">No change</span>
+                                  <Minus className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">No change</span>
                                 </>
                               )}
                               {response.type === 'unknown' && (
-                                <span className="text-sm text-gray-500 italic">Insufficient data</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500 italic">Insufficient data</span>
                               )}
                             </div>
                           </div>
 
                           {med.symptomSeverityBefore !== null && med.symptomSeverityAfter !== null && (
-                            <div className="flex items-center gap-2 text-xs text-gray-600">
-                              <span>Pre-dose: <span className="font-semibold text-gray-900">{med.symptomSeverityBefore.toFixed(1)}</span></span>
+                            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                              <span>Pre-dose: <span className="font-medium text-gray-700 dark:text-gray-300">{med.symptomSeverityBefore.toFixed(1)}</span></span>
                               <span>→</span>
-                              <span>Post-dose (4h): <span className="font-semibold text-gray-900">{med.symptomSeverityAfter.toFixed(1)}</span></span>
+                              <span>Post-dose (4h): <span className="font-medium text-gray-700 dark:text-gray-300">{med.symptomSeverityAfter.toFixed(1)}</span></span>
                             </div>
                           )}
                         </div>
@@ -133,29 +135,24 @@ export default function MedicationCorrelationSection({ correlations }: Medicatio
                     })}
                   </div>
 
-                  <div className={`text-sm p-3 rounded border-l-4 ${
+                  <div className={`text-xs p-3 rounded-lg ${
                     positiveResponses > negativeResponses
-                      ? 'bg-green-50 border-green-600 text-green-900'
+                      ? 'bg-[#4A8FA8]/8 dark:bg-[#4A8FA8]/10 text-gray-700 dark:text-gray-300'
                       : negativeResponses > positiveResponses
-                      ? 'bg-red-50 border-red-600 text-red-900'
-                      : 'bg-gray-50 border-gray-600 text-gray-900'
+                      ? 'bg-[#C28F94]/8 dark:bg-[#C28F94]/10 text-gray-700 dark:text-gray-300'
+                      : 'bg-gray-50 dark:bg-white/[0.03] text-gray-600 dark:text-gray-400'
                   }`}>
-                    <span className="font-semibold">Clinical Assessment: </span>
                     {positiveResponses > negativeResponses ? (
                       <>
-                        Medication demonstrates consistent therapeutic efficacy with symptom reduction in majority
-                        of administrations ({positiveResponses}/{meds.length}). Current regimen appears appropriate.
+                        Symptom reduction observed in {positiveResponses} of {meds.length} administrations. Current regimen appears to be having an effect.
                       </>
                     ) : negativeResponses > positiveResponses ? (
                       <>
-                        Limited therapeutic benefit observed with potential symptom exacerbation noted in
-                        {negativeResponses}/{meds.length} administrations. Consider dose adjustment, timing modification,
-                        or alternative pharmacologic intervention.
+                        Limited symptom benefit observed in {negativeResponses}/{meds.length} administrations. Consider discussing dose, timing, or alternatives with your clinician.
                       </>
                     ) : (
                       <>
-                        Variable response pattern suggests inconsistent efficacy. May indicate need for dose optimization,
-                        evaluation of medication timing relative to meals, or assessment of drug-drug interactions.
+                        Mixed response pattern. Dose optimization or timing adjustments may be worth exploring.
                       </>
                     )}
                   </div>
@@ -164,13 +161,10 @@ export default function MedicationCorrelationSection({ correlations }: Medicatio
             })}
           </div>
 
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">Temporal Analysis Methodology</h3>
-            <p className="text-xs text-blue-800 leading-relaxed">
-              Pre-dose severity represents average symptom intensity 2 hours prior to medication administration.
-              Post-dose severity represents average symptom intensity 4 hours following administration. This temporal
-              window captures peak pharmacologic effect for most GI medications. Improvement ≥1 point considered
-              clinically significant.
+          <div className="mt-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-xl p-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              <span className="font-medium text-gray-600 dark:text-gray-300">Methodology:</span>{' '}
+              Pre-dose severity represents average symptoms in the 2 hours prior to administration. Post-dose represents the 4 hours following. A change of ≥1 point is considered clinically meaningful for GI medications.
             </p>
           </div>
         </>

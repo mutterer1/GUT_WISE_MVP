@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Printer, Download, FileText } from 'lucide-react';
+import { Printer, Download, FileText, ClipboardList } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -124,7 +124,13 @@ export default function Reports() {
       day: 'numeric',
       year: 'numeric',
     });
-    return `${start} - ${end}`;
+    return `${start} – ${end}`;
+  };
+
+  const getDayCount = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
   const getPrimaryConcerns = (): string[] => {
@@ -169,127 +175,148 @@ export default function Reports() {
 
   return (
     <MainLayout>
-      <div className="p-4 sm:p-6 lg:p-8 print:p-8 max-w-7xl mx-auto">
-          <div className="mb-6 print:hidden">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Clinical Report</h1>
-                <p className="text-gray-600 dark:text-gray-400">Professional digestive health documentation for healthcare consultation</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handlePrint}
-                  className="flex items-center gap-2"
-                >
-                  <Printer className="h-5 w-5" />
-                  Print
-                </Button>
-                <Button
-                  onClick={handleExportPDF}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-5 w-5" />
-                  Export PDF
-                </Button>
-              </div>
-            </div>
+      <div className="p-4 sm:p-6 lg:p-8 print:p-8 max-w-5xl mx-auto">
 
-            <DateRangeSelector
-              startDate={startDate}
-              endDate={endDate}
-              onDateRangeChange={handleDateRangeChange}
-            />
-          </div>
-
-          <div className="hidden print:block mb-8">
-            <div className="border-b-4 border-gray-900 pb-4 mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <FileText className="h-8 w-8 text-gray-900" />
-                <h1 className="text-4xl font-bold text-gray-900">Clinical Digestive Health Report</h1>
-              </div>
-              <p className="text-gray-700 text-lg">Professional Medical Documentation</p>
-              <p className="text-sm text-gray-600 mt-2">
-                Generated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        <div className="mb-6 print:hidden">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
+                Health Summary Report
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Patient-reported data compiled for clinical review
               </p>
             </div>
+            <div className="flex gap-2 flex-shrink-0 ml-4">
+              <Button
+                variant="outline"
+                onClick={handlePrint}
+                className="flex items-center gap-2 text-sm"
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 text-sm"
+              >
+                <Download className="h-4 w-4" />
+                Export PDF
+              </Button>
+            </div>
           </div>
+        </div>
 
-          {loading && (
-            <div className="bg-white border border-gray-300 rounded-lg p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Generating clinical report...</p>
+        <div className="mb-6 print:hidden">
+          <DateRangeSelector
+            startDate={startDate}
+            endDate={endDate}
+            onDateRangeChange={handleDateRangeChange}
+          />
+        </div>
+
+        <div className="hidden print:block mb-8">
+          <div className="border-b-2 border-gray-900 pb-5 mb-6">
+            <div className="flex items-center gap-3 mb-1">
+              <FileText className="h-7 w-7 text-gray-900" />
+              <h1 className="text-3xl font-bold text-gray-900">Digestive Health Summary Report</h1>
             </div>
-          )}
+            <p className="text-gray-600 text-sm mt-1">Patient-reported data — for clinical review purposes only</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Generated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              &nbsp;·&nbsp; Coverage: {formatDateRange()} ({getDayCount()} days)
+            </p>
+          </div>
+        </div>
 
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-6">
-              <p className="text-red-800 font-medium">{error}</p>
+        {loading && (
+          <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-12 text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#4A8FA8] mx-auto mb-4"></div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Compiling report data…</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 mb-6">
+            <p className="text-red-800 dark:text-red-300 text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && !bmAnalytics && (
+          <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-12 text-center">
+            <div className="w-12 h-12 rounded-xl bg-[#4A8FA8]/10 flex items-center justify-center mx-auto mb-4">
+              <ClipboardList className="h-6 w-6 text-[#4A8FA8]" />
             </div>
-          )}
+            <p className="text-gray-900 dark:text-white font-medium mb-1">No data for this period</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Try selecting a different date range, or continue logging to build your report.
+            </p>
+          </div>
+        )}
 
-          {!loading && !error && bmAnalytics && (
-            <>
-              <ExecutiveSummary
-                dateRange={formatDateRange()}
-                totalBMs={bmAnalytics.totalCount}
-                avgPerDay={bmAnalytics.averagePerDay}
-                avgPerWeek={bmAnalytics.averagePerWeek}
-                criticalAlerts={clinicalAlerts.filter(a => a.severity === 'critical' || a.severity === 'high')}
-                primaryConcerns={getPrimaryConcerns()}
-              />
+        {!loading && !error && bmAnalytics && (
+          <>
+            <ExecutiveSummary
+              dateRange={formatDateRange()}
+              dayCount={getDayCount()}
+              totalBMs={bmAnalytics.totalCount}
+              avgPerDay={bmAnalytics.averagePerDay}
+              avgPerWeek={bmAnalytics.averagePerWeek}
+              criticalAlerts={clinicalAlerts.filter(a => a.severity === 'critical' || a.severity === 'high')}
+              primaryConcerns={getPrimaryConcerns()}
+            />
 
-              <ClinicalAlertsSection alerts={clinicalAlerts} />
+            <ClinicalAlertsSection alerts={clinicalAlerts} />
 
-              <BMAnalyticsSection analytics={bmAnalytics} />
+            <BMAnalyticsSection analytics={bmAnalytics} />
 
-              <BristolDistributionSection distribution={bristolDistribution} />
+            <BristolDistributionSection distribution={bristolDistribution} />
 
-              <SymptomProgressionSection trends={symptomTrends} />
+            <SymptomProgressionSection trends={symptomTrends} />
 
-              <HealthMarkersSection correlations={healthMarkers} />
+            <HealthMarkersSection correlations={healthMarkers} />
 
-              <TriggerPatternsSection triggers={triggerPatterns} />
+            <TriggerPatternsSection triggers={triggerPatterns} />
 
-              <MedicationCorrelationSection correlations={medicationCorrelations} />
+            <MedicationCorrelationSection correlations={medicationCorrelations} />
 
-              <div className="bg-white border-t-4 border-gray-900 rounded-lg p-6 mt-8 print:mt-12">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Clinical Recommendations</h2>
-                <div className="space-y-3 text-sm text-gray-800 leading-relaxed">
-                  <p>
-                    <span className="font-semibold">1. Comprehensive Evaluation:</span> Review findings with gastroenterologist
-                    for differential diagnosis and treatment optimization.
-                  </p>
-                  <p>
-                    <span className="font-semibold">2. Follow-up Timeline:</span> Schedule reassessment in 4-6 weeks to evaluate
-                    therapeutic response and symptom progression.
-                  </p>
-                  <p>
-                    <span className="font-semibold">3. Diagnostic Considerations:</span> Consider laboratory studies (CBC, CMP, inflammatory
-                    markers, celiac panel) and imaging as clinically indicated based on symptom severity.
-                  </p>
-                  <p>
-                    <span className="font-semibold">4. Patient Education:</span> Continue systematic symptom tracking for longitudinal
-                    trend analysis and treatment efficacy assessment.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mt-4 print:mt-8">
-                <p className="text-xs text-gray-700 leading-relaxed">
-                  <span className="font-semibold">Disclaimer:</span> This report is generated from patient-reported data and is intended
-                  to facilitate clinical consultation. It does not constitute medical diagnosis or treatment recommendation. All clinical
-                  decisions should be made by qualified healthcare professionals based on comprehensive patient assessment, physical examination,
-                  and appropriate diagnostic testing. Data accuracy is dependent on patient compliance with systematic logging protocols.
+            <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mt-6 print:mt-10">
+              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">
+                Suggested Discussion Points
+              </h2>
+              <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p>
+                  <span className="font-medium text-gray-900 dark:text-white">Pattern review:</span>{' '}
+                  Discuss the observed trends and any flagged patterns with your gastroenterologist for clinical context.
+                </p>
+                <p>
+                  <span className="font-medium text-gray-900 dark:text-white">Follow-up:</span>{' '}
+                  Reassessment after 4–6 weeks can help evaluate whether symptoms or patterns have changed.
+                </p>
+                <p>
+                  <span className="font-medium text-gray-900 dark:text-white">Diagnostics:</span>{' '}
+                  Your clinician may recommend additional testing (labs, imaging) based on the patterns shown here.
+                </p>
+                <p>
+                  <span className="font-medium text-gray-900 dark:text-white">Continued logging:</span>{' '}
+                  Systematic tracking improves the accuracy of pattern detection over time.
                 </p>
               </div>
+            </div>
 
-              <div className="text-center text-xs text-gray-500 mt-6 print:mt-12 pb-4">
-                <p>End of Clinical Report</p>
-                <p className="mt-1">This document contains protected health information. Handle in accordance with HIPAA requirements.</p>
-              </div>
-            </>
-          )}
+            <div className="bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-xl p-4 mt-4 print:mt-6">
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                <span className="font-medium text-gray-600 dark:text-gray-300">Notice:</span>{' '}
+                This report is compiled from patient-reported data and is intended to support clinical conversation — it does not constitute a medical diagnosis or treatment recommendation.
+                All clinical decisions should be made by qualified healthcare professionals based on comprehensive assessment and appropriate testing.
+              </p>
+            </div>
+
+            <div className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6 print:mt-10 pb-4">
+              <p>End of report · {formatDateRange()}</p>
+            </div>
+          </>
+        )}
       </div>
 
       <style>{`
@@ -318,8 +345,16 @@ export default function Reports() {
             margin-top: 3rem !important;
           }
 
+          .print\\:mt-10 {
+            margin-top: 2.5rem !important;
+          }
+
           .print\\:mt-8 {
             margin-top: 2rem !important;
+          }
+
+          .print\\:mt-6 {
+            margin-top: 1.5rem !important;
           }
 
           .print\\:border-0 {
@@ -328,10 +363,6 @@ export default function Reports() {
 
           .print\\:p-0 {
             padding: 0 !important;
-          }
-
-          .print\\:border-gray-800 {
-            border-color: #1f2937 !important;
           }
 
           @page {

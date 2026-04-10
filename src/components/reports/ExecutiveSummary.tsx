@@ -1,8 +1,9 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { ClinicalAlert } from '../../utils/clinicalReportQueries';
 
 interface ExecutiveSummaryProps {
   dateRange: string;
+  dayCount: number;
   totalBMs: number;
   avgPerDay: number;
   avgPerWeek: number;
@@ -12,50 +13,65 @@ interface ExecutiveSummaryProps {
 
 export default function ExecutiveSummary({
   dateRange,
+  dayCount,
   totalBMs,
   avgPerDay,
   avgPerWeek,
   criticalAlerts,
   primaryConcerns,
 }: ExecutiveSummaryProps) {
-  return (
-    <div className="bg-white border-2 border-gray-300 rounded-lg p-6 mb-6 print:border-gray-800">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-200">
-        Executive Summary
-      </h2>
+  const hasFindings = criticalAlerts.length > 0 || primaryConcerns.length > 0;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Report Period</p>
-          <p className="text-lg font-semibold text-gray-900">{dateRange}</p>
+  return (
+    <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mb-5 print:border-gray-300">
+      <div className="mb-5 pb-4 border-b border-gray-100 dark:border-white/[0.06]">
+        <p className="text-xs font-semibold text-[#4A8FA8] uppercase tracking-widest mb-1">Executive Summary</p>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-snug">{dateRange}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{dayCount}-day coverage period</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wide">Total Events</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalBMs}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">bowel movements</p>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Total Bowel Movements</p>
-          <p className="text-lg font-semibold text-gray-900">{totalBMs}</p>
+        <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wide">Daily Average</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{avgPerDay.toFixed(1)}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">per day</p>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">Daily Average</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {avgPerDay.toFixed(2)} per day / {avgPerWeek.toFixed(2)} per week
-          </p>
+        <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wide">Weekly Average</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{avgPerWeek.toFixed(1)}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">per week</p>
         </div>
       </div>
 
+      {!hasFindings && (
+        <div className="flex items-start gap-3 bg-[#4A8FA8]/8 dark:bg-[#4A8FA8]/10 border border-[#4A8FA8]/20 rounded-xl p-4">
+          <CheckCircle className="h-5 w-5 text-[#4A8FA8] flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            No flagged patterns during this period. Observed metrics are within expected ranges.
+          </p>
+        </div>
+      )}
+
       {criticalAlerts.length > 0 && (
-        <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-4">
+        <div className="mb-4 bg-[#C28F94]/10 dark:bg-[#C28F94]/10 border border-[#C28F94]/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-[#8D5D62] dark:text-[#C28F94] flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-red-900 mb-2">
-                Clinical Alerts ({criticalAlerts.length})
+              <h3 className="text-sm font-semibold text-[#8D5D62] dark:text-[#C28F94] mb-2">
+                {criticalAlerts.length} alert{criticalAlerts.length !== 1 ? 's' : ''} flagged — review below
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {criticalAlerts.map((alert, idx) => (
-                  <li key={idx} className="text-sm text-red-800">
-                    <span className="font-semibold uppercase tracking-wide text-xs bg-red-200 px-2 py-1 rounded mr-2">
+                  <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <span className="inline-block text-xs font-semibold uppercase tracking-wide text-[#8D5D62] dark:text-[#C28F94] bg-[#C28F94]/20 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
                       {alert.severity}
                     </span>
-                    {alert.message}
+                    <span>{alert.message}</span>
                   </li>
                 ))}
               </ul>
@@ -66,20 +82,17 @@ export default function ExecutiveSummary({
 
       {primaryConcerns.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Primary Clinical Observations</h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-800">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+            Key Observations
+          </h3>
+          <ul className="space-y-2">
             {primaryConcerns.map((concern, idx) => (
-              <li key={idx} className="leading-relaxed">{concern}</li>
+              <li key={idx} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4A8FA8] flex-shrink-0 mt-1.5"></span>
+                <span>{concern}</span>
+              </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {primaryConcerns.length === 0 && criticalAlerts.length === 0 && (
-        <div className="bg-green-50 border-l-4 border-green-600 p-4">
-          <p className="text-green-800 font-medium">
-            No critical concerns identified during the reporting period. Patient data within expected parameters.
-          </p>
         </div>
       )}
     </div>

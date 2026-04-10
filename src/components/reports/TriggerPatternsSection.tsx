@@ -9,26 +9,22 @@ export default function TriggerPatternsSection({ triggers }: TriggerPatternsSect
   const hasData = triggers.length > 0;
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+    <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mb-5 print:border-gray-300">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
         Trigger Pattern Analysis
-      </h2>
+      </p>
 
       {!hasData ? (
-        <p className="text-gray-600 italic">
-          Insufficient data to identify statistically significant trigger patterns. Continued logging recommended
-          for pattern recognition analysis.
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+          Insufficient data to identify statistically significant trigger patterns. Continued logging will improve detection accuracy.
         </p>
       ) : (
         <>
-          <div className="mb-4">
-            <p className="text-sm text-gray-700 leading-relaxed">
-              The following dietary items demonstrate statistically significant correlation with symptom occurrence
-              (correlation strength &gt;0.3). Listed in descending order of correlation strength.
-            </p>
-          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+            Dietary items showing temporal correlation with symptom occurrence (within 8 hours of consumption, minimum 3 exposures). Listed by correlation strength.
+          </p>
 
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3 mb-5">
             {triggers.map((trigger, idx) => {
               const correlationPercentage = trigger.correlationStrength * 100;
               const isHighRisk = trigger.correlationStrength > 0.6;
@@ -37,85 +33,77 @@ export default function TriggerPatternsSection({ triggers }: TriggerPatternsSect
               return (
                 <div
                   key={idx}
-                  className={`border-l-4 p-4 rounded-r-lg ${
-                    isHighRisk ? 'border-red-600 bg-red-50' :
-                    isMediumRisk ? 'border-orange-500 bg-orange-50' :
-                    'border-yellow-500 bg-yellow-50'
+                  className={`border rounded-xl p-4 ${
+                    isHighRisk
+                      ? 'border-[#C28F94]/40 bg-[#C28F94]/8 dark:bg-[#C28F94]/8'
+                      : isMediumRisk
+                      ? 'border-amber-300/50 dark:border-amber-700/30 bg-amber-50/50 dark:bg-amber-900/8'
+                      : 'border-gray-200 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02]'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {isHighRisk && <AlertCircle className="h-5 w-5 text-red-600" />}
-                        <h3 className="text-lg font-semibold text-gray-900">{trigger.trigger}</h3>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        {isHighRisk && <AlertCircle className="h-3.5 w-3.5 text-[#8D5D62] dark:text-[#C28F94]" />}
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{trigger.trigger}</h3>
                       </div>
-                      <p className="text-xs text-gray-600 uppercase tracking-wide font-medium mb-2">
-                        {trigger.category} trigger
+                      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                        {trigger.category}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <div className={`text-2xl font-bold ${
-                        isHighRisk ? 'text-red-700' :
-                        isMediumRisk ? 'text-orange-700' :
-                        'text-yellow-700'
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <div className={`text-xl font-bold tabular-nums ${
+                        isHighRisk ? 'text-[#8D5D62] dark:text-[#C28F94]' :
+                        isMediumRisk ? 'text-amber-600 dark:text-amber-400' :
+                        'text-gray-600 dark:text-gray-400'
                       }`}>
                         {correlationPercentage.toFixed(0)}%
                       </div>
-                      <p className="text-xs text-gray-600">correlation</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">correlation</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-3 gap-3 text-xs mb-3">
                     <div>
-                      <p className="text-gray-600 mb-1">Occurrences</p>
-                      <p className="font-semibold text-gray-900">{trigger.occurrences}</p>
+                      <p className="text-gray-400 dark:text-gray-500 mb-0.5">Occurrences</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-200">{trigger.occurrences}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600 mb-1">Avg Symptom Severity</p>
-                      <p className="font-semibold text-gray-900">
+                      <p className="text-gray-400 dark:text-gray-500 mb-0.5">Avg Severity</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-200">
                         {trigger.avgSymptomSeverity.toFixed(1)}/10
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-600 mb-1">Risk Level</p>
+                      <p className="text-gray-400 dark:text-gray-500 mb-0.5">Signal</p>
                       <p className={`font-semibold ${
-                        isHighRisk ? 'text-red-700' :
-                        isMediumRisk ? 'text-orange-700' :
-                        'text-yellow-700'
+                        isHighRisk ? 'text-[#8D5D62] dark:text-[#C28F94]' :
+                        isMediumRisk ? 'text-amber-600 dark:text-amber-400' :
+                        'text-gray-500 dark:text-gray-400'
                       }`}>
-                        {isHighRisk ? 'High' : isMediumRisk ? 'Medium' : 'Low'}
+                        {isHighRisk ? 'Strong' : isMediumRisk ? 'Moderate' : 'Weak'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-300">
-                    <p className="text-sm text-gray-800">
-                      <span className="font-semibold">Clinical Recommendation:</span>
-                      {isHighRisk ? (
-                        <> Strong temporal association between consumption and symptom manifestation.
-                        Recommend strict elimination and formal challenge testing under medical supervision
-                        to establish causality.</>
-                      ) : isMediumRisk ? (
-                        <> Moderate correlation suggests potential trigger. Consider elimination trial for
-                        2-4 weeks with symptom monitoring to assess clinical response.</>
-                      ) : (
-                        <> Weak-to-moderate association observed. May warrant dietary modification if other
-                        interventions fail to provide adequate symptom control.</>
-                      )}
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-200/60 dark:border-white/[0.05] pt-2.5">
+                    {isHighRisk ? (
+                      <>Strong temporal association observed. Consider discussing an elimination trial with your clinician to assess causality.</>
+                    ) : isMediumRisk ? (
+                      <>Moderate association. A 2–4 week dietary modification may be informative.</>
+                    ) : (
+                      <>Weak association observed. May be worth noting if other triggers have been addressed.</>
+                    )}
+                  </p>
                 </div>
               );
             })}
           </div>
 
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Methodology Note</h3>
-            <p className="text-xs text-gray-700 leading-relaxed">
-              Trigger analysis evaluates temporal correlation between dietary intake and symptom occurrence within
-              an 8-hour post-consumption window. Correlation strength represents the proportion of exposures followed
-              by symptomatic events. Values &gt;0.6 indicate high likelihood of causative relationship. Analysis requires
-              minimum 3 exposures for statistical validity.
+          <div className="bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-xl p-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              <span className="font-medium text-gray-600 dark:text-gray-300">Methodology:</span>{' '}
+              Correlation strength represents the proportion of exposures followed by symptomatic events within 8 hours. Values above 0.6 indicate a strong observed association. Correlation does not establish causation.
             </p>
           </div>
         </>
