@@ -49,6 +49,7 @@ interface LLMEvidenceSummary {
   exposed_rate: number | null;
   lift: number | null;
   contradiction_level: ContradictionLevel;
+  statistics?: Record<string, unknown>;
 }
 
 interface LLMInsightItem {
@@ -161,6 +162,16 @@ function serializeItem(item: LLMInsightItem, index: number): string {
       ` contradictions=${item.evidence.contradiction_level}`,
     `ranking_reasons: ${item.ranking_reasons.join("; ") || "none"}`,
   ];
+
+  if (item.evidence.statistics !== undefined) {
+    const statParts = Object.entries(item.evidence.statistics)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(" ");
+    if (statParts.length > 0) {
+      lines.push(`evidence_statistics: ${statParts}`);
+    }
+  }
 
   if (item.medical_context_modifier_applied && item.medical_context_annotations.length > 0) {
     lines.push(`medical_annotations: ${item.medical_context_annotations.join("; ")}`);
