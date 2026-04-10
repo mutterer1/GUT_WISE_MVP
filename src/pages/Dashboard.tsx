@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/Card';
 import {
-  Activity,
+  Waves,
   Utensils,
   Droplet,
   Moon,
@@ -45,7 +45,7 @@ const quickActions: QuickAction[] = [
     label: 'Bowel Movement',
     shortLabel: 'BM',
     path: '/bm-log',
-    icon: Activity,
+    icon: Waves,
     tier: 'primary',
     hoverClasses: {
       button: 'hover:bg-orange-400/10 hover:border-orange-500/30 dark:hover:bg-orange-400/10 dark:hover:border-orange-500/25',
