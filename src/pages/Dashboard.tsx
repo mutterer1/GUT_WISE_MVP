@@ -48,9 +48,9 @@ const quickActions: QuickAction[] = [
     icon: Activity,
     tier: 'primary',
     hoverClasses: {
-      button: 'hover:bg-amber-400/10 hover:border-amber-500/30 dark:hover:bg-amber-400/10 dark:hover:border-amber-500/25',
-      iconBg: 'group-hover:bg-amber-400/20 dark:group-hover:bg-amber-400/20',
-      iconColor: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
+      button: 'hover:bg-orange-400/10 hover:border-orange-500/30 dark:hover:bg-orange-400/10 dark:hover:border-orange-500/25',
+      iconBg: 'group-hover:bg-orange-400/20 dark:group-hover:bg-orange-400/20',
+      iconColor: 'group-hover:text-orange-600 dark:group-hover:text-orange-400',
     },
   },
   {
