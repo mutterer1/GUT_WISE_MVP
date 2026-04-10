@@ -24,20 +24,20 @@ const confidenceConfig: Record<
   }
 > = {
   low: {
-    accent: 'border-l-yellow-400',
-    pill: 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+    accent: 'border-l-signal-500',
+    pill: 'bg-signal-500/08 text-signal-700 dark:text-signal-300 border border-signal-500/20',
     icon: AlertCircle,
     label: 'Low confidence',
   },
   medium: {
-    accent: 'border-l-blue-400',
-    pill: 'bg-blue-50 text-blue-800 border border-blue-200',
+    accent: 'border-l-brand-400',
+    pill: 'bg-brand-500/08 text-brand-700 dark:text-brand-300 border border-brand-500/20',
     icon: TrendingUp,
     label: 'Medium confidence',
   },
   high: {
-    accent: 'border-l-green-400',
-    pill: 'bg-green-50 text-green-800 border border-green-200',
+    accent: 'border-l-brand-500',
+    pill: 'bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/25',
     icon: Lightbulb,
     label: 'High confidence',
   },
@@ -92,18 +92,18 @@ export default function InsightCard({ insight }: InsightCardProps) {
 
   return (
     <div
-      className={`rounded-2xl border border-gray-200 dark:border-white/[0.08] border-l-4 bg-white dark:bg-white/[0.04] p-6 shadow-sm transition-all hover:shadow-md ${config.accent}`}
+      className={`rounded-2xl border border-neutral-border dark:border-dark-border border-l-4 bg-neutral-surface dark:bg-dark-surface p-6 shadow-soft transition-all hover:shadow-sm ${config.accent}`}
     >
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="mb-2 flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <div className="mb-2 flex items-center gap-2 text-neutral-muted dark:text-dark-muted">
             <ConfidenceIcon className="h-4 w-4" />
-            <span className="text-sm font-medium">
+            <span className="text-body-sm font-medium">
               {getInsightTypeLabel(insight.insight_type)}
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-snug">
+          <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
             {insight.summary}
           </h3>
         </div>
@@ -127,24 +127,24 @@ export default function InsightCard({ insight }: InsightCardProps) {
           <InfoTile
             label="Last observed"
             value={formatObservedDate(lastObserved)}
-            icon={<CalendarDays className="h-4 w-4 text-gray-500" />}
+            icon={<CalendarDays className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />}
           />
         </div>
 
         <div>
-          <h4 className="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Evidence</h4>
+          <h4 className="mb-2 text-body-sm font-semibold text-neutral-text dark:text-dark-text">Evidence</h4>
 
-          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+          <div className="space-y-2 text-body-sm text-neutral-text dark:text-dark-text">
             {insight.evidence.frequency && (
               <p>
-                <span className="font-medium text-gray-900 dark:text-white">Frequency:</span>{' '}
+                <span className="font-medium">Frequency:</span>{' '}
                 {insight.evidence.frequency}
               </p>
             )}
 
             {insight.evidence.correlation && (
               <p>
-                <span className="font-medium text-gray-900 dark:text-white">Correlation:</span>{' '}
+                <span className="font-medium">Correlation:</span>{' '}
                 {insight.evidence.correlation}
               </p>
             )}
@@ -152,19 +152,19 @@ export default function InsightCard({ insight }: InsightCardProps) {
 
           {observedDates.length > 0 && (
             <div className="mt-3">
-              <p className="mb-2 text-sm font-medium text-gray-900 dark:text-white">Observed on</p>
+              <p className="mb-2 text-body-sm font-medium text-neutral-text dark:text-dark-text">Observed on</p>
               <div className="flex flex-wrap gap-2">
                 {observedDates.slice(0, 5).map((date, index) => (
                   <span
                     key={`${date}-${index}`}
-                    className="rounded-full bg-gray-100 dark:bg-white/[0.08] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300"
+                    className="rounded-full bg-neutral-bg dark:bg-dark-elevated px-2.5 py-1 text-xs text-neutral-text dark:text-dark-text"
                   >
                     {formatObservedDate(date)}
                   </span>
                 ))}
 
                 {observedDates.length > 5 && (
-                  <span className="rounded-full bg-gray-50 dark:bg-white/[0.04] px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="rounded-full bg-neutral-bg dark:bg-dark-surface px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted">
                     +{observedDates.length - 5} more
                   </span>
                 )}
@@ -173,20 +173,20 @@ export default function InsightCard({ insight }: InsightCardProps) {
           )}
         </div>
 
-        <div className="rounded-xl bg-teal-50 dark:bg-teal-900/20 p-4">
+        <div className="rounded-xl bg-brand-500/06 dark:bg-brand-500/10 border border-brand-500/15 dark:border-brand-500/20 p-4">
           <div className="mb-2 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-teal-700 dark:text-teal-400" />
-            <h4 className="text-sm font-semibold text-teal-900 dark:text-teal-200">
+            <CheckCircle2 className="h-4 w-4 text-brand-500" />
+            <h4 className="text-body-sm font-semibold text-brand-700 dark:text-brand-300">
               Suggested next step
             </h4>
           </div>
-          <p className="text-sm leading-relaxed text-teal-800 dark:text-teal-300">
+          <p className="text-body-sm leading-relaxed text-brand-700/85 dark:text-brand-300/85">
             {getSuggestedNextStep(insight.insight_type)}
           </p>
         </div>
 
-        <div className="border-t border-gray-100 dark:border-white/[0.06] pt-3">
-          <p className="text-xs text-gray-500 dark:text-gray-500">
+        <div className="border-t border-neutral-border dark:border-dark-border pt-3">
+          <p className="text-body-xs text-neutral-muted dark:text-dark-muted">
             Confidence reflects how often this pattern appears in your logged data.
           </p>
         </div>
@@ -205,12 +205,12 @@ function InfoTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-gray-50 dark:bg-white/[0.04] p-3">
-      <div className="mb-1 flex items-center gap-2 text-gray-500 dark:text-gray-400">
+    <div className="rounded-xl bg-neutral-bg dark:bg-dark-elevated p-3">
+      <div className="mb-1 flex items-center gap-2 text-neutral-muted dark:text-dark-muted">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}</p>
+      <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">{value}</p>
     </div>
   );
 }

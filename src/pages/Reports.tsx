@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Printer, Download, FileText, ClipboardList, MessageSquare } from 'lucide-react';
+import { Printer, Download, FileText, ClipboardList, MessageSquare, Loader2 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -174,13 +174,13 @@ export default function Reports() {
   };
 
   const SectionGroupLabel = ({ label, accent = false }: { label: string; accent?: boolean }) => (
-    <div className="flex items-center gap-3 mb-4 px-0.5 print:hidden">
+    <div className="flex items-center gap-3 mb-md px-0.5 print:hidden">
       <span className={`text-xs font-semibold uppercase tracking-widest flex-shrink-0 ${
-        accent ? 'text-[#4A8FA8]' : 'text-gray-400 dark:text-gray-500'
+        accent ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted'
       }`}>
         {label}
       </span>
-      <div className={`flex-1 h-px ${accent ? 'bg-[#4A8FA8]/25' : 'bg-gray-200 dark:bg-white/[0.07]'}`} />
+      <div className={`flex-1 h-px ${accent ? 'bg-brand-500/25' : 'bg-neutral-border dark:bg-dark-border'}`} />
     </div>
   );
 
@@ -188,13 +188,13 @@ export default function Reports() {
     <MainLayout>
       <div className="p-4 sm:p-6 lg:p-8 print:p-8 max-w-5xl mx-auto">
 
-        <div className="mb-6 print:hidden">
+        <div className="mb-lg print:hidden">
           <div className="flex items-start justify-between mb-1">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
                 Health Summary Report
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              <p className="text-body-sm text-neutral-muted dark:text-dark-muted mt-0.5">
                 Patient-reported data compiled for clinical review
               </p>
             </div>
@@ -218,7 +218,7 @@ export default function Reports() {
           </div>
         </div>
 
-        <div className="mb-6 print:hidden">
+        <div className="mb-lg print:hidden">
           <DateRangeSelector
             startDate={startDate}
             endDate={endDate}
@@ -241,25 +241,28 @@ export default function Reports() {
         </div>
 
         {loading && (
-          <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-12 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#4A8FA8] mx-auto mb-4"></div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Compiling report data…</p>
+          <div className="flex h-72 flex-col items-center justify-center gap-3">
+            <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Compiling report data…</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl p-4 mb-6">
-            <p className="text-red-800 dark:text-red-300 text-sm font-medium">{error}</p>
+          <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
+            <p className="text-body-sm text-signal-700 dark:text-signal-300 font-medium">{error}</p>
           </div>
         )}
 
         {!loading && !error && !bmAnalytics && (
-          <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-12 text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#4A8FA8]/10 flex items-center justify-center mx-auto mb-4">
-              <ClipboardList className="h-6 w-6 text-[#4A8FA8]" />
+          <div
+            className="rounded-2xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface p-12 text-center shadow-soft"
+            style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
+          >
+            <div className="w-12 h-12 rounded-xl bg-brand-500/10 dark:bg-brand-500/12 flex items-center justify-center mx-auto mb-md">
+              <ClipboardList className="h-6 w-6 text-brand-500" />
             </div>
-            <p className="text-gray-900 dark:text-white font-medium mb-1">No data for this period</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-1">No data for this period</p>
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
               Try selecting a different date range, or continue logging to build your report.
             </p>
           </div>
@@ -295,48 +298,48 @@ export default function Reports() {
 
             <MedicationCorrelationSection correlations={medicationCorrelations} />
 
-            <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mt-6 print:mt-10">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
-                <MessageSquare className="h-4 w-4 text-[#4A8FA8]" />
-                <p className="text-xs font-semibold text-[#4A8FA8] uppercase tracking-widest">Suggested Discussion Points</p>
+            <div className="bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border rounded-2xl p-6 mt-6 print:mt-10">
+              <div className="flex items-center gap-2 mb-md pb-3 border-b border-neutral-border dark:border-dark-border">
+                <MessageSquare className="h-4 w-4 text-brand-500" />
+                <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest">Suggested Discussion Points</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pattern review</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div className="bg-neutral-bg dark:bg-dark-elevated rounded-xl p-4">
+                  <p className="text-xs font-semibold text-neutral-text dark:text-dark-text mb-1">Pattern review</p>
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
                     Discuss observed trends and flagged patterns with your gastroenterologist for clinical context.
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Follow-up timeline</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div className="bg-neutral-bg dark:bg-dark-elevated rounded-xl p-4">
+                  <p className="text-xs font-semibold text-neutral-text dark:text-dark-text mb-1">Follow-up timeline</p>
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
                     Reassessment after 4–6 weeks can help evaluate whether symptoms or patterns have changed.
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Diagnostics</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div className="bg-neutral-bg dark:bg-dark-elevated rounded-xl p-4">
+                  <p className="text-xs font-semibold text-neutral-text dark:text-dark-text mb-1">Diagnostics</p>
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
                     Your clinician may recommend additional testing (labs, imaging) based on patterns shown here.
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Continued logging</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div className="bg-neutral-bg dark:bg-dark-elevated rounded-xl p-4">
+                  <p className="text-xs font-semibold text-neutral-text dark:text-dark-text mb-1">Continued logging</p>
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
                     Systematic tracking improves the accuracy of pattern detection over time.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-xl p-4 mt-4 print:mt-6">
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                <span className="font-medium text-gray-600 dark:text-gray-300">Notice:</span>{' '}
+            <div className="bg-neutral-bg dark:bg-dark-surface border border-neutral-border dark:border-dark-border rounded-xl p-md mt-4 print:mt-6">
+              <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
+                <span className="font-medium text-neutral-text dark:text-dark-text">Notice:</span>{' '}
                 This report is compiled from patient-reported data and is intended to support clinical conversation — it does not constitute a medical diagnosis or treatment recommendation.
                 All clinical decisions should be made by qualified healthcare professionals based on comprehensive assessment and appropriate testing.
               </p>
             </div>
 
-            <div className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6 print:mt-10 pb-4">
+            <div className="text-center text-xs text-neutral-muted dark:text-dark-muted mt-6 print:mt-10 pb-4">
               <p>End of report · {formatDateRange()}</p>
             </div>
           </>

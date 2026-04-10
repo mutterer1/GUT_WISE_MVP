@@ -103,19 +103,19 @@ export default function Insights() {
   const exMap = isSafeToUse ? explanationMap() : new Map();
 
   return (
-    <div className="flex min-h-screen bg-dark-bg">
+    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
 
       <main
-        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0"
+        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg"
         data-insight-source={insightSource}
         data-explanation-origin={explanationOrigin}
       >
         <div className="max-w-7xl mx-auto">
-          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="mb-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Health Insights</h1>
-              <p className="text-gray-500 dark:text-gray-400">
+              <h1 className="mb-1 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Health Insights</h1>
+              <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                 Pattern-based analysis of your digestive health data.
               </p>
             </div>
@@ -142,17 +142,17 @@ export default function Insights() {
           </div>
 
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
-              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">{error}</p>
+            <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
+              <p className="text-body-sm text-signal-700 dark:text-signal-300">{error}</p>
             </div>
           )}
 
           {/* Ranked fallback notice — error path */}
           {useLegacyFallback && rankedError && (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#2C617D]/25 bg-[#4A8FA8]/06 dark:bg-[#4A8FA8]/06 px-4 py-3.5">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8] dark:text-[#8EBFD8]" />
-              <p className="text-sm text-[#2C617D] dark:text-[#8EBFD8]">
+            <div className="mb-md flex items-start gap-3 rounded-xl border border-brand-700/25 bg-brand-500/06 dark:bg-brand-500/08 px-md py-sm">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500 dark:text-brand-300" />
+              <p className="text-body-sm text-brand-700 dark:text-brand-300">
                 Pattern analysis ran into a problem. Showing available insights instead.
               </p>
             </div>
@@ -160,11 +160,11 @@ export default function Insights() {
 
           {/* Ranked fallback notice — no candidates yet path */}
           {useLegacyFallback && !rankedError && (
-            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#2C617D]/18 bg-[#4A8FA8]/04 dark:bg-[#4A8FA8]/04 px-4 py-3.5">
-              <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8]/70 dark:text-[#8EBFD8]/70" />
+            <div className="mb-md flex items-start gap-3 rounded-xl border border-brand-700/18 bg-brand-500/04 dark:bg-brand-500/06 px-md py-sm">
+              <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500/70 dark:text-brand-300/70" />
               <div>
-                <p className="text-sm text-[#2C617D]/90 dark:text-[#8EBFD8]/90 font-medium">Your patterns are still building</p>
-                <p className="mt-0.5 text-sm text-[#2C617D]/65 dark:text-[#8EBFD8]/65">
+                <p className="text-body-sm font-medium text-brand-700/90 dark:text-brand-300/90">Your patterns are still building</p>
+                <p className="mt-0.5 text-body-sm text-brand-700/65 dark:text-brand-300/65">
                   Keep logging consistently and GutWise will surface personalized patterns over time. Earlier insights are shown below.
                 </p>
               </div>
@@ -174,22 +174,22 @@ export default function Insights() {
           {/* Primary: Ranked insight pipeline */}
           {rankedLoading ? (
             <div className="flex h-72 flex-col items-center justify-center gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
-              <p className="text-sm text-gray-400 dark:text-gray-500">Looking for patterns in your data…</p>
+              <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+              <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Looking for patterns in your data…</p>
             </div>
           ) : hasRankedCandidates ? (
-            <section className="mb-10">
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <section className="mb-lg">
+              <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <div className="flex items-center gap-2.5 mb-1.5">
-                    <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">Pattern Insights</h2>
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <h2 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">Pattern Insights</h2>
                     {explanationOrigin !== 'none' && !explanationError && (
-                      <span className="rounded-full bg-[#7C5CFF]/07 dark:bg-[#7C5CFF]/12 border border-[#7C5CFF]/18 px-2.5 py-0.5 text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF]">
+                      <span className="rounded-full bg-discovery-500/07 dark:bg-discovery-500/12 border border-discovery-500/18 px-2.5 py-0.5 text-xs font-medium text-discovery-500 dark:text-discovery-300">
                         AI explained
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                     {rankedInsights?.input_day_count ?? 0} days analyzed
                     {rankedInsights?.analyzed_from && rankedInsights?.analyzed_to
                       ? ` · ${formatShortDate(rankedInsights.analyzed_from)} – ${formatShortDate(rankedInsights.analyzed_to)}`
@@ -200,7 +200,7 @@ export default function Insights() {
 
                 <div className="flex items-center gap-3 shrink-0">
                   {explanationError && (
-                    <div className="flex items-center gap-1.5 text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
+                    <div className="flex items-center gap-1.5 text-body-sm text-signal-700 dark:text-signal-300">
                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
                       <span>Couldn't generate explanations</span>
                     </div>
@@ -227,25 +227,25 @@ export default function Insights() {
               </div>
 
               {rankedError ? (
-                <div className="flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20 p-4">
-                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">{rankedError}</p>
+                <div className="flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
+                  <p className="text-body-sm text-signal-700 dark:text-signal-300">{rankedError}</p>
                 </div>
               ) : (
                 <>
                   {validationStatus === 'invalid' && (
-                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#C28F94]/25 bg-[#C28F94]/05 dark:bg-[#C28F94]/08 p-3.5">
-                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8D5D62] dark:text-[#D9B3B7]" />
-                      <p className="text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
+                    <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/25 bg-signal-500/06 dark:bg-signal-500/08 p-sm">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
+                      <p className="text-body-sm text-signal-700 dark:text-signal-300">
                         AI explanations couldn't be verified and won't be shown. Your patterns are still displayed below.
                       </p>
                     </div>
                   )}
 
                   {validationStatus === 'valid_with_warnings' && distinctWarningFlags.length > 0 && (
-                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/10 p-3.5">
-                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
-                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/25 bg-signal-500/06 dark:bg-signal-500/06 p-sm">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
+                      <p className="text-body-sm text-signal-700 dark:text-signal-300">
                         Some explanations may be incomplete. Patterns are still shown below.
                       </p>
                     </div>
@@ -268,30 +268,30 @@ export default function Insights() {
             /* Fallback: legacy insights path */
             loading ? (
               <div className="flex h-72 flex-col items-center justify-center gap-3">
-                <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
-                <p className="text-sm text-gray-400 dark:text-gray-500">Loading your insights…</p>
+                <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Loading your insights…</p>
               </div>
             ) : insights.length === 0 ? (
               <div
-                className="rounded-2xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.035] p-14 text-center shadow-sm"
+                className="rounded-2xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface p-14 text-center shadow-soft"
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4A8FA8]/07 dark:bg-[#4A8FA8]/12"
+                  className="mx-auto mb-lg flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/08 dark:bg-brand-500/12"
                   style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
                 >
-                  <Brain className="h-8 w-8 text-[#4A8FA8] dark:text-[#8EBFD8]" />
+                  <Brain className="h-8 w-8 text-brand-500 dark:text-brand-300" />
                 </div>
 
-                <h3 className="mb-2.5 text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
+                <h3 className="mb-2.5 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
                   Your patterns are still forming
                 </h3>
 
-                <p className="mx-auto mb-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                <p className="mx-auto mb-2 max-w-md text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
                   GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
                 </p>
 
-                <p className="mx-auto mb-9 max-w-sm text-xs text-gray-400 dark:text-gray-500">
+                <p className="mx-auto mb-9 max-w-sm text-body-xs text-neutral-muted dark:text-dark-muted">
                   Check back after a few more days of logging to see your first patterns.
                 </p>
 
@@ -301,14 +301,14 @@ export default function Insights() {
               </div>
             ) : (
               <>
-                <div className="mb-5 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mb-md flex items-center gap-3 text-body-sm text-neutral-muted dark:text-dark-muted">
                   <span>{insights.length} {insights.length === 1 ? 'pattern' : 'patterns'} found</span>
-                  <span className="text-gray-300 dark:text-white/20">·</span>
+                  <span className="text-neutral-border dark:text-dark-border">·</span>
                   <span>Based on repeated observations in your logs</span>
                 </div>
 
-                <div className="mb-7 rounded-2xl border border-[#2C617D]/18 bg-[#4A8FA8]/04 dark:bg-[#4A8FA8]/05 px-4 py-3.5">
-                  <p className="text-sm text-[#2C617D]/85 dark:text-[#8EBFD8]/85 leading-relaxed">
+                <div className="mb-lg rounded-xl border border-brand-700/18 bg-brand-500/04 dark:bg-brand-500/05 px-md py-sm">
+                  <p className="text-body-sm text-brand-700/85 dark:text-brand-300/85 leading-relaxed">
                     <span className="font-medium">How patterns are found: </span>
                     GutWise identifies patterns by comparing days with a given factor against days without it. Confidence grows the more consistently the same signal appears.
                   </p>
