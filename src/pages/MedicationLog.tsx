@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Pill } from 'lucide-react';
+import { Save, Clock, Activity, Pill, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -98,20 +98,33 @@ export default function MedicationLog() {
         showHistory={showHistory}
         onShowNew={() => setShowHistory(false)}
         onShowHistory={() => setShowHistory(true)}
-        newIcon={<Activity className="h-4 w-4 mr-2" />}
-        historyIcon={<Clock className="h-4 w-4 mr-2" />}
+        newIcon={<Activity className="mr-2 h-4 w-4" />}
+        historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="logged_at" className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock className="inline h-4 w-4 mr-1" />
+              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Clock className="mr-1 inline h-4 w-4" />
                 Time Taken
               </label>
               <input
@@ -119,14 +132,14 @@ export default function MedicationLog() {
                 id="logged_at"
                 value={formData.logged_at}
                 onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="medication_name" className="block text-sm font-medium text-gray-700 mb-2">
-                <Pill className="inline h-4 w-4 mr-1" />
+              <label htmlFor="medication_name" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Pill className="mr-1 inline h-4 w-4" />
                 Medication Name
               </label>
               <input
@@ -135,13 +148,13 @@ export default function MedicationLog() {
                 value={formData.medication_name}
                 onChange={(e) => setFormData({ ...formData, medication_name: e.target.value })}
                 placeholder="e.g., Ibuprofen, Vitamin D..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dosage" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Dosage
               </label>
               <input
@@ -150,13 +163,13 @@ export default function MedicationLog() {
                 value={formData.dosage}
                 onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
                 placeholder="e.g., 200mg, 1 tablet, 5ml..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Medication Type
               </label>
               <div className="grid grid-cols-3 gap-3">
@@ -165,13 +178,13 @@ export default function MedicationLog() {
                     key={type}
                     type="button"
                     onClick={() => setFormData({ ...formData, medication_type: type })}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`rounded-xl border-2 p-4 transition-all ${
                       formData.medication_type === type
-                        ? 'border-teal-500 bg-teal-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                       {type === 'otc' ? 'Over-the-Counter' : type.charAt(0).toUpperCase() + type.slice(1)}
                     </div>
                   </button>
@@ -179,17 +192,17 @@ export default function MedicationLog() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Taken as Prescribed</span>
+            <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
+              <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">Taken as Prescribed</span>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, taken_as_prescribed: !formData.taken_as_prescribed })}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.taken_as_prescribed ? 'bg-teal-500' : 'bg-gray-300'
+                  formData.taken_as_prescribed ? 'bg-brand-500' : 'bg-neutral-border dark:bg-dark-border'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
                     formData.taken_as_prescribed ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -197,19 +210,21 @@ export default function MedicationLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Side Effects (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonSideEffects.map((effect) => (
                   <button
                     key={effect}
                     type="button"
                     onClick={() => toggleSideEffect(effect)}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.side_effects.includes(effect)
-                        ? 'border-red-500 bg-red-50 text-gray-900 shadow-md'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
+                        ? effect === 'None'
+                          ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                          : 'border-signal-500 bg-signal-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {effect}
@@ -219,27 +234,27 @@ export default function MedicationLog() {
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Notes (Optional)
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
                 rows={3}
                 placeholder="Reason for taking, effectiveness, etc..."
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving}>
-                <Save className="inline h-4 w-4 mr-2" />
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -247,59 +262,60 @@ export default function MedicationLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Entry History</h2>
           {history.length === 0 ? (
-            <EmptyState category="medication" icon={<Pill className="h-8 w-8 text-gray-400" />} />
+            <EmptyState category="medication" icon={<Pill className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {log.medication_name} • {log.dosage}
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                        {log.medication_name} &middot; {log.dosage}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(log as MedicationFormData & { id: string })}
-                        className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
-                  <div className="flex gap-4 text-xs mb-2">
+                  <div className="mb-2 flex gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500">Type:</span>
-                      <span className="ml-1 font-medium capitalize">{log.medication_type}</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Type:</span>
+                      <span className="ml-1 font-medium capitalize text-neutral-text dark:text-dark-text">{log.medication_type}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">As Prescribed:</span>
-                      <span className="ml-1 font-medium">{log.taken_as_prescribed ? 'Yes' : 'No'}</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">As Prescribed:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.taken_as_prescribed ? 'Yes' : 'No'}</span>
                     </div>
                   </div>
                   {log.side_effects && log.side_effects.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1">Side Effects:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Side Effects:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.side_effects.map((effect: string, idx: number) => (
                           <span
                             key={idx}
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                              effect === 'None' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs border ${
+                              effect === 'None'
+                                ? 'bg-brand-500/10 border-brand-500/20 text-brand-500 dark:text-brand-300'
+                                : 'bg-signal-500/10 border-signal-500/20 text-signal-500 dark:text-signal-300'
                             }`}
                           >
                             {effect}
@@ -309,7 +325,7 @@ export default function MedicationLog() {
                     </div>
                   )}
                   {log.notes && (
-                    <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}

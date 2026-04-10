@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Dumbbell } from 'lucide-react';
+import { Save, Clock, Activity, Dumbbell, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -93,20 +93,33 @@ export default function ExerciseLog() {
         showHistory={showHistory}
         onShowNew={() => setShowHistory(false)}
         onShowHistory={() => setShowHistory(true)}
-        newIcon={<Dumbbell className="h-4 w-4 mr-2" />}
-        historyIcon={<Clock className="h-4 w-4 mr-2" />}
+        newIcon={<Dumbbell className="mr-2 h-4 w-4" />}
+        historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="logged_at" className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock className="inline h-4 w-4 mr-1" />
+              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Clock className="mr-1 inline h-4 w-4" />
                 Time
               </label>
               <input
@@ -114,26 +127,26 @@ export default function ExerciseLog() {
                 id="logged_at"
                 value={formData.logged_at}
                 onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                <Activity className="inline h-4 w-4 mr-1" />
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Activity className="mr-1 inline h-4 w-4" />
                 Exercise Type
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {exerciseTypes.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setFormData({ ...formData, exercise_type: type })}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.exercise_type === type
-                        ? 'border-brand-500 bg-brand-100 text-brand-700 shadow-md dark:border-brand-300 dark:bg-brand-900/30 dark:text-brand-300'
-                        : 'border-gray-200 text-neutral-text hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {type}
@@ -146,14 +159,14 @@ export default function ExerciseLog() {
                   placeholder="Or type a custom activity..."
                   value={exerciseTypes.includes(formData.exercise_type) ? '' : formData.exercise_type}
                   onChange={(e) => setFormData({ ...formData, exercise_type: e.target.value })}
-                  className="mt-3 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="mt-3 w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
                 />
               )}
               {exerciseTypes.includes(formData.exercise_type) && (
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, exercise_type: '' })}
-                  className="mt-2 text-xs text-brand-500 hover:text-brand-700"
+                  className="mt-2 text-xs text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                 >
                   Use custom type instead
                 </button>
@@ -161,7 +174,7 @@ export default function ExerciseLog() {
             </div>
 
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="duration" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Duration (minutes)
               </label>
               <input
@@ -171,19 +184,19 @@ export default function ExerciseLog() {
                 max="600"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
-              <div className="flex gap-2 mt-2">
+              <div className="mt-2 flex gap-2">
                 {[15, 30, 45, 60, 90].map((mins) => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => setFormData({ ...formData, duration_minutes: mins })}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
                       formData.duration_minutes === mins
                         ? 'bg-brand-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
                     }`}
                   >
                     {mins}m
@@ -193,8 +206,8 @@ export default function ExerciseLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Intensity: {formData.intensity_level}/5 - {intensityLabels[formData.intensity_level]}
+              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                Intensity: <span className="text-neutral-text dark:text-dark-text">{formData.intensity_level}/5 - {intensityLabels[formData.intensity_level]}</span>
               </label>
               <input
                 type="range"
@@ -203,20 +216,17 @@ export default function ExerciseLog() {
                 step="1"
                 value={formData.intensity_level}
                 onChange={(e) => setFormData({ ...formData, intensity_level: parseInt(e.target.value) })}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                style={{
-                  background: `linear-gradient(to right, #4A8FA8 0%, #4A8FA8 ${((formData.intensity_level - 1) / 4) * 100}%, rgb(229, 231, 235) ${((formData.intensity_level - 1) / 4) * 100}%, rgb(229, 231, 235) 100%)`
-                }}
+                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
                 <span>Very Light</span>
                 <span>Maximum</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Perceived Exertion (Optional): {formData.perceived_exertion ?? '-'}/10
+              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                Perceived Exertion (Optional): <span className="text-neutral-text dark:text-dark-text">{formData.perceived_exertion ?? '-'}/10</span>
               </label>
               <input
                 type="range"
@@ -225,9 +235,9 @@ export default function ExerciseLog() {
                 step="1"
                 value={formData.perceived_exertion ?? 5}
                 onChange={(e) => setFormData({ ...formData, perceived_exertion: parseInt(e.target.value) })}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
+                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
                 <span>Easy</span>
                 <span>Max Effort</span>
               </div>
@@ -235,7 +245,7 @@ export default function ExerciseLog() {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, perceived_exertion: null })}
-                  className="mt-1 text-xs text-gray-400 hover:text-gray-600"
+                  className="mt-1 text-xs text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text"
                 >
                   Clear
                 </button>
@@ -243,7 +253,7 @@ export default function ExerciseLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Location (Optional)
               </label>
               <div className="flex gap-3">
@@ -257,10 +267,10 @@ export default function ExerciseLog() {
                         indoor_outdoor: formData.indoor_outdoor === loc ? null : loc,
                       })
                     }
-                    className={`flex-1 p-3 rounded-lg border-2 transition-all text-sm font-medium capitalize ${
+                    className={`flex-1 rounded-xl border-2 p-3 text-body-sm font-medium capitalize transition-all ${
                       formData.indoor_outdoor === loc
-                        ? 'border-brand-500 bg-brand-100 text-brand-700 shadow-md dark:border-brand-300 dark:bg-brand-900/30 dark:text-brand-300'
-                        : 'border-gray-200 text-neutral-text hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {loc}
@@ -270,27 +280,27 @@ export default function ExerciseLog() {
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Notes (Optional)
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
                 rows={3}
                 placeholder="How did the workout feel?"
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving || !formData.exercise_type}>
-                <Save className="inline h-4 w-4 mr-2" />
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving || !formData.exercise_type} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -298,57 +308,56 @@ export default function ExerciseLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Entry History</h2>
           {history.length === 0 ? (
-            <EmptyState category="exercise" icon={<Dumbbell className="h-8 w-8 text-gray-400" />} />
+            <EmptyState category="exercise" icon={<Dumbbell className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {log.exercise_type} - {log.duration_minutes}min - Intensity {log.intensity_level}/5
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                        {log.exercise_type} &middot; {log.duration_minutes}min &middot; Intensity {log.intensity_level}/5
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(log as ExerciseFormData & { id: string })}
-                        className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-brand-100 text-brand-700">
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center rounded-full bg-brand-500/10 border border-brand-500/20 px-2.5 py-1 text-xs text-brand-500 dark:text-brand-300">
                       {intensityLabels[log.intensity_level] || `Intensity ${log.intensity_level}`}
                     </span>
                     {log.indoor_outdoor && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 capitalize">
+                      <span className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs capitalize text-neutral-muted dark:text-dark-muted">
                         {log.indoor_outdoor}
                       </span>
                     )}
                     {log.perceived_exertion != null && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
+                      <span className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted">
                         RPE {log.perceived_exertion}/10
                       </span>
                     )}
                   </div>
                   {log.notes && (
-                    <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}

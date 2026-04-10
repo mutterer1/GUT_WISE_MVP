@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Clock, Activity, AlertCircle } from 'lucide-react';
+import { Save, Clock, Activity, AlertCircle, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -120,13 +120,30 @@ export default function SymptomsLog() {
         onShowHistory={() => setShowHistory(true)}
         newIcon={<Activity className="mr-2 h-4 w-4" />}
         historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="logged_at" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 <Clock className="mr-1 inline h-4 w-4" />
                 Time
               </label>
@@ -137,13 +154,13 @@ export default function SymptomsLog() {
                 onChange={(e) =>
                   setFormData({ ...formData, logged_at: e.target.value })
                 }
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-900">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Symptom Type
               </label>
 
@@ -155,10 +172,10 @@ export default function SymptomsLog() {
                     onClick={() =>
                       setFormData({ ...formData, symptom_type: symptom })
                     }
-                    className={`rounded-lg border-2 p-3 text-sm transition-all ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.symptom_type === symptom
-                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark:border-teal-500 bg-teal-50 dark:text-gray-900 dark:hover:border-teal-500 bg-teal-50 text-gray-900'
-                        : 'border-gray-300 text-gray-900 hover:border-teal-300 bg-white text-gray-900'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {symptom}
@@ -172,7 +189,7 @@ export default function SymptomsLog() {
                   value={customSymptom}
                   onChange={(e) => setCustomSymptom(e.target.value)}
                   placeholder="Or enter custom symptom..."
-                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                  className="flex-1 rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
                 />
 
                 <Button
@@ -192,15 +209,15 @@ export default function SymptomsLog() {
               </div>
 
               {formData.symptom_type && (
-                <div className="mt-2 text-sm text-teal-600">
+                <div className="mt-2 text-body-sm text-brand-500 dark:text-brand-300">
                   Selected: {formData.symptom_type}
                 </div>
               )}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Severity: {formData.severity}/10
+              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                Severity: <span className="text-neutral-text dark:text-dark-text">{formData.severity}/10</span>
               </label>
 
               <input
@@ -215,17 +232,17 @@ export default function SymptomsLog() {
                     severity: parseInt(e.target.value, 10),
                   })
                 }
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-red-500"
+                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500"
               />
 
-              <div className="mt-1 flex justify-between text-xs text-gray-500">
+              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
                 <span>Mild</span>
                 <span>Severe</span>
               </div>
             </div>
 
             <div>
-              <label htmlFor="duration" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="duration" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Duration (minutes)
               </label>
 
@@ -239,14 +256,14 @@ export default function SymptomsLog() {
                     duration_minutes: parseInt(e.target.value, 10),
                   })
                 }
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 min="1"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="location" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="location" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Location (Optional)
               </label>
 
@@ -258,12 +275,12 @@ export default function SymptomsLog() {
                   setFormData({ ...formData, location: e.target.value })
                 }
                 placeholder="e.g., Lower abdomen, Head..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
               />
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-900">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Potential Triggers
               </label>
 
@@ -273,11 +290,11 @@ export default function SymptomsLog() {
                     key={trigger}
                     type="button"
                     onClick={() => toggleTrigger(trigger)}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
-  formData.triggers.includes(trigger)
-    ? 'border-gray-300 bg-white text-gray-900 hover:border-teal-300 shadow-md dark:border-teal-300 bg-teal-50 dark:text-gray-900 dark:hover:border-teal-300 bg-teal-50 text-gray-900 '
-    : 'border-teal-500 bg-teal-50 text-gray-900 hover:border-teal-500 bg-teal-50 dark:border-gray-200 dark:text-gray-900 dark:hover:border-gray-300 text-gray-900'
-}`}
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
+                      formData.triggers.includes(trigger)
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
+                    }`}
                   >
                     {trigger}
                   </button>
@@ -286,7 +303,7 @@ export default function SymptomsLog() {
             </div>
 
             <div>
-              <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Notes
               </label>
 
@@ -298,12 +315,12 @@ export default function SymptomsLog() {
                 }
                 rows={3}
                 placeholder="Additional observations..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving || !formData.symptom_type}>
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving || !formData.symptom_type} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
                 {saving
                   ? 'Saving...'
@@ -313,8 +330,8 @@ export default function SymptomsLog() {
               </Button>
 
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -325,38 +342,38 @@ export default function SymptomsLog() {
           {history.length === 0 ? (
             <EmptyState
               category="symptoms"
-              icon={<AlertCircle className="h-8 w-8 text-gray-400" />}
+              icon={<AlertCircle className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-gray-300"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="mt-1 text-xs text-gray-500">
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
                         {log.symptom_type}
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() =>
                           handleEdit(log as SymptomsFormData & { id: string })
                         }
-                        className="text-sm font-medium text-teal-600 hover:text-teal-700"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
 
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm font-medium text-red-600 hover:text-red-700"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
@@ -365,20 +382,20 @@ export default function SymptomsLog() {
 
                   <div className="mb-3 grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500">Severity:</span>
-                      <span className="ml-1 font-medium">{log.severity}/10</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Severity:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.severity}/10</span>
                     </div>
 
                     <div>
-                      <span className="text-gray-500">Duration:</span>
-                      <span className="ml-1 font-medium">
+                      <span className="text-neutral-muted dark:text-dark-muted">Duration:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
                         {log.duration_minutes} min
                       </span>
                     </div>
                   </div>
 
                   {log.location && (
-                    <div className="mb-2 text-sm text-gray-600">
+                    <div className="mb-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       <span className="font-medium">Location:</span>{' '}
                       {log.location}
                     </div>
@@ -386,12 +403,12 @@ export default function SymptomsLog() {
 
                   {log.triggers?.length > 0 && (
                     <div className="mb-2">
-                      <div className="mb-1 text-xs text-gray-500">Triggers:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Triggers:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.triggers.map((trigger, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center rounded-full border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-900"
+                            className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted"
                           >
                             <AlertCircle className="mr-1 h-3 w-3" />
                             {trigger}
@@ -402,7 +419,7 @@ export default function SymptomsLog() {
                   )}
 
                   {log.notes && (
-                    <div className="mt-3 rounded bg-gray-50 p-2 text-sm text-gray-600">
+                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}

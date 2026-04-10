@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Save, Clock, Heart, Droplet } from 'lucide-react';
+import { Save, Clock, Heart, Droplet, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -95,6 +95,10 @@ const menstrualConfig = {
     buildPayload(formData),
 };
 
+const inputCls = 'w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-signal-500 focus:border-transparent';
+const labelCls = 'mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted';
+const sliderCls = 'h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500';
+
 export default function MenstrualCycleLog() {
   const {
     formData,
@@ -160,21 +164,34 @@ export default function MenstrualCycleLog() {
         showHistory={showHistory}
         onShowNew={() => setShowHistory(false)}
         onShowHistory={() => setShowHistory(true)}
-        newIcon={<Heart className="h-4 w-4 mr-2" />}
-        historyIcon={<Clock className="h-4 w-4 mr-2" />}
+        newIcon={<Heart className="mr-2 h-4 w-4" />}
+        historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-signal-500/8 dark:bg-signal-500/10 border border-signal-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-signal-500 dark:text-signal-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="cycle_start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Droplet className="inline h-4 w-4 mr-1" />
+                <label htmlFor="cycle_start_date" className={labelCls}>
+                  <Droplet className="mr-1 inline h-4 w-4" />
                   Cycle Start Date
                 </label>
                 <input
@@ -182,14 +199,14 @@ export default function MenstrualCycleLog() {
                   id="cycle_start_date"
                   value={formData.cycle_start_date}
                   onChange={(e) => setFormData({ ...formData, cycle_start_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="logged_at" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="inline h-4 w-4 mr-1" />
+                <label htmlFor="logged_at" className={labelCls}>
+                  <Clock className="mr-1 inline h-4 w-4" />
                   Logged At
                 </label>
                 <input
@@ -197,33 +214,29 @@ export default function MenstrualCycleLog() {
                   id="logged_at"
                   value={formData.logged_at}
                   onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                   required
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label htmlFor="cycle_day" className="block text-sm font-medium text-gray-700 mb-2">
-                  Cycle Day
-                </label>
+                <label htmlFor="cycle_day" className={labelCls}>Cycle Day</label>
                 <input
                   type="number"
                   id="cycle_day"
                   min="1"
                   value={formData.cycle_day}
                   onChange={(e) => setFormData({ ...formData, cycle_day: parseInt(e.target.value) || 1 })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Auto-calculated from start date</p>
+                <p className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">Auto-calculated from start date</p>
               </div>
 
               <div>
-                <label htmlFor="estimated_cycle_length" className="block text-sm font-medium text-gray-700 mb-2">
-                  Estimated Cycle Length (days)
-                </label>
+                <label htmlFor="estimated_cycle_length" className={labelCls}>Estimated Cycle Length (days)</label>
                 <input
                   type="number"
                   id="estimated_cycle_length"
@@ -231,19 +244,17 @@ export default function MenstrualCycleLog() {
                   max="60"
                   value={formData.estimated_cycle_length}
                   onChange={(e) => setFormData({ ...formData, estimated_cycle_length: parseInt(e.target.value) || 28 })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                 />
               </div>
 
               <div>
-                <label htmlFor="flow_intensity" className="block text-sm font-medium text-gray-700 mb-2">
-                  Flow Intensity
-                </label>
+                <label htmlFor="flow_intensity" className={labelCls}>Flow Intensity</label>
                 <select
                   id="flow_intensity"
                   value={formData.flow_intensity}
                   onChange={(e) => setFormData({ ...formData, flow_intensity: e.target.value as typeof formData.flow_intensity })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                   required
                 >
                   <option value="none">None</option>
@@ -255,16 +266,14 @@ export default function MenstrualCycleLog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                  Color
-                </label>
+                <label htmlFor="color" className={labelCls}>Color</label>
                 <select
                   id="color"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                 >
                   {colorOptions.map((color) => (
                     <option key={color} value={color}>{color}</option>
@@ -273,8 +282,8 @@ export default function MenstrualCycleLog() {
               </div>
 
               <div>
-                <label htmlFor="pain_level" className="block text-sm font-medium text-gray-700 mb-2">
-                  Pain Level (0-10)
+                <label htmlFor="pain_level" className={labelCls}>
+                  Pain Level: <span className="text-neutral-text dark:text-dark-text">{formData.pain_level}/10</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -284,24 +293,24 @@ export default function MenstrualCycleLog() {
                     max="10"
                     value={formData.pain_level}
                     onChange={(e) => setFormData({ ...formData, pain_level: parseInt(e.target.value) })}
-                    className="flex-1"
+                    className={sliderCls + ' flex-1'}
                   />
-                  <span className="text-sm font-semibold text-gray-700 w-8">{formData.pain_level}</span>
+                  <span className="text-body-sm font-semibold text-neutral-text dark:text-dark-text w-8">{formData.pain_level}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Tissue/Clots Passed</span>
+            <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
+              <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">Tissue/Clots Passed</span>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, tissue_passed: !formData.tissue_passed })}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.tissue_passed ? 'bg-rose-500' : 'bg-gray-300'
+                  formData.tissue_passed ? 'bg-signal-500' : 'bg-neutral-border dark:bg-dark-border'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
                     formData.tissue_passed ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -309,19 +318,19 @@ export default function MenstrualCycleLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Symptoms (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                 {commonSymptoms.map((symptom) => (
                   <button
                     key={symptom}
                     type="button"
                     onClick={() => toggleSymptom(symptom)}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.symptoms.includes(symptom)
-                        ? 'border-rose-500 bg-rose-50 text-gray-900 shadow-md'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
+                        ? 'border-signal-500 bg-signal-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {symptom}
@@ -331,23 +340,21 @@ export default function MenstrualCycleLog() {
             </div>
 
             <div>
-              <label htmlFor="mood_notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Mood Notes (Optional)
-              </label>
+              <label htmlFor="mood_notes" className={labelCls}>Mood Notes (Optional)</label>
               <input
                 type="text"
                 id="mood_notes"
                 value={formData.mood_notes}
                 onChange={(e) => setFormData({ ...formData, mood_notes: e.target.value })}
                 placeholder="e.g., irritable, emotional, anxious..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                className={inputCls + ' placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50'}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="sleep_quality" className="block text-sm font-medium text-gray-700 mb-2">
-                  Sleep Quality (1-10)
+                <label htmlFor="sleep_quality" className={labelCls}>
+                  Sleep Quality: <span className="text-neutral-text dark:text-dark-text">{formData.sleep_quality}/10</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -357,15 +364,15 @@ export default function MenstrualCycleLog() {
                     max="10"
                     value={formData.sleep_quality}
                     onChange={(e) => setFormData({ ...formData, sleep_quality: parseInt(e.target.value) })}
-                    className="flex-1"
+                    className={sliderCls + ' flex-1'}
                   />
-                  <span className="text-sm font-semibold text-gray-700 w-8">{formData.sleep_quality}</span>
+                  <span className="text-body-sm font-semibold text-neutral-text dark:text-dark-text w-8">{formData.sleep_quality}</span>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="energy_level" className="block text-sm font-medium text-gray-700 mb-2">
-                  Energy Level (1-10)
+                <label htmlFor="energy_level" className={labelCls}>
+                  Energy Level: <span className="text-neutral-text dark:text-dark-text">{formData.energy_level}/10</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -375,23 +382,21 @@ export default function MenstrualCycleLog() {
                     max="10"
                     value={formData.energy_level}
                     onChange={(e) => setFormData({ ...formData, energy_level: parseInt(e.target.value) })}
-                    className="flex-1"
+                    className={sliderCls + ' flex-1'}
                   />
-                  <span className="text-sm font-semibold text-gray-700 w-8">{formData.energy_level}</span>
+                  <span className="text-body-sm font-semibold text-neutral-text dark:text-dark-text w-8">{formData.energy_level}</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="contraceptive_method" className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraceptive Method (Optional)
-                </label>
+                <label htmlFor="contraceptive_method" className={labelCls}>Contraceptive Method (Optional)</label>
                 <select
                   id="contraceptive_method"
                   value={formData.contraceptive_method}
                   onChange={(e) => setFormData({ ...formData, contraceptive_method: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                 >
                   {contraceptiveOptions.map((option) => (
                     <option key={option} value={option}>{option}</option>
@@ -400,14 +405,12 @@ export default function MenstrualCycleLog() {
               </div>
 
               <div>
-                <label htmlFor="cervical_mucus_type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Cervical Mucus (Optional)
-                </label>
+                <label htmlFor="cervical_mucus_type" className={labelCls}>Cervical Mucus (Optional)</label>
                 <select
                   id="cervical_mucus_type"
                   value={formData.cervical_mucus_type}
                   onChange={(e) => setFormData({ ...formData, cervical_mucus_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  className={inputCls}
                 >
                   {cervicalMucusOptions.map((option) => (
                     <option key={option} value={option}>{option}</option>
@@ -417,19 +420,19 @@ export default function MenstrualCycleLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Ovulation Indicators (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                 {ovulationIndicatorsList.map((indicator) => (
                   <button
                     key={indicator}
                     type="button"
                     onClick={() => toggleOvulationIndicator(indicator)}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.ovulation_indicators.includes(indicator)
-                        ? 'border-amber-500 bg-amber-50 text-gray-900 shadow-md'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {indicator}
@@ -439,9 +442,7 @@ export default function MenstrualCycleLog() {
             </div>
 
             <div>
-              <label htmlFor="basal_temp" className="block text-sm font-medium text-gray-700 mb-2">
-                Basal Body Temperature (Optional)
-              </label>
+              <label htmlFor="basal_temp" className={labelCls}>Basal Body Temperature (Optional)</label>
               <input
                 type="number"
                 id="basal_temp"
@@ -451,21 +452,21 @@ export default function MenstrualCycleLog() {
                 value={formData.basal_temp}
                 onChange={(e) => setFormData({ ...formData, basal_temp: e.target.value ? parseFloat(e.target.value) : '' })}
                 placeholder="e.g., 97.8 F"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                className={inputCls + ' placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50'}
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <span className="text-sm font-medium text-gray-700">Sexual Activity</span>
+            <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
+              <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">Sexual Activity</span>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, sexual_activity: !formData.sexual_activity })}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.sexual_activity ? 'bg-rose-500' : 'bg-gray-300'
+                  formData.sexual_activity ? 'bg-signal-500' : 'bg-neutral-border dark:bg-dark-border'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
                     formData.sexual_activity ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -473,27 +474,25 @@ export default function MenstrualCycleLog() {
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Notes (Optional)
-              </label>
+              <label htmlFor="notes" className={labelCls}>Additional Notes (Optional)</label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-signal-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
                 rows={3}
                 placeholder="Any other observations or context..."
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving}>
-                <Save className="inline h-4 w-4 mr-2" />
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -501,66 +500,65 @@ export default function MenstrualCycleLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Entry History</h2>
           {history.length === 0 ? (
-            <EmptyState category="menstrual cycle" icon={<Heart className="h-8 w-8 text-gray-400" />} />
+            <EmptyState category="menstrual cycle" icon={<Heart className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Day {log.cycle_day} - {log.flow_intensity} flow
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                        Day {log.cycle_day} &middot; {log.flow_intensity} flow
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(log as MenstrualFormData & { id: string })}
-                        className="text-sm text-rose-600 hover:text-rose-700 font-medium"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
+                  <div className="mb-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
                     <div>
-                      <span className="text-gray-500">Color:</span>
-                      <span className="ml-1 font-medium">{log.color}</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Color:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.color}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Pain:</span>
-                      <span className="ml-1 font-medium">{log.pain_level}/10</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Pain:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.pain_level}/10</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Sleep:</span>
-                      <span className="ml-1 font-medium">{log.sleep_quality}/10</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Sleep:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.sleep_quality}/10</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Energy:</span>
-                      <span className="ml-1 font-medium">{log.energy_level}/10</span>
+                      <span className="text-neutral-muted dark:text-dark-muted">Energy:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.energy_level}/10</span>
                     </div>
                   </div>
 
                   {log.symptoms && log.symptoms.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1">Symptoms:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Symptoms:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.symptoms.map((symptom: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-rose-100 text-rose-800">
+                          <span key={idx} className="inline-flex items-center rounded-full bg-signal-500/10 border border-signal-500/20 px-2.5 py-1 text-xs text-signal-500 dark:text-signal-300">
                             {symptom}
                           </span>
                         ))}
@@ -569,13 +567,13 @@ export default function MenstrualCycleLog() {
                   )}
 
                   {log.mood_notes && (
-                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-2">
+                    <div className="mb-2 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-xs text-neutral-muted dark:text-dark-muted">
                       Mood: {log.mood_notes}
                     </div>
                   )}
 
                   {log.notes && (
-                    <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="mt-2 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}

@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Brain } from 'lucide-react';
+import { Save, Clock, Activity, Brain, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -93,16 +93,33 @@ export default function StressLog() {
         showHistory={showHistory}
         onShowNew={() => setShowHistory(false)}
         onShowHistory={() => setShowHistory(true)}
-        newIcon={<Activity className="h-4 w-4 mr-2" />}
-        historyIcon={<Clock className="h-4 w-4 mr-2" />}
+        newIcon={<Activity className="mr-2 h-4 w-4" />}
+        historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
+              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="font-medium">Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="logged_at" className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock className="inline h-4 w-4 mr-1" />
+              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Clock className="mr-1 inline h-4 w-4" />
                 Time
               </label>
               <input
@@ -110,15 +127,15 @@ export default function StressLog() {
                 id="logged_at"
                 value={formData.logged_at}
                 onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Brain className="inline h-4 w-4 mr-1" />
-                Stress Level: {formData.stress_level}/10
+              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                <Brain className="mr-1 inline h-4 w-4" />
+                Stress Level: <span className="text-neutral-text dark:text-dark-text">{formData.stress_level}/10</span>
               </label>
               <input
                 type="range"
@@ -127,22 +144,19 @@ export default function StressLog() {
                 step="1"
                 value={formData.stress_level}
                 onChange={(e) => setFormData({ ...formData, stress_level: parseInt(e.target.value) })}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                style={{
-                  background: `linear-gradient(to right, rgb(249, 115, 22) 0%, rgb(249, 115, 22) ${((formData.stress_level - 1) / 9) * 100}%, rgb(229, 231, 235) ${((formData.stress_level - 1) / 9) * 100}%, rgb(229, 231, 235) 100%)`
-                }}
+                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
                 <span>Calm</span>
                 <span>Overwhelmed</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Triggers (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonTriggers.map((trigger) => (
                   <button
                     key={trigger}
@@ -153,10 +167,10 @@ export default function StressLog() {
                         triggers: toggleItem(formData.triggers, trigger),
                       })
                     }
-                    className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.triggers.includes(trigger)
-                        ? 'border-red-500 bg-red-50 text-neutral-text shadow-md dark:border-dark-border dark:text-neutral-text dark:hover:border-dark-muted'
-                        : 'border-gray-200 text-neutral-text hover:border-gray-300'
+                        ? 'border-signal-500 bg-signal-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {trigger}
@@ -166,19 +180,19 @@ export default function StressLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Coping Methods Used (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonCopingMethods.map((method) => (
                   <button
                     key={method}
                     type="button"
                     onClick={() => setFormData({ ...formData, coping_methods: toggleItem(formData.coping_methods, method) })}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.coping_methods.includes(method)
-                        ? 'border-teal-500 bg-teal-50 text-neutral-text shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-muted'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {method}
@@ -188,19 +202,19 @@ export default function StressLog() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-3">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Physical Symptoms (Optional)
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonPhysicalSymptoms.map((symptom) => (
                   <button
                     key={symptom}
                     type="button"
                     onClick={() => setFormData({ ...formData, physical_symptoms: toggleItem(formData.physical_symptoms, symptom) })}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
                       formData.physical_symptoms.includes(symptom)
-                        ? 'border-orange-500 bg-orange-50 text-gray-900 shadow-md dark:border-dark-border dark:text-dark-text dark:hover:border-dark-border'
-                        : 'border-gray-200 text-gray-900 hover:border-gray-300 text-gray-900'
+                        ? 'border-orange-500 bg-orange-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {symptom}
@@ -210,27 +224,27 @@ export default function StressLog() {
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Notes (Optional)
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
                 rows={3}
                 placeholder="Additional context or observations..."
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving}>
-                <Save className="inline h-4 w-4 mr-2" />
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -239,33 +253,33 @@ export default function StressLog() {
       ) : (
         <Card>
           {history.length === 0 ? (
-            <EmptyState category="stress" icon={<Brain className="h-8 w-8 text-gray-400" />} />
+            <EmptyState category="stress" icon={<Brain className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
                         Stress Level: {log.stress_level}/10
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(log as StressFormData & { id: string })}
-                        className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
@@ -273,10 +287,10 @@ export default function StressLog() {
                   </div>
                   {log.triggers && log.triggers.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1">Triggers:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Triggers:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.triggers.map((trigger: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                          <span key={idx} className="inline-flex items-center rounded-full bg-signal-500/10 border border-signal-500/20 px-2.5 py-1 text-xs text-signal-500 dark:text-signal-300">
                             {trigger}
                           </span>
                         ))}
@@ -285,10 +299,10 @@ export default function StressLog() {
                   )}
                   {log.coping_methods && log.coping_methods.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1">Coping Methods:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Coping Methods:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.coping_methods.map((method: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800">
+                          <span key={idx} className="inline-flex items-center rounded-full bg-brand-500/10 border border-brand-500/20 px-2.5 py-1 text-xs text-brand-500 dark:text-brand-300">
                             {method}
                           </span>
                         ))}
@@ -297,10 +311,10 @@ export default function StressLog() {
                   )}
                   {log.physical_symptoms && log.physical_symptoms.length > 0 && (
                     <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1">Physical Symptoms:</div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Physical Symptoms:</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {log.physical_symptoms.map((symptom: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                          <span key={idx} className="inline-flex items-center rounded-full bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 text-xs text-orange-600 dark:text-orange-300">
                             {symptom}
                           </span>
                         ))}
@@ -308,7 +322,7 @@ export default function StressLog() {
                     </div>
                   )}
                   {log.notes && (
-                    <div className="mt-3 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}
