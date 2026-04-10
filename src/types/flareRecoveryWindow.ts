@@ -25,12 +25,18 @@ export interface RecoveryWindow {
   followsFlare: boolean;
 }
 
-export interface FlareDetectionOptions {
-  minDays?: number;
+export interface BurdenSummaryOptions {
   burdenElevationMultiplier?: number;
+  urgencyElevationFallback?: number;
+  looseStoolMinCount?: number;
 }
 
-export interface RecoveryDetectionOptions {
+export interface FlareDetectionOptions extends BurdenSummaryOptions {
+  minDays?: number;
+}
+
+export interface RecoveryDetectionOptions extends BurdenSummaryOptions {
   minDays?: number;
   requireFollowsFlare?: boolean;
+  recoveryBurdenMultiplier?: number;
 }
