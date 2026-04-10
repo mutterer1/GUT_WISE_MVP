@@ -17,23 +17,21 @@ const INSIGHT_KEY = 'medication_any_same_day_symptom_burden';
 
 const MIN_ELIGIBLE_DAYS = 7;
 const MIN_EXPOSURE_DAYS = 3;
-const ELEVATED_BURDEN_MULTIPLIER = 1.3;
 
 function isElevatedSymptomBurdenDay(
   day: UserDailyFeatures,
   baselines: UserBaselineSet
 ): boolean {
-  const threshold = baselines.symptoms.high_burden_threshold;
-  if (threshold !== null) {
-    return day.symptom_burden_score > threshold;
-  }
+  const burdenAboveThreshold =
+    baselines.symptoms.high_burden_threshold !== null &&
+    day.symptom_burden_score > baselines.symptoms.high_burden_threshold;
 
-  const median = baselines.symptoms.median_burden;
-  if (median !== null && median > 0) {
-    return day.symptom_burden_score > median * ELEVATED_BURDEN_MULTIPLIER;
-  }
+  const severityAboveMedian =
+    day.max_symptom_severity !== null &&
+    baselines.symptoms.median_max_severity !== null &&
+    day.max_symptom_severity > baselines.symptoms.median_max_severity;
 
-  return false;
+  return burdenAboveThreshold || severityAboveMedian;
 }
 
 function hasSymptomData(day: UserDailyFeatures): boolean {
@@ -47,7 +45,7 @@ export function analyzeMedicationAnySymptomBurdenCandidate(
   if (features.length === 0) return null;
 
   const { symptoms } = baselines;
-  if (symptoms.high_burden_threshold === null && symptoms.median_burden === null) {
+  if (symptoms.high_burden_threshold === null && symptoms.median_max_severity === null) {
     return null;
   }
 
@@ -116,7 +114,7 @@ export function analyzeMedicationAnySymptomBurdenCandidate(
     category: 'medication',
     subtype: 'medication_any_symptom_burden',
     trigger_factors: ['medication_event_count'],
-    target_outcomes: ['symptom_burden_score'],
+    target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
     data_sufficiency: sufficiency,

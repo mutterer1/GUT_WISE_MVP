@@ -39,17 +39,29 @@ function isElevatedSymptomBurdenDay(
   day: UserDailyFeatures,
   baselines: UserBaselineSet
 ): boolean {
-  const threshold = baselines.symptoms.high_burden_threshold;
-  if (threshold !== null) {
-    return day.symptom_burden_score > threshold;
-  }
-  return day.symptom_burden_score > 0;
+  const burdenAboveThreshold =
+    baselines.symptoms.high_burden_threshold !== null &&
+    day.symptom_burden_score > baselines.symptoms.high_burden_threshold;
+
+  const severityAboveMedian =
+    day.max_symptom_severity !== null &&
+    baselines.symptoms.median_max_severity !== null &&
+    day.max_symptom_severity > baselines.symptoms.median_max_severity;
+
+  return burdenAboveThreshold || severityAboveMedian;
 }
 
 export function analyzeFoodMealRegularitySymptomBurdenCandidate(
   features: UserDailyFeatures[],
   baselines: UserBaselineSet
 ): InsightCandidate | null {
+  if (
+    baselines.symptoms.high_burden_threshold === null &&
+    baselines.symptoms.median_max_severity === null
+  ) {
+    return null;
+  }
+
   const eligibleDays = features.filter(hasFoodData);
   if (eligibleDays.length < 5) return null;
 
@@ -116,7 +128,7 @@ export function analyzeFoodMealRegularitySymptomBurdenCandidate(
     category: 'food',
     subtype: 'low_meal_regularity_symptom_burden',
     trigger_factors: ['meal_count'],
-    target_outcomes: ['symptom_burden_score'],
+    target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
     data_sufficiency: sufficiency,
