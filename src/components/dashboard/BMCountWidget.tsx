@@ -44,9 +44,9 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
     }
     return {
       message: 'Above average today',
-      color: 'text-brand-300',
+      color: 'text-signal-500',
       icon: TrendingUp,
-      bgColor: 'bg-brand-500/10 dark:bg-brand-500/15',
+      bgColor: 'bg-signal-500/10 dark:bg-signal-500/15',
     };
   };
 

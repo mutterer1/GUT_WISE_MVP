@@ -79,10 +79,10 @@ export default function StreakTracker() {
     return (
       <Card>
         <div className="animate-pulse flex items-center gap-3">
-          <div className="h-10 w-10 bg-gray-200 rounded-lg" />
+          <div className="h-10 w-10 bg-neutral-border dark:bg-dark-border rounded-lg" />
           <div className="flex-1">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-            <div className="h-3 bg-gray-200 rounded w-40" />
+            <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-24 mb-2" />
+            <div className="h-3 bg-neutral-border dark:bg-dark-border rounded w-40" />
           </div>
         </div>
       </Card>
@@ -93,12 +93,12 @@ export default function StreakTracker() {
     return (
       <Card>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-gray-400" />
+          <div className="w-10 h-10 bg-neutral-bg dark:bg-dark-surface rounded-lg flex items-center justify-center">
+            <Calendar className="h-5 w-5 text-neutral-muted dark:text-dark-muted" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">No streak yet</p>
-            <p className="text-xs text-gray-500">Log something today to start building your streak.</p>
+            <p className="text-sm font-medium text-neutral-text dark:text-dark-text">No streak yet</p>
+            <p className="text-xs text-neutral-muted dark:text-dark-muted">Log something today to start building your streak.</p>
           </div>
         </div>
       </Card>
@@ -108,30 +108,30 @@ export default function StreakTracker() {
   const celebration = getStreakCelebration(streakDays);
 
   return (
-    <Card className="border-teal-100">
+    <Card className="border-brand-500/20 dark:border-brand-500/25">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            streakDays >= 7 ? 'bg-orange-100' : 'bg-teal-100'
+            streakDays >= 7 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-brand-500/10 dark:bg-brand-500/15'
           }`}>
             <Flame
-              className={`h-5 w-5 ${streakDays >= 7 ? 'text-orange-500' : 'text-teal-600'}`}
+              className={`h-5 w-5 ${streakDays >= 7 ? 'text-orange-500' : 'text-brand-500'}`}
               style={streakDays >= 7 ? { animation: 'flamePulse 2s ease-in-out infinite' } : undefined}
             />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-neutral-text dark:text-dark-text">
                 {streakDays} day{streakDays !== 1 ? 's' : ''} streak
               </p>
               {loggedToday && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
                   <CheckCircle className="h-3 w-3" />
                   Logged today
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-neutral-muted dark:text-dark-muted mt-0.5">
               {celebration || 'Keep logging daily to grow your streak.'}
             </p>
           </div>

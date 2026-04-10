@@ -101,7 +101,7 @@ export default function MedicationWidget({
         </div>
       </div>
 
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-thin">
         {medications.map((med) => {
           const time = new Date(med.logged_at).toLocaleTimeString([], {
             hour: '2-digit',
