@@ -184,10 +184,6 @@ export default function FoodLog() {
 
       {!showHistory ? (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
-
           <form onSubmit={handleFormSubmit} className="space-y-6">
             <div>
               <label htmlFor="logged_at" className="mb-2 block text-sm font-medium text-gray-700">
@@ -400,8 +396,6 @@ export default function FoodLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">Entry History</h2>
-
           {history.length === 0 ? (
             <EmptyState
               category="food"

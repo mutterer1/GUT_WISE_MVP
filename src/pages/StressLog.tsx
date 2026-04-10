@@ -99,10 +99,6 @@ export default function StressLog() {
 
       {!showHistory ? (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="logged_at" className="block text-sm font-medium text-gray-700 mb-2">
@@ -242,7 +238,6 @@ export default function StressLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Entry History</h2>
           {history.length === 0 ? (
             <EmptyState category="stress" icon={<Brain className="h-8 w-8 text-gray-400" />} />
           ) : (

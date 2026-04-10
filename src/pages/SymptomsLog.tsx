@@ -124,10 +124,6 @@ export default function SymptomsLog() {
 
       {!showHistory ? (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="logged_at" className="mb-2 block text-sm font-medium text-gray-700">
@@ -326,8 +322,6 @@ export default function SymptomsLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">Entry History</h2>
-
           {history.length === 0 ? (
             <EmptyState
               category="symptoms"

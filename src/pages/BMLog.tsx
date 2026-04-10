@@ -85,7 +85,7 @@ export default function BMLog() {
   return (
     <LogPageShell
       title="Bowel Movement Log"
-      subtitle="Quick and comprehensive tracking"
+      subtitle="Log quickly. All details are optional."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -97,17 +97,14 @@ export default function BMLog() {
         onShowHistory={() => setShowHistory(true)}
         newIcon={<Activity className="mr-2 h-4 w-4" />}
         historyIcon={<Clock className="mr-2 h-4 w-4" />}
+        newLabel={editingId ? 'Edit Entry' : 'New Entry'}
       />
 
       {!showHistory ? (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">
-            {editingId ? 'Edit Entry' : 'Log New Entry'}
-          </h2>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="logged_at" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 <Clock className="mr-1 inline h-4 w-4" />
                 Time
               </label>
@@ -118,15 +115,18 @@ export default function BMLog() {
                 onChange={(e) =>
                   setFormData({ ...formData, logged_at: e.target.value })
                 }
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-700">
-                Bristol Stool Scale
-              </label>
+              <div className="mb-3 flex items-baseline justify-between">
+                <label className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                  Bristol Stool Scale
+                </label>
+                <span className="text-xs text-neutral-muted dark:text-dark-muted">Type 4 is ideal</span>
+              </div>
 
               <div className="grid grid-cols-7 gap-2">
                 {BRISTOL_SCALE.map((item) => (
@@ -136,16 +136,16 @@ export default function BMLog() {
                     onClick={() =>
                       setFormData({ ...formData, bristol_type: item.value })
                     }
-                    className={`rounded-lg border-2 p-3 transition-all ${
+                    className={`rounded-xl border-2 p-3 transition-all ${
                       formData.bristol_type === item.value
-                        ? 'border-teal-500 bg-teal-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-neutral-text dark:text-dark-text">
                       {item.value}
                     </div>
-                    <div className="mt-1 text-xs text-gray-600">
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
                       {item.desc}
                     </div>
                   </button>
@@ -160,7 +160,7 @@ export default function BMLog() {
                 onChange={(value) =>
                   setFormData({ ...formData, urgency: value })
                 }
-                accent="accent-teal-500"
+                accent="accent-brand-500"
                 low="Low"
                 high="High"
               />
@@ -171,7 +171,7 @@ export default function BMLog() {
                 onChange={(value) =>
                   setFormData({ ...formData, pain_level: value })
                 }
-                accent="accent-red-500"
+                accent="accent-signal-500"
                 low="None"
                 high="Severe"
               />
@@ -189,7 +189,7 @@ export default function BMLog() {
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-gray-700">
+              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Amount
               </label>
 
@@ -199,10 +199,10 @@ export default function BMLog() {
                     key={size}
                     type="button"
                     onClick={() => setFormData({ ...formData, amount: size })}
-                    className={`rounded-lg border-2 p-4 capitalize transition-all ${
+                    className={`rounded-xl border-2 p-4 capitalize transition-all text-body-sm font-medium ${
                       formData.amount === size
-                        ? 'border-teal-500 bg-teal-50 text-gray-900 shadow-md dark: border-teal-500 bg-teal-50 text-gray-900'
-                        : 'border-gray-600 text-gray-900 hover:border-gray-900 dark:border-dark-border dark:text-gray-900 dark:hover:border-dark-muted'
+                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
+                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     {size}
@@ -211,50 +211,48 @@ export default function BMLog() {
               </div>
             </div>
 
-           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-  <ToggleField
-    label="Incomplete Evacuation"
-    active={formData.incomplete_evacuation}
-    onToggle={() =>
-      setFormData({
-        ...formData,
-        incomplete_evacuation: !formData.incomplete_evacuation,
-      })
-    }
-    activeClass="bg-teal-500"
-    labelClassName="text-gray-900"
-  />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <ToggleField
+                label="Incomplete Evacuation"
+                active={formData.incomplete_evacuation}
+                onToggle={() =>
+                  setFormData({
+                    ...formData,
+                    incomplete_evacuation: !formData.incomplete_evacuation,
+                  })
+                }
+                activeClass="bg-brand-500"
+              />
 
-  <ToggleField
-    label="Blood Present"
-    active={formData.blood_present}
-    onToggle={() =>
-      setFormData({
-        ...formData,
-        blood_present: !formData.blood_present,
-      })
-    }
-    activeClass="bg-red-500"
-    labelClassName="text-gray-900"
-  />
+              <ToggleField
+                label="Blood Present"
+                active={formData.blood_present}
+                onToggle={() =>
+                  setFormData({
+                    ...formData,
+                    blood_present: !formData.blood_present,
+                  })
+                }
+                activeClass="bg-signal-500"
+              />
 
-  <ToggleField
-    label="Mucus Present"
-    active={formData.mucus_present}
-    onToggle={() =>
-      setFormData({
-        ...formData,
-        mucus_present: !formData.mucus_present,
-      })
-    }
-    activeClass="bg-orange-500"
-    labelClassName="text-gray-900"
-  />
-</div>
+              <ToggleField
+                label="Mucus Present"
+                active={formData.mucus_present}
+                onToggle={() =>
+                  setFormData({
+                    ...formData,
+                    mucus_present: !formData.mucus_present,
+                  })
+                }
+                activeClass="bg-orange-500"
+              />
+            </div>
 
             <div>
-              <label htmlFor="notes" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
                 Notes
+                <span className="ml-1 font-normal text-neutral-muted dark:text-dark-muted opacity-60">(optional)</span>
               </label>
               <textarea
                 id="notes"
@@ -264,12 +262,12 @@ export default function BMLog() {
                 }
                 rows={3}
                 placeholder="Any additional observations..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
               />
             </div>
 
-            <div className="flex gap-3">
-              <Button type="submit" disabled={saving}>
+            <div className="flex gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
                 {saving
                   ? 'Saving...'
@@ -279,8 +277,8 @@ export default function BMLog() {
               </Button>
 
               {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Cancel Edit
+                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                  Cancel
                 </Button>
               )}
             </div>
@@ -288,45 +286,41 @@ export default function BMLog() {
         </Card>
       ) : (
         <Card>
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">
-            Entry History
-          </h2>
-
           {history.length === 0 ? (
             <EmptyState
               category="bm"
-              icon={<Activity className="h-8 w-8 text-gray-400" />}
+              icon={<Activity className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-lg border border-gray-200 p-4 transition-colors hover:border-gray-300"
+                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        Bristol Type {log.bristol_type} - {log.amount}
+                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                        Bristol Type {log.bristol_type} &middot; {log.amount}
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button
                         onClick={() =>
                           handleEdit(log as BMFormData & { id: string })
                         }
-                        className="text-sm font-medium text-teal-600 hover:text-teal-700"
+                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
                       >
                         Edit
                       </button>
 
                       <button
                         onClick={() => handleDelete(log.id!)}
-                        className="text-sm font-medium text-red-600 hover:text-red-700"
+                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
                       >
                         Delete
                       </button>
@@ -335,22 +329,22 @@ export default function BMLog() {
 
                   <div className="grid grid-cols-3 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500">Urgency:</span>
-                      <span className="ml-1 font-medium">
+                      <span className="text-neutral-muted dark:text-dark-muted">Urgency:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
                         {Number(log.urgency).toFixed(1)}/10
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-gray-500">Pain:</span>
-                      <span className="ml-1 font-medium">
+                      <span className="text-neutral-muted dark:text-dark-muted">Pain:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
                         {Number(log.pain_level).toFixed(1)}/10
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-gray-500">Difficulty:</span>
-                      <span className="ml-1 font-medium">
+                      <span className="text-neutral-muted dark:text-dark-muted">Difficulty:</span>
+                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
                         {Number(log.difficulty_level).toFixed(1)}/10
                       </span>
                     </div>
@@ -359,7 +353,7 @@ export default function BMLog() {
                   {(log.incomplete_evacuation ||
                     log.blood_present ||
                     log.mucus_present) && (
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex gap-2 flex-wrap">
                       {log.incomplete_evacuation && (
                         <Badge label="Incomplete" color="yellow" />
                       )}
@@ -373,7 +367,7 @@ export default function BMLog() {
                   )}
 
                   {log.notes && (
-                    <div className="mt-3 rounded bg-gray-50 p-2 text-sm text-gray-600">
+                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
                       {log.notes}
                     </div>
                   )}
@@ -404,8 +398,8 @@ function SliderField({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-gray-700">
-        {label}: {value.toFixed(1)}
+      <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+        {label}: <span className="text-neutral-text dark:text-dark-text">{value.toFixed(1)}</span>
       </label>
 
       <input
@@ -415,10 +409,10 @@ function SliderField({
         step="0.1"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 ${accent}`}
+        className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border ${accent}`}
       />
 
-      <div className="mt-1 flex justify-between text-xs text-gray-500">
+      <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
         <span>{low}</span>
         <span>{high}</span>
       </div>
@@ -438,14 +432,14 @@ function ToggleField({
   activeClass: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-dark-surface">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-700">{label}</span>
+    <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
+      <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">{label}</span>
 
       <button
         type="button"
         onClick={onToggle}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          active ? activeClass : 'bg-gray-300 dark:bg-gray-300'
+          active ? activeClass : 'bg-neutral-border dark:bg-dark-border'
         }`}
       >
         <span
@@ -466,14 +460,14 @@ function Badge({
   color: 'yellow' | 'red' | 'orange';
 }) {
   const styles = {
-    yellow: 'bg-yellow-100 text-yellow-800',
-    red: 'bg-red-100 text-red-800',
-    orange: 'bg-orange-100 text-orange-800',
+    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    red: 'bg-signal-500/10 text-signal-500',
+    orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
   };
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${styles[color]}`}
+      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${styles[color]}`}
     >
       <AlertCircle className="mr-1 h-3 w-3" />
       {label}

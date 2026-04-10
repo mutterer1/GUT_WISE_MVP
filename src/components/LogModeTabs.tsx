@@ -18,14 +18,14 @@ export default function LogModeTabs({
   historyLabel = 'History',
 }: LogModeTabsProps) {
   return (
-    <div className="mb-6 flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+    <div className="mb-lg flex gap-1 bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border p-1 rounded-xl w-fit">
       <button
         type="button"
         onClick={onShowNew}
-        className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`flex items-center px-4 py-2 rounded-lg text-body-sm font-medium transition-all ${
           !showHistory
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-500 hover:text-gray-700'
+            ? 'bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text shadow-soft border border-neutral-border dark:border-dark-border'
+            : 'text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
         }`}
       >
         {newIcon}
@@ -34,10 +34,10 @@ export default function LogModeTabs({
       <button
         type="button"
         onClick={onShowHistory}
-        className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`flex items-center px-4 py-2 rounded-lg text-body-sm font-medium transition-all ${
           showHistory
-            ? 'bg-white text-gray-900 shadow-sm'
-            : 'text-gray-500 hover:text-gray-700'
+            ? 'bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text shadow-soft border border-neutral-border dark:border-dark-border'
+            : 'text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
         }`}
       >
         {historyIcon}
