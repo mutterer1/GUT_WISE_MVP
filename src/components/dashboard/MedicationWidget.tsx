@@ -21,9 +21,19 @@ export default function MedicationWidget({
   if (loading) {
     return (
       <Card variant="elevated">
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-1/2"></div>
-          <div className="h-12 bg-neutral-border dark:bg-dark-border rounded"></div>
+        <div className="animate-pulse">
+          <div className="flex items-start justify-between mb-4">
+            <div className="space-y-2">
+              <div className="h-3 bg-neutral-border dark:bg-dark-border rounded w-32"></div>
+              <div className="h-9 bg-neutral-border dark:bg-dark-border rounded w-8"></div>
+            </div>
+            <div className="w-11 h-11 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
+          </div>
+          <div className="h-3 bg-neutral-border dark:bg-dark-border rounded-full mb-3"></div>
+          <div className="space-y-2">
+            <div className="h-14 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
+            <div className="h-14 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
+          </div>
         </div>
       </Card>
     );
@@ -41,28 +51,23 @@ export default function MedicationWidget({
       <Card variant="elevated">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted mb-1">
+            <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
               Medications Today
             </p>
             <p className="text-display-md font-sora font-semibold text-neutral-muted dark:text-dark-muted">0</p>
           </div>
-          <div className="w-12 h-12 bg-neutral-bg dark:bg-dark-surface rounded-xl flex items-center justify-center">
-            <Pill className="h-6 w-6 text-neutral-muted dark:text-dark-muted" />
+          <div className="w-11 h-11 bg-neutral-bg dark:bg-dark-surface rounded-xl flex items-center justify-center">
+            <Pill className="h-5 w-5 text-neutral-muted dark:text-dark-muted" />
           </div>
         </div>
-
-        <div className="bg-neutral-bg dark:bg-dark-surface p-4 rounded-xl text-center">
+        <div className="bg-neutral-bg dark:bg-dark-surface px-4 py-3 rounded-xl">
           <p className="text-body-sm text-neutral-muted dark:text-dark-muted">No medications logged today</p>
-          <p className="text-xs text-neutral-muted dark:text-dark-muted mt-1 opacity-75">
-            Track your medications to monitor adherence
-          </p>
         </div>
       </Card>
     );
   }
 
   const getAdherenceColor = () => {
-    if (adherenceRate === 100) return 'bg-brand-500';
     if (adherenceRate >= 80) return 'bg-brand-500';
     return 'bg-signal-500';
   };
@@ -71,26 +76,26 @@ export default function MedicationWidget({
     <Card variant="elevated">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted mb-1">
+          <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
             Medications Today
           </p>
           <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{medications.length}</p>
         </div>
-        <div className="w-12 h-12 bg-brand-500/10 dark:bg-brand-500/20 rounded-xl flex items-center justify-center">
-          <Pill className="h-6 w-6 text-brand-500" />
+        <div className="w-11 h-11 bg-brand-500/10 dark:bg-brand-500/15 rounded-xl flex items-center justify-center">
+          <Pill className="h-5 w-5 text-brand-500" />
         </div>
       </div>
 
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-body-sm text-neutral-muted dark:text-dark-muted">Adherence Rate</span>
-          <span className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs text-neutral-muted dark:text-dark-muted">Adherence</span>
+          <span className="text-xs font-semibold text-neutral-text dark:text-dark-text">
             {Math.round(adherenceRate)}%
           </span>
         </div>
-        <div className="w-full bg-neutral-border dark:bg-dark-border rounded-full h-2">
+        <div className="w-full bg-neutral-border dark:bg-dark-border rounded-full h-2 overflow-hidden">
           <div
-            className={`h-2 rounded-full transition-all ${getAdherenceColor()}`}
+            className={`h-2 rounded-full transition-all duration-500 ${getAdherenceColor()}`}
             style={{ width: `${adherenceRate}%` }}
           />
         </div>
@@ -106,35 +111,33 @@ export default function MedicationWidget({
           return (
             <div
               key={med.id}
-              className={`p-3 rounded-xl border transition-all ${
+              className={`px-3 py-2.5 rounded-xl border ${
                 med.taken_as_prescribed
-                  ? 'bg-brand-500/5 dark:bg-brand-500/10 border-brand-500/20 dark:border-brand-500/30'
-                  : 'bg-signal-500/5 dark:bg-signal-500/10 border-signal-500/20 dark:border-signal-500/30'
+                  ? 'bg-brand-500/5 dark:bg-brand-500/08 border-brand-500/15 dark:border-brand-500/20'
+                  : 'bg-signal-500/5 dark:bg-signal-500/08 border-signal-500/15 dark:border-signal-500/20'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    {med.taken_as_prescribed ? (
-                      <CheckCircle className="h-4 w-4 text-brand-500 flex-shrink-0" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-signal-500 flex-shrink-0" />
-                    )}
-                    <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {med.taken_as_prescribed ? (
+                    <CheckCircle className="h-4 w-4 text-brand-500 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-signal-500 flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text truncate">
                       {med.medication_name}
                     </p>
+                    <p className="text-xs text-neutral-muted dark:text-dark-muted">{med.dosage}</p>
                   </div>
-                  <p className="text-xs text-neutral-muted dark:text-dark-muted mt-1 ml-6">{med.dosage}</p>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-neutral-muted dark:text-dark-muted">
+                <div className="flex items-center gap-1 text-xs text-neutral-muted dark:text-dark-muted flex-shrink-0 ml-2">
                   <Clock className="h-3 w-3" />
                   <span>{time}</span>
                 </div>
               </div>
               {!med.taken_as_prescribed && (
-                <p className="text-xs text-signal-500 mt-2 ml-6">
-                  Not taken as prescribed
-                </p>
+                <p className="text-xs text-signal-500 mt-1.5 ml-6">Not taken as prescribed</p>
               )}
             </div>
           );
@@ -142,10 +145,8 @@ export default function MedicationWidget({
       </div>
 
       {adherenceRate === 100 && (
-        <div className="mt-4 bg-brand-500/5 dark:bg-brand-500/10 p-3 rounded-xl border border-brand-500/20 dark:border-brand-500/30">
-          <p className="text-body-sm font-medium text-brand-500 text-center">
-            Full adherence today
-          </p>
+        <div className="mt-3 bg-brand-500/5 dark:bg-brand-500/08 px-3 py-2.5 rounded-xl border border-brand-500/15 dark:border-brand-500/20">
+          <p className="text-body-sm font-medium text-brand-500 text-center">Full adherence today</p>
         </div>
       )}
     </Card>

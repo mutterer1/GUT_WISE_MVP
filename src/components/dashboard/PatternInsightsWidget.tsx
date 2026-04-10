@@ -30,12 +30,21 @@ export default function PatternInsightsWidget({
   if (loading) {
     return (
       <Card variant="discovery" glowIntensity="subtle">
-        <div className="animate-pulse space-y-4">
-          <div className="h-5 bg-neutral-border dark:bg-dark-border rounded w-1/3"></div>
+        <div className="animate-pulse">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
+            <div className="space-y-2 flex-1">
+              <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-44"></div>
+              <div className="h-3 bg-neutral-border dark:bg-dark-border rounded w-56"></div>
+            </div>
+          </div>
           <div className="space-y-3">
             {[1, 2].map((i) => (
               <div key={i} className="h-20 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
             ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-neutral-border dark:border-dark-border">
+            <div className="h-3 bg-neutral-border dark:bg-dark-border rounded w-64"></div>
           </div>
         </div>
       </Card>
@@ -124,9 +133,9 @@ export default function PatternInsightsWidget({
   const getInsightStyle = (type: InsightType) => {
     switch (type) {
       case 'positive':
-        return 'bg-brand-500/5 dark:bg-brand-500/10 border-brand-500/20 dark:border-brand-500/20';
+        return 'bg-brand-500/5 dark:bg-brand-500/08 border-brand-500/15 dark:border-brand-500/15';
       case 'suggestion':
-        return 'bg-signal-500/5 dark:bg-signal-500/10 border-signal-500/20 dark:border-signal-500/20';
+        return 'bg-signal-500/5 dark:bg-signal-500/08 border-signal-500/15 dark:border-signal-500/15';
       default:
         return 'bg-neutral-bg dark:bg-dark-surface border-neutral-border dark:border-dark-border';
     }
@@ -137,64 +146,64 @@ export default function PatternInsightsWidget({
 
     switch (type) {
       case 'positive':
-        return `bg-brand-500/10 dark:bg-brand-500/20 text-brand-500 ${baseStyle}`;
+        return `bg-brand-500/10 dark:bg-brand-500/15 text-brand-500 ${baseStyle}`;
       case 'suggestion':
-        return `bg-signal-500/10 dark:bg-signal-500/20 text-signal-500 ${baseStyle}`;
+        return `bg-signal-500/10 dark:bg-signal-500/15 text-signal-500 ${baseStyle}`;
       default:
-        return 'bg-discovery-500/10 dark:bg-discovery-500/20 text-discovery-500';
+        return 'bg-discovery-500/10 dark:bg-discovery-500/15 text-discovery-500';
     }
   };
 
   return (
     <Card variant="discovery" glowIntensity={glowIntensity}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-discovery-500/10 dark:bg-discovery-500/20 shadow-glow-subtle">
+          <div className="p-2 rounded-xl bg-discovery-500/10 dark:bg-discovery-500/15 shadow-glow-subtle flex-shrink-0">
             <Brain className="h-5 w-5 text-discovery-500" />
           </div>
           <div>
             <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text flex items-center gap-2">
               What Your Body is Showing
-              <span className="px-2 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded-full">
+              <span className="px-2 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded-full border border-discovery-500/15">
                 AI
               </span>
             </h3>
-            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+            <p className="text-xs text-neutral-muted dark:text-dark-muted mt-0.5">
               Patterns based on your recent logs
             </p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {insights.map((insight, index) => {
           const Icon = insight.icon;
           return (
             <div
               key={index}
-              className={`p-4 rounded-xl border transition-all ${getInsightStyle(insight.type)}`}
+              className={`px-4 py-3.5 rounded-xl border transition-all ${getInsightStyle(insight.type)}`}
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${getIconStyle(
+                  className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${getIconStyle(
                     insight.type,
                     insight.confidence
                   )}`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-body-md font-semibold text-neutral-text dark:text-dark-text">
+                    <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">
                       {insight.title}
                     </p>
-                    {insight.confidence === 'high' && (
-                      <span className="px-1.5 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded">
-                        High confidence
+                    {insight.confidence === 'high' && insight.type !== 'neutral' && (
+                      <span className="px-1.5 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded border border-discovery-500/15 flex-shrink-0">
+                        High
                       </span>
                     )}
                   </div>
-                  <p className="text-body-sm text-neutral-muted dark:text-dark-muted leading-relaxed">
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
                     {insight.message}
                   </p>
                 </div>
@@ -205,8 +214,8 @@ export default function PatternInsightsWidget({
       </div>
 
       <div className="mt-4 pt-4 border-t border-neutral-border dark:border-dark-border">
-        <div className="flex items-center gap-2 text-body-sm text-neutral-muted dark:text-dark-muted">
-          <Sparkles className="h-4 w-4 text-discovery-500" />
+        <div className="flex items-center gap-2 text-xs text-neutral-muted dark:text-dark-muted">
+          <Sparkles className="h-3.5 w-3.5 text-discovery-500 flex-shrink-0" />
           <p>Insights improve with consistent logging over time</p>
         </div>
       </div>

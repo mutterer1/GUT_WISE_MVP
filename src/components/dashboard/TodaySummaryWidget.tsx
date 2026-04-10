@@ -135,10 +135,18 @@ export default function TodaySummaryWidget({
   if (loading) {
     return (
       <Card variant="elevated">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-1/2"></div>
-          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-3/4"></div>
-          <div className="grid grid-cols-4 gap-4 mt-6">
+        <div className="animate-pulse">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
+                <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-48"></div>
+              </div>
+              <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-3/4"></div>
+            </div>
+            <div className="ml-4 h-10 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-16 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
             ))}
@@ -150,13 +158,13 @@ export default function TodaySummaryWidget({
 
   return (
     <Card variant="elevated" className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/10 dark:to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/08 dark:to-transparent pointer-events-none" />
 
       <div className="relative">
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/20">
+              <div className="p-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 flex-shrink-0">
                 <GreetingIcon className="h-5 w-5 text-brand-500" />
               </div>
               <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
@@ -174,7 +182,7 @@ export default function TodaySummaryWidget({
                 <div className="h-10 w-24 bg-neutral-border dark:bg-dark-border rounded-xl" />
               </div>
             ) : streakDays > 0 || loggedToday ? (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 border border-brand-500/20 dark:border-brand-500/30">
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/20 dark:border-brand-500/25">
                 <div className="text-right">
                   <p className="text-h4 font-sora font-semibold text-brand-500 leading-none">
                     {streakDays}
@@ -184,13 +192,13 @@ export default function TodaySummaryWidget({
                   </p>
                 </div>
                 {loggedToday && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-brand-500/20 dark:bg-brand-500/30 rounded-lg">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-brand-500/20 dark:bg-brand-500/25 rounded-lg">
                     <CheckCircle className="h-3 w-3 text-brand-500" />
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-surface dark:bg-dark-surface border border-dark-border dark:border-dark-border">
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-bg dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
                 <Calendar className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
                 <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Start logging</p>
               </div>
@@ -201,8 +209,8 @@ export default function TodaySummaryWidget({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="h-4 w-4 text-signal-500" />
-              <span className="text-label text-neutral-muted dark:text-dark-muted">BM</span>
+              <Activity className="h-3.5 w-3.5 text-signal-500" />
+              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">BM</span>
             </div>
             <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
               {bmCount}
@@ -211,10 +219,10 @@ export default function TodaySummaryWidget({
 
           <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
             <div className="flex items-center gap-2 mb-2">
-              <svg className="h-4 w-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-3.5 w-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="text-label text-neutral-muted dark:text-dark-muted">Meals</span>
+              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Meals</span>
             </div>
             <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
               {totalFood}
@@ -223,24 +231,24 @@ export default function TodaySummaryWidget({
 
           <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
             <div className="flex items-center gap-2 mb-2">
-              <Droplet className="h-4 w-4 text-brand-300" />
-              <span className="text-label text-neutral-muted dark:text-dark-muted">Water</span>
+              <Droplet className="h-3.5 w-3.5 text-brand-300" />
+              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Water</span>
             </div>
             <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-              {hydrationLiters}<span className="text-body-md font-normal text-neutral-muted dark:text-dark-muted">L</span>
+              {hydrationLiters}<span className="text-body-sm font-normal text-neutral-muted dark:text-dark-muted">L</span>
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
             <div className="flex items-center gap-2 mb-2">
-              <Moon className="h-4 w-4 text-brand-700 dark:text-brand-300" />
-              <span className="text-label text-neutral-muted dark:text-dark-muted">Sleep</span>
+              <Moon className="h-3.5 w-3.5 text-brand-700 dark:text-brand-300" />
+              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Sleep</span>
             </div>
             <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
               {sleepHours !== null ? (
-                <>{sleepHours}<span className="text-body-md font-normal text-neutral-muted dark:text-dark-muted">h</span></>
+                <>{sleepHours}<span className="text-body-sm font-normal text-neutral-muted dark:text-dark-muted">h</span></>
               ) : (
-                <span className="text-neutral-muted dark:text-dark-muted">--</span>
+                <span className="text-neutral-muted dark:text-dark-muted">—</span>
               )}
             </p>
           </div>
