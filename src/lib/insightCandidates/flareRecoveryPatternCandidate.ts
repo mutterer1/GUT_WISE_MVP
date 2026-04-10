@@ -81,6 +81,13 @@ export function analyzeFlareRecoveryPatternCandidate(
       (flareWindows.reduce((s, w) => s + w.durationDays, 0) / flareWindows.length) * 10
     ) / 10;
 
+  const totalFlareDays = flareWindows.reduce((s, w) => s + w.durationDays, 0);
+  const maxFlareDuration = Math.max(...flareWindows.map((w) => w.durationDays));
+  const peakBurdenOverall = Math.max(...flareWindows.map((w) => w.peakBurden));
+  const mostRecentFlareDate =
+    flareWindows.slice().sort((a, b) => b.startDate.localeCompare(a.startDate))[0]?.startDate ??
+    null;
+
   const avgRecoveryDuration =
     flaresWithRecovery > 0
       ? Math.round((totalRecoveryDuration / flaresWithRecovery) * 10) / 10
@@ -113,11 +120,15 @@ export function analyzeFlareRecoveryPatternCandidate(
     statistics: {
       total_days_analyzed: orderedDays.length,
       flare_window_count: flareWindows.length,
+      total_flare_days: totalFlareDays,
+      avg_flare_duration_days: avgFlareDuration,
+      max_flare_duration_days: maxFlareDuration,
+      peak_burden_in_flare: peakBurdenOverall,
+      most_recent_flare_date: mostRecentFlareDate,
       flares_with_immediate_recovery: flaresWithRecovery,
       flares_without_immediate_recovery: flaresWithoutRecovery,
       prolonged_recovery_count: prolongedRecoveryCount,
       incomplete_recovery_rate: exposedRate,
-      avg_flare_duration_days: avgFlareDuration,
       avg_recovery_duration_days: avgRecoveryDuration,
     },
   };

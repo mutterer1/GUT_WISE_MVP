@@ -64,9 +64,11 @@ export function analyzeFlareSymptomBurdenEpisodeCandidate(
     .map((w) => w.startDate)
     .slice(0, 10);
 
+  const mostRecentFlareDate = sampleDates[0] ?? null;
+
   const evidence: CandidateEvidence = {
     support_count: supportCount,
-    exposure_count: flareDayCount,
+    exposure_count: supportCount,
     contradiction_count: contradictionCount,
     baseline_rate: baselineRate,
     exposed_rate: exposedRate,
@@ -79,6 +81,7 @@ export function analyzeFlareSymptomBurdenEpisodeCandidate(
       avg_flare_duration_days: avgFlareDuration,
       max_flare_duration_days: maxFlareDuration,
       peak_burden_in_flare: peakBurdenOverall,
+      most_recent_flare_date: mostRecentFlareDate,
       non_flare_days: nonFlareSummaries.length,
       non_flare_elevated_days: nonFlareElevatedCount,
     },
