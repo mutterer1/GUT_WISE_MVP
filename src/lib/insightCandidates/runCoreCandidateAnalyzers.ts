@@ -9,6 +9,7 @@ import { analyzeFoodCaffeineSameDaySymptomBurdenCandidate } from './foodCaffeine
 import { analyzeBmUrgencyRollingElevationCandidate } from './bmUrgencyRollingElevationCandidate';
 import { analyzeSymptomTypePersistenceCandidate } from './symptomTypePersistenceCandidate';
 import { analyzeExerciseMovementBmRegularityCandidate } from './exerciseMovementBmRegularityCandidate';
+import { analyzeExerciseLowMovementSymptomBurdenCandidate } from './exerciseLowMovementSymptomBurdenCandidate';
 import { analyzeCyclePhaseSymptomShiftCandidate } from './cyclePhaseSymptomShiftCandidate';
 import { analyzeCyclePhaseBmShiftCandidate } from './cyclePhaseBmShiftCandidate';
 import { analyzeMedicationAnyBmShiftCandidate } from './medicationAnyBmShiftCandidate';
@@ -31,6 +32,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeBmUrgencyRollingElevationCandidate,
   analyzeSymptomTypePersistenceCandidate,
   analyzeExerciseMovementBmRegularityCandidate,
+  analyzeExerciseLowMovementSymptomBurdenCandidate,
   analyzeCyclePhaseSymptomShiftCandidate,
   analyzeCyclePhaseBmShiftCandidate,
   analyzeMedicationAnyBmShiftCandidate,
