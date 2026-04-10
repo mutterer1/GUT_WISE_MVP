@@ -107,11 +107,15 @@ export default function Insights() {
       <Sidebar />
 
       <main
-        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg"
+        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg relative"
         data-insight-source={insightSource}
         data-explanation-origin={explanationOrigin}
       >
-        <div className="max-w-7xl mx-auto">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-80 z-0"
+          style={{ background: 'radial-gradient(ellipse 75% 55% at 50% 0%, rgba(124, 92, 255, 0.10) 0%, transparent 75%)' }}
+        />
+        <div className="relative z-10 max-w-7xl mx-auto">
           <div className="mb-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="mb-1 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Health Insights</h1>
@@ -160,11 +164,11 @@ export default function Insights() {
 
           {/* Ranked fallback notice — no candidates yet path */}
           {useLegacyFallback && !rankedError && (
-            <div className="mb-md flex items-start gap-3 rounded-xl border border-brand-700/18 bg-brand-500/04 dark:bg-brand-500/06 px-md py-sm">
-              <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500/70 dark:text-brand-300/70" />
+            <div className="mb-md flex items-start gap-3 rounded-xl border border-[#7C5CFF]/20 bg-[#7C5CFF]/04 dark:bg-[#7C5CFF]/07 px-md py-sm">
+              <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#7C5CFF]/70 dark:text-[#B8A8FF]/70" />
               <div>
-                <p className="text-body-sm font-medium text-brand-700/90 dark:text-brand-300/90">Your patterns are still building</p>
-                <p className="mt-0.5 text-body-sm text-brand-700/65 dark:text-brand-300/65">
+                <p className="text-body-sm font-medium text-[#5B3FD6]/90 dark:text-[#B8A8FF]/90">Your patterns are still building</p>
+                <p className="mt-0.5 text-body-sm text-[#5B3FD6]/65 dark:text-[#B8A8FF]/65">
                   Keep logging consistently and GutWise will surface personalized patterns over time. Any available observations are shown below.
                 </p>
               </div>
@@ -277,10 +281,10 @@ export default function Insights() {
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-lg flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/08 dark:bg-brand-500/12"
-                  style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
+                  className="mx-auto mb-lg flex h-16 w-16 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
+                  style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite', boxShadow: '0 0 0 1px rgba(124,92,255,0.14), 0 0 18px 2px rgba(124,92,255,0.10)' }}
                 >
-                  <Brain className="h-8 w-8 text-brand-500 dark:text-brand-300" />
+                  <Brain className="h-8 w-8 text-[#7C5CFF] dark:text-[#B8A8FF]" />
                 </div>
 
                 <h3 className="mb-2.5 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">

@@ -43,9 +43,9 @@ const patternTypeConfig: Record<PatternType, { label: string; color: string; bg:
   },
   recurring: {
     label: 'Recurring pattern',
-    color: 'text-[#2C617D] dark:text-[#8EBFD8]',
-    bg: 'bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/12',
-    border: 'border-[#4A8FA8]/20 dark:border-[#4A8FA8]/25',
+    color: 'text-[#5B3FD6] dark:text-[#B8A8FF]',
+    bg: 'bg-[#7C5CFF]/06 dark:bg-[#7C5CFF]/10',
+    border: 'border-[#7C5CFF]/15 dark:border-[#7C5CFF]/22',
   },
 };
 
@@ -214,7 +214,7 @@ export default function RankedCandidateCard({ candidate, explanation, rank }: Ra
       )}
 
       {explanation && (
-        <div className="mt-5 border-t border-gray-100 dark:border-white/[0.06] pt-5 space-y-4">
+        <div className="mt-5 border-t border-[#7C5CFF]/12 dark:border-[#7C5CFF]/16 pt-5 space-y-4">
           <div className="flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-[#7C5CFF]" />
             <span className="text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF] tracking-wide">
