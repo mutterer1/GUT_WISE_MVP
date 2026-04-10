@@ -153,7 +153,7 @@ export default function Insights() {
             <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/30 bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/06 px-4 py-3">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8] dark:text-[#8EBFD8]" />
               <p className="text-sm text-[#2C617D] dark:text-[#8EBFD8]">
-                Advanced pattern analysis was unavailable. Showing standard insights instead.
+                Pattern analysis ran into a problem. Showing available insights instead.
               </p>
             </div>
           )}
@@ -162,16 +162,20 @@ export default function Insights() {
           {useLegacyFallback && !rankedError && (
             <div className="mb-5 flex items-start gap-3 rounded-xl border border-[#2C617D]/20 bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/04 px-4 py-3">
               <Brain className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#4A8FA8]/70 dark:text-[#8EBFD8]/70" />
-              <p className="text-sm text-[#2C617D]/80 dark:text-[#8EBFD8]/80">
-                Pattern insights are not ready yet. Keep logging daily to unlock them. Standard insights are shown below.
-              </p>
+              <div>
+                <p className="text-sm text-[#2C617D]/90 dark:text-[#8EBFD8]/90 font-medium">Your patterns are still building</p>
+                <p className="mt-0.5 text-sm text-[#2C617D]/70 dark:text-[#8EBFD8]/70">
+                  Keep logging consistently and GutWise will surface personalized patterns over time. Earlier insights are shown below.
+                </p>
+              </div>
             </div>
           )}
 
           {/* Primary: Ranked insight pipeline */}
           {rankedLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[#4A8FA8]" />
+            <div className="flex h-64 flex-col items-center justify-center gap-3">
+              <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
+              <p className="text-sm text-gray-400 dark:text-gray-500">Looking for patterns in your data…</p>
             </div>
           ) : hasRankedCandidates ? (
             <section className="mb-10">
@@ -198,7 +202,7 @@ export default function Insights() {
                   {explanationError && (
                     <div className="flex items-center gap-1.5 text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <span>Explanation failed</span>
+                      <span>Couldn't generate explanations</span>
                     </div>
                   )}
 
@@ -210,12 +214,12 @@ export default function Insights() {
                     {explanationLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating...
+                        Explaining patterns…
                       </>
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4" />
-                        {explanationOrigin === 'none' ? 'Generate explanations' : 'Regenerate'}
+                        {explanationOrigin === 'none' ? 'Explain these patterns' : 'Refresh explanations'}
                       </>
                     )}
                   </button>
@@ -233,7 +237,7 @@ export default function Insights() {
                     <div className="mb-4 flex items-start gap-3 rounded-xl border border-[#C28F94]/30 bg-[#C28F94]/06 dark:bg-[#C28F94]/08 p-3">
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8D5D62] dark:text-[#D9B3B7]" />
                       <p className="text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
-                        AI explanations could not be verified and are not shown. Candidates are still displayed below.
+                        AI explanations couldn't be verified and won't be shown. Your patterns are still displayed below.
                       </p>
                     </div>
                   )}
@@ -263,12 +267,13 @@ export default function Insights() {
           ) : (
             /* Fallback: legacy insights path */
             loading ? (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[#4A8FA8]" />
+              <div className="flex h-64 flex-col items-center justify-center gap-3">
+                <Loader2 className="h-7 w-7 animate-spin text-[#4A8FA8]" />
+                <p className="text-sm text-gray-400 dark:text-gray-500">Loading your insights…</p>
               </div>
             ) : insights.length === 0 ? (
               <div
-                className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[60px]"
+                className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm"
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
@@ -279,44 +284,33 @@ export default function Insights() {
                 </div>
 
                 <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  Building your pattern library
+                  Your patterns are still forming
                 </h3>
 
                 <p className="mx-auto mb-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                  GutWise needs several days of consistent logging to identify reliable patterns. The more you log, the sharper your insights become.
+                  GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
                 </p>
 
                 <p className="mx-auto mb-8 max-w-sm text-xs text-gray-400 dark:text-gray-500">
-                  Log meals, symptoms, hydration, sleep, and stress for the strongest analysis.
+                  Check back after a few more days of logging to see your first patterns.
                 </p>
 
                 <Button onClick={handleGenerateInsights} disabled={generating}>
-                  {generating ? 'Analyzing...' : 'Analyze Latest Data'}
+                  {generating ? 'Analyzing…' : 'Check for patterns now'}
                 </Button>
               </div>
             ) : (
               <>
-                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Active Insights</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{insights.length}</p>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Analysis Style</p>
-                    <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Rule-based and transparent</p>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-4 shadow-sm">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Best Results</p>
-                    <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">Consistent multi-category logging</p>
-                  </div>
+                <div className="mb-5 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                  <span>{insights.length} {insights.length === 1 ? 'pattern' : 'patterns'} found</span>
+                  <span className="text-gray-300 dark:text-white/20">·</span>
+                  <span>Based on repeated observations in your logs</span>
                 </div>
 
-                <div className="mb-6 rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-900/20 p-4">
-                  <h3 className="mb-1 font-semibold text-blue-900 dark:text-blue-200">How Insights Work</h3>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Insights are generated using transparent rules based on repeated patterns in your data. Confidence improves when the same pattern appears consistently over time.
+                <div className="mb-6 rounded-xl border border-[#2C617D]/20 bg-[#4A8FA8]/05 dark:bg-[#4A8FA8]/06 px-4 py-3">
+                  <p className="text-sm text-[#2C617D]/90 dark:text-[#8EBFD8]/90 leading-relaxed">
+                    <span className="font-medium">How patterns are found: </span>
+                    GutWise identifies patterns by comparing days with a given factor against days without it. Confidence grows the more consistently the same signal appears.
                   </p>
                 </div>
 
