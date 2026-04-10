@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import Logo from '../components/Logo';
 import {
   Brain,
   Shield,
@@ -189,7 +188,11 @@ export default function Landing() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-lg">
               <div>
                 <div className="mb-md">
-                  <Logo variant="full" size="sm" />
+                  <img
+                    src="/logos/gutwise-horizontal-dark.svg"
+                    alt="GutWise"
+                    style={{ height: '48px', width: 'auto', marginLeft: '-13px' }}
+                  />
                 </div>
                 <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                   Turning body signals into understanding
