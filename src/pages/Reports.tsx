@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Printer, Download, FileText, ClipboardList } from 'lucide-react';
+import { Printer, Download, FileText, ClipboardList, MessageSquare } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -173,6 +173,17 @@ export default function Reports() {
     return concerns;
   };
 
+  const SectionGroupLabel = ({ label, accent = false }: { label: string; accent?: boolean }) => (
+    <div className="flex items-center gap-3 mb-4 px-0.5 print:hidden">
+      <span className={`text-xs font-semibold uppercase tracking-widest flex-shrink-0 ${
+        accent ? 'text-[#4A8FA8]' : 'text-gray-400 dark:text-gray-500'
+      }`}>
+        {label}
+      </span>
+      <div className={`flex-1 h-px ${accent ? 'bg-[#4A8FA8]/25' : 'bg-gray-200 dark:bg-white/[0.07]'}`} />
+    </div>
+  );
+
   return (
     <MainLayout>
       <div className="p-4 sm:p-6 lg:p-8 print:p-8 max-w-5xl mx-auto">
@@ -256,6 +267,8 @@ export default function Reports() {
 
         {!loading && !error && bmAnalytics && (
           <>
+            <SectionGroupLabel label="Key Findings" accent />
+
             <ExecutiveSummary
               dateRange={formatDateRange()}
               dayCount={getDayCount()}
@@ -267,6 +280,8 @@ export default function Reports() {
             />
 
             <ClinicalAlertsSection alerts={clinicalAlerts} />
+
+            <SectionGroupLabel label="Supporting Detail" />
 
             <BMAnalyticsSection analytics={bmAnalytics} />
 
@@ -281,26 +296,35 @@ export default function Reports() {
             <MedicationCorrelationSection correlations={medicationCorrelations} />
 
             <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mt-6 print:mt-10">
-              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">
-                Suggested Discussion Points
-              </h2>
-              <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                <p>
-                  <span className="font-medium text-gray-900 dark:text-white">Pattern review:</span>{' '}
-                  Discuss the observed trends and any flagged patterns with your gastroenterologist for clinical context.
-                </p>
-                <p>
-                  <span className="font-medium text-gray-900 dark:text-white">Follow-up:</span>{' '}
-                  Reassessment after 4–6 weeks can help evaluate whether symptoms or patterns have changed.
-                </p>
-                <p>
-                  <span className="font-medium text-gray-900 dark:text-white">Diagnostics:</span>{' '}
-                  Your clinician may recommend additional testing (labs, imaging) based on the patterns shown here.
-                </p>
-                <p>
-                  <span className="font-medium text-gray-900 dark:text-white">Continued logging:</span>{' '}
-                  Systematic tracking improves the accuracy of pattern detection over time.
-                </p>
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
+                <MessageSquare className="h-4 w-4 text-[#4A8FA8]" />
+                <p className="text-xs font-semibold text-[#4A8FA8] uppercase tracking-widest">Suggested Discussion Points</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pattern review</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Discuss observed trends and flagged patterns with your gastroenterologist for clinical context.
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Follow-up timeline</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Reassessment after 4–6 weeks can help evaluate whether symptoms or patterns have changed.
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Diagnostics</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Your clinician may recommend additional testing (labs, imaging) based on patterns shown here.
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-white/[0.03] rounded-xl p-4">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Continued logging</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Systematic tracking improves the accuracy of pattern detection over time.
+                  </p>
+                </div>
               </div>
             </div>
 

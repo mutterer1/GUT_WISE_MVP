@@ -65,20 +65,27 @@ export default function ClinicalAlertsSection({ alerts }: ClinicalAlertsSectionP
   return (
     <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-2xl p-6 mb-5 print:border-gray-300">
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Clinical Alerts</p>
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+          Clinical Alerts
+          {hasAlerts && (
+            <span className="ml-2 font-normal normal-case tracking-normal text-gray-400 dark:text-gray-500">
+              — {alerts.length} total
+            </span>
+          )}
+        </p>
         {hasAlerts && (
-          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-xs">
             {criticalAlerts.length > 0 && (
-              <span className="text-[#8D5D62] dark:text-[#C28F94] font-medium">{criticalAlerts.length} critical</span>
+              <span className="text-[#8D5D62] dark:text-[#C28F94] font-semibold">{criticalAlerts.length} critical</span>
             )}
             {highAlerts.length > 0 && (
-              <span className="text-orange-600 dark:text-orange-400 font-medium">{highAlerts.length} high</span>
+              <span className="text-orange-600 dark:text-orange-400 font-semibold">{highAlerts.length} high</span>
             )}
             {mediumAlerts.length > 0 && (
-              <span className="text-amber-600 dark:text-amber-400 font-medium">{mediumAlerts.length} medium</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">{mediumAlerts.length} medium</span>
             )}
             {lowAlerts.length > 0 && (
-              <span className="text-[#4A8FA8] font-medium">{lowAlerts.length} low</span>
+              <span className="text-[#4A8FA8] font-semibold">{lowAlerts.length} low</span>
             )}
           </div>
         )}
@@ -93,6 +100,14 @@ export default function ClinicalAlertsSection({ alerts }: ClinicalAlertsSectionP
         </div>
       ) : (
         <div className="space-y-3">
+          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-1 pb-3 border-b border-gray-50 dark:border-white/[0.04]">
+            <div><span className="font-medium text-[#8D5D62] dark:text-[#C28F94]">Critical / High</span> — discuss with clinician soon</div>
+            <div className="text-gray-300 dark:text-white/20 select-none">·</div>
+            <div><span className="font-medium text-amber-600 dark:text-amber-400">Medium</span> — raise at next appointment</div>
+            <div className="text-gray-300 dark:text-white/20 select-none">·</div>
+            <div><span className="font-medium text-[#4A8FA8]">Low</span> — awareness only</div>
+          </div>
+
           {alerts.map((alert, idx) => {
             const style = getAlertStyle(alert.severity);
 
@@ -146,14 +161,6 @@ export default function ClinicalAlertsSection({ alerts }: ClinicalAlertsSectionP
               </div>
             );
           })}
-
-          <div className="mt-2 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-              <div><span className="font-medium text-[#8D5D62] dark:text-[#C28F94]">Critical/High</span> — discuss with your clinician soon</div>
-              <div><span className="font-medium text-amber-600 dark:text-amber-400">Medium</span> — raise at your next appointment</div>
-              <div><span className="font-medium text-[#4A8FA8]">Low</span> — for awareness; no urgent action needed</div>
-            </div>
-          </div>
         </div>
       )}
     </div>
