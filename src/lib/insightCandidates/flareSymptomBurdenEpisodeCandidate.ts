@@ -68,7 +68,7 @@ export function analyzeFlareSymptomBurdenEpisodeCandidate(
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
-    exposure_count: supportCount,
+    exposure_count: flareWindows.length,
     contradiction_count: contradictionCount,
     baseline_rate: baselineRate,
     exposed_rate: exposedRate,
