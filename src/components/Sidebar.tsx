@@ -33,16 +33,29 @@ const mainNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-const loggingSubmenu = [
-  { name: 'Bowel Movement', href: '/bm-log', icon: Activity },
-  { name: 'Food Intake', href: '/food-log', icon: Utensils },
-  { name: 'Symptoms', href: '/symptoms-log', icon: AlertCircle },
-  { name: 'Sleep', href: '/sleep-log', icon: Moon },
-  { name: 'Stress', href: '/stress-log', icon: Brain },
-  { name: 'Hydration', href: '/hydration-log', icon: Droplet },
-  { name: 'Menstrual Cycle', href: '/menstrual-cycle-log', icon: Heart },
-  { name: 'Medication', href: '/medication-log', icon: Pill },
-  { name: 'Exercise', href: '/exercise-log', icon: Dumbbell },
+interface LoggingMenuItem {
+  name: string;
+  href: string;
+  icon: typeof Activity;
+  group: 'core' | 'lifestyle' | 'context';
+}
+
+const loggingSubmenu: LoggingMenuItem[] = [
+  { name: 'Bowel Movement', href: '/bm-log', icon: Activity, group: 'core' },
+  { name: 'Symptoms', href: '/symptoms-log', icon: AlertCircle, group: 'core' },
+  { name: 'Food Intake', href: '/food-log', icon: Utensils, group: 'core' },
+  { name: 'Hydration', href: '/hydration-log', icon: Droplet, group: 'core' },
+  { name: 'Sleep', href: '/sleep-log', icon: Moon, group: 'lifestyle' },
+  { name: 'Stress', href: '/stress-log', icon: Brain, group: 'lifestyle' },
+  { name: 'Exercise', href: '/exercise-log', icon: Dumbbell, group: 'lifestyle' },
+  { name: 'Medication', href: '/medication-log', icon: Pill, group: 'context' },
+  { name: 'Menstrual Cycle', href: '/menstrual-cycle-log', icon: Heart, group: 'context' },
+];
+
+const loggingGroups: { key: LoggingMenuItem['group']; label: string }[] = [
+  { key: 'core', label: 'Core' },
+  { key: 'lifestyle', label: 'Lifestyle' },
+  { key: 'context', label: 'Context' },
 ];
 
 export default function Sidebar() {
@@ -171,29 +184,38 @@ export default function Sidebar() {
                     </button>
 
                     {expandedLoggingHub && (
-                      <div className="mt-1 ml-2 space-y-1 border-l border-neutral-border pl-2 dark:border-dark-border">
-                        {loggingSubmenu.map((subitem) => {
-                          const SubIcon = subitem.icon;
-                          const subActive = isActive(subitem.href);
-
+                      <div className="mt-1 ml-2 border-l border-neutral-border pl-2 dark:border-dark-border">
+                        {loggingGroups.map((group, groupIdx) => {
+                          const groupItems = loggingSubmenu.filter((s) => s.group === group.key);
                           return (
-                            <Link
-                              key={subitem.name}
-                              to={subitem.href}
-                              className={`
-                                flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium
-                                transition-colors duration-150
-                                ${
-                                  subActive
-                                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                                    : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
-                                }
-                              `}
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              <SubIcon className="h-4 w-4" />
-                              <span className="text-xs">{subitem.name}</span>
-                            </Link>
+                            <div key={group.key} className={groupIdx > 0 ? 'mt-1 pt-1 border-t border-neutral-border/50 dark:border-dark-border/50' : ''}>
+                              <span className="block px-4 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/40">
+                                {group.label}
+                              </span>
+                              {groupItems.map((subitem) => {
+                                const SubIcon = subitem.icon;
+                                const subActive = isActive(subitem.href);
+                                return (
+                                  <Link
+                                    key={subitem.name}
+                                    to={subitem.href}
+                                    className={`
+                                      flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium
+                                      transition-colors duration-150
+                                      ${
+                                        subActive
+                                          ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                                          : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
+                                      }
+                                    `}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                  >
+                                    <SubIcon className="h-4 w-4" />
+                                    <span className="text-xs">{subitem.name}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
                           );
                         })}
                       </div>

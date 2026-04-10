@@ -26,20 +26,25 @@ import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget
 
 interface QuickAction {
   label: string;
+  shortLabel: string;
   path: string;
   icon: LucideIcon;
+  tier: 'primary' | 'secondary';
 }
 
 const quickActions: QuickAction[] = [
-  { label: 'Bowel Movement', path: '/bm-log', icon: Activity },
-  { label: 'Food', path: '/food-log', icon: Utensils },
-  { label: 'Symptoms', path: '/symptoms-log', icon: AlertCircle },
-  { label: 'Sleep', path: '/sleep-log', icon: Moon },
-  { label: 'Stress', path: '/stress-log', icon: Brain },
-  { label: 'Hydration', path: '/hydration-log', icon: Droplet },
-  { label: 'Cycle', path: '/menstrual-cycle-log', icon: Heart },
-  { label: 'Medication', path: '/medication-log', icon: Pill },
+  { label: 'Bowel Movement', shortLabel: 'BM', path: '/bm-log', icon: Activity, tier: 'primary' },
+  { label: 'Symptoms', shortLabel: 'Symptoms', path: '/symptoms-log', icon: AlertCircle, tier: 'primary' },
+  { label: 'Food', shortLabel: 'Food', path: '/food-log', icon: Utensils, tier: 'primary' },
+  { label: 'Hydration', shortLabel: 'Hydration', path: '/hydration-log', icon: Droplet, tier: 'primary' },
+  { label: 'Sleep', shortLabel: 'Sleep', path: '/sleep-log', icon: Moon, tier: 'secondary' },
+  { label: 'Stress', shortLabel: 'Stress', path: '/stress-log', icon: Brain, tier: 'secondary' },
+  { label: 'Medication', shortLabel: 'Meds', path: '/medication-log', icon: Pill, tier: 'secondary' },
+  { label: 'Cycle', shortLabel: 'Cycle', path: '/menstrual-cycle-log', icon: Heart, tier: 'secondary' },
 ];
+
+const primaryActions = quickActions.filter((a) => a.tier === 'primary');
+const secondaryActions = quickActions.filter((a) => a.tier === 'secondary');
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -82,26 +87,58 @@ export default function Dashboard() {
           />
 
           <Card variant="elevated" padding="sm">
-            <div className="flex items-center justify-between mb-3 px-2 pt-1">
-              <h2 className="text-body-md font-sora font-semibold text-neutral-text dark:text-dark-text">
-                Quick Log
-              </h2>
+            <div className="flex items-center justify-between mb-4 px-2 pt-1">
+              <div>
+                <h2 className="text-body-md font-sora font-semibold text-neutral-text dark:text-dark-text">
+                  Quick Log
+                </h2>
+                <p className="text-body-xs text-neutral-muted dark:text-dark-muted mt-0.5">
+                  Tap to start a new entry
+                </p>
+              </div>
               <Plus className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
             </div>
 
-            <div className="grid grid-cols-4 gap-2 md:grid-cols-8">
-              {quickActions.map((action) => {
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 mb-3">
+              {primaryActions.map((action) => {
                 const Icon = action.icon;
-
                 return (
                   <button
                     key={action.path}
                     onClick={() => navigate(action.path)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border hover:border-brand-500/50 dark:hover:border-brand-500/30 hover:bg-brand-500/5 dark:hover:bg-brand-500/10 transition-all group"
+                    className="flex flex-col items-center gap-2.5 p-4 rounded-xl bg-brand-500/8 dark:bg-brand-500/12 border border-brand-500/20 dark:border-brand-500/25 hover:bg-brand-500/14 dark:hover:bg-brand-500/20 hover:border-brand-500/35 transition-all group"
                   >
-                    <Icon className="h-4 w-4 text-brand-500 group-hover:scale-110 transition-transform" />
-                    <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted group-hover:text-neutral-text dark:group-hover:text-dark-text text-center leading-tight">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/15 dark:bg-brand-500/20 group-hover:bg-brand-500/25 transition-colors">
+                      <Icon className="h-4 w-4 text-brand-600 dark:text-brand-300 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-semibold text-neutral-text dark:text-dark-text text-center leading-tight">
                       {action.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 mb-2.5 px-1">
+              <div className="flex-1 h-px bg-neutral-border dark:bg-dark-border" />
+              <span className="text-[10px] font-medium uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/50">
+                Lifestyle
+              </span>
+              <div className="flex-1 h-px bg-neutral-border dark:bg-dark-border" />
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {secondaryActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <button
+                    key={action.path}
+                    onClick={() => navigate(action.path)}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border hover:border-brand-500/30 dark:hover:border-brand-500/25 hover:bg-brand-500/5 dark:hover:bg-brand-500/8 transition-all group"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-neutral-muted dark:text-dark-muted group-hover:text-brand-500 dark:group-hover:text-brand-300 transition-colors" />
+                    <span className="text-[10px] font-medium text-neutral-muted dark:text-dark-muted group-hover:text-neutral-text dark:group-hover:text-dark-text text-center leading-tight">
+                      {action.shortLabel}
                     </span>
                   </button>
                 );
