@@ -10,6 +10,7 @@ import {
   Pill,
   AlertCircle,
   Heart,
+  Dumbbell,
   Plus,
   type LucideIcon,
 } from 'lucide-react';
@@ -39,6 +40,7 @@ const quickActions: QuickAction[] = [
   { label: 'Hydration', shortLabel: 'Hydration', path: '/hydration-log', icon: Droplet, tier: 'primary' },
   { label: 'Sleep', shortLabel: 'Sleep', path: '/sleep-log', icon: Moon, tier: 'secondary' },
   { label: 'Stress', shortLabel: 'Stress', path: '/stress-log', icon: Brain, tier: 'secondary' },
+  { label: 'Exercise', shortLabel: 'Exercise', path: '/exercise-log', icon: Dumbbell, tier: 'secondary' },
   { label: 'Medication', shortLabel: 'Meds', path: '/medication-log', icon: Pill, tier: 'secondary' },
   { label: 'Cycle', shortLabel: 'Cycle', path: '/menstrual-cycle-log', icon: Heart, tier: 'secondary' },
 ];
@@ -127,7 +129,7 @@ export default function Dashboard() {
               <div className="flex-1 h-px bg-neutral-border dark:bg-dark-border" />
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {secondaryActions.map((action) => {
                 const Icon = action.icon;
                 return (
