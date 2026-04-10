@@ -165,7 +165,7 @@ export default function Insights() {
               <div>
                 <p className="text-body-sm font-medium text-brand-700/90 dark:text-brand-300/90">Your patterns are still building</p>
                 <p className="mt-0.5 text-body-sm text-brand-700/65 dark:text-brand-300/65">
-                  Keep logging consistently and GutWise will surface personalized patterns over time. Earlier insights are shown below.
+                  Keep logging consistently and GutWise will surface personalized patterns over time. Any available observations are shown below.
                 </p>
               </div>
             </div>
@@ -309,8 +309,8 @@ export default function Insights() {
 
                 <div className="mb-lg rounded-xl border border-brand-700/18 bg-brand-500/04 dark:bg-brand-500/05 px-md py-sm">
                   <p className="text-body-sm text-brand-700/85 dark:text-brand-300/85 leading-relaxed">
-                    <span className="font-medium">How patterns are found: </span>
-                    GutWise identifies patterns by comparing days with a given factor against days without it. Confidence grows the more consistently the same signal appears.
+                    <span className="font-medium">About these observations: </span>
+                    GutWise surfaces patterns by comparing days when a factor was present against days it wasn't. Confidence grows as the same signal appears consistently over time.
                   </p>
                 </div>
 

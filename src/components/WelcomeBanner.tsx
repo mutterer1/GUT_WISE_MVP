@@ -139,18 +139,18 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
 
   return (
     <div
-      className="mb-lg bg-white rounded-2xl border border-neutral-border shadow-sm overflow-hidden"
+      className="mb-lg bg-white dark:bg-dark-surface rounded-2xl border border-neutral-border dark:border-dark-border shadow-sm dark:shadow-none overflow-hidden"
       style={{ animation: 'welcomeSlideDown 0.4s ease-out both' }}
     >
       <div className="p-lg">
         <div className="flex items-start justify-between gap-md">
           <div className="flex-1 min-w-0">
-            <h3 className="text-h4 font-sora font-semibold text-neutral-text">
+            <h3 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
               {userName ? `Welcome back, ${userName}` : 'Welcome to GutWise'}
             </h3>
             {showOnboarding && (
-              <p className="text-body-sm text-neutral-muted mt-1">
-                Complete these steps to get the most out of your health tracking.
+              <p className="text-body-sm text-neutral-muted dark:text-dark-muted mt-1">
+                A few first logs will help GutWise start finding your patterns.
               </p>
             )}
           </div>
@@ -158,60 +158,60 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
           <div className="flex items-center gap-sm flex-shrink-0">
             {streakLoading ? (
               <div className="animate-pulse flex items-center gap-2">
-                <div className="h-8 w-8 bg-gray-200 rounded-lg" />
-                <div className="h-4 w-16 bg-gray-200 rounded" />
+                <div className="h-8 w-8 bg-gray-200 dark:bg-dark-border rounded-lg" />
+                <div className="h-4 w-16 bg-gray-200 dark:bg-dark-border rounded" />
               </div>
             ) : streakDays > 0 || loggedToday ? (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-100 border border-brand-300">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-100 dark:bg-brand-500/12 border border-brand-300 dark:border-brand-500/25">
                 <div className={`flex items-center justify-center h-7 w-7 rounded-lg ${
-                  streakDays >= 7 ? 'bg-orange-100' : 'bg-brand-200'
+                  streakDays >= 7 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-brand-200 dark:bg-brand-500/20'
                 }`}>
                   <Flame
-                    className={`h-4 w-4 ${streakDays >= 7 ? 'text-orange-500' : 'text-brand-700'}`}
+                    className={`h-4 w-4 ${streakDays >= 7 ? 'text-orange-500' : 'text-brand-700 dark:text-brand-300'}`}
                     style={streakDays >= 7 ? { animation: 'flamePulse 2s ease-in-out infinite' } : undefined}
                   />
                 </div>
                 <div>
-                  <p className="text-body-sm font-semibold text-brand-900 leading-none">
+                  <p className="text-body-sm font-semibold text-brand-900 dark:text-brand-100 leading-none">
                     {streakDays} day{streakDays !== 1 ? 's' : ''}
                   </p>
-                  <p className="text-xs text-brand-700 leading-none mt-0.5">streak</p>
+                  <p className="text-xs text-brand-700 dark:text-brand-300 leading-none mt-0.5">streak</p>
                 </div>
                 {loggedToday && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium ml-1">
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium ml-1">
                     <CheckCircle className="h-3 w-3" />
                     Today
                   </span>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <p className="text-body-sm text-neutral-muted">Start your streak today</p>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-dark-elevated border border-gray-200 dark:border-dark-border">
+                <Calendar className="h-4 w-4 text-gray-400 dark:text-dark-muted" />
+                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Start your streak today</p>
               </div>
             )}
 
             {showOnboarding && (
               <button
                 onClick={handleDismiss}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors"
                 aria-label="Dismiss welcome banner"
               >
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-4 w-4 text-gray-400 dark:text-dark-muted" />
               </button>
             )}
           </div>
         </div>
 
         {!streakLoading && !showOnboarding && (
-          <p className="mt-2 text-body-sm text-neutral-muted">
+          <p className="mt-2 text-body-sm text-neutral-muted dark:text-dark-muted">
             {celebration || 'Log something each day to keep your streak going.'}
           </p>
         )}
 
         {showOnboarding && (
           <>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-md mb-md">
+            <div className="w-full bg-gray-100 dark:bg-dark-border rounded-full h-1.5 mt-md mb-md">
               <div
                 className="h-1.5 bg-brand-500 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
@@ -228,19 +228,19 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
                     disabled={step.done}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       step.done
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-gray-50 border-gray-200 hover:border-brand-300 hover:bg-brand-100 hover:shadow-sm'
+                        ? 'bg-green-50 dark:bg-green-900/15 border-green-200 dark:border-green-800/30'
+                        : 'bg-gray-50 dark:bg-dark-elevated border-gray-200 dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-500/40 hover:bg-brand-100 dark:hover:bg-brand-500/08 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       {step.done ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
                       ) : (
-                        <Icon className="h-4 w-4 text-gray-400" />
+                        <Icon className="h-4 w-4 text-gray-400 dark:text-dark-muted" />
                       )}
                     </div>
-                    <p className={`text-xs font-medium leading-tight ${step.done ? 'text-green-700' : 'text-gray-700'}`}>
-                      {step.done ? 'Done' : step.label}
+                    <p className={`text-xs font-medium leading-tight ${step.done ? 'text-green-700 dark:text-green-400' : 'text-gray-700 dark:text-dark-text'}`}>
+                      {step.label}
                     </p>
                   </button>
                 );

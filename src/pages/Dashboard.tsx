@@ -154,7 +154,7 @@ export default function Dashboard() {
                 Today's Detail
               </h2>
               <p className="text-body-sm text-neutral-muted dark:text-dark-muted mt-0.5">
-                Individual health markers logged so far today
+                Your tracked health metrics for today
               </p>
             </div>
 

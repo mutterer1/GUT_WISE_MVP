@@ -261,9 +261,9 @@ export default function Reports() {
             <div className="w-12 h-12 rounded-xl bg-brand-500/10 dark:bg-brand-500/12 flex items-center justify-center mx-auto mb-md">
               <ClipboardList className="h-6 w-6 text-brand-500" />
             </div>
-            <p className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-1">No data for this period</p>
-            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-              Try selecting a different date range, or continue logging to build your report.
+            <p className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-1">No bowel movement logs found</p>
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted max-w-sm mx-auto leading-relaxed">
+              Reports require at least one bowel movement log in the selected period. Try a different date range or continue logging daily.
             </p>
           </div>
         )}

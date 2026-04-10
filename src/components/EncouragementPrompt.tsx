@@ -75,33 +75,33 @@ export default function EncouragementPrompt({ onNavigate }: EncouragementPromptP
 
   return (
     <div
-      className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4"
+      className="mb-6 bg-brand-500/05 dark:bg-brand-500/08 border border-brand-500/20 dark:border-brand-500/18 rounded-xl p-4"
       style={{ animation: 'encouragementFade 0.3s ease-out both' }}
     >
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Sparkles className="h-5 w-5 text-amber-600" />
+        <div className="w-10 h-10 bg-brand-500/10 dark:bg-brand-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Sparkles className="h-5 w-5 text-brand-500 dark:text-brand-300" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-amber-900 mb-1">Time for a quick check-in?</p>
-          <p className="text-xs text-amber-700 leading-relaxed">{message}</p>
+          <p className="text-sm font-medium text-neutral-text dark:text-dark-text mb-1">Ready to log today?</p>
+          <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">{message}</p>
           <button
             onClick={() => {
               handleDismiss();
               onNavigate('/bm-log');
             }}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-100 transition-colors"
           >
-            Start logging
+            Start a log entry
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
         <button
           onClick={handleDismiss}
-          className="p-1 rounded-lg hover:bg-amber-100 transition-colors flex-shrink-0"
+          className="p-1 rounded-lg hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors flex-shrink-0"
           aria-label="Dismiss encouragement"
         >
-          <X className="h-4 w-4 text-amber-400" />
+          <X className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
         </button>
       </div>
     </div>

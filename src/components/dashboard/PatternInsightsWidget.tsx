@@ -103,8 +103,8 @@ export default function PatternInsightsWidget({
     } else if (stressLevel !== null && stressLevel >= 7) {
       insights.push({
         icon: AlertCircle,
-        title: 'Elevated stress detected',
-        message: 'High stress may affect digestion. Consider relaxation techniques when possible.',
+        title: 'Higher stress today',
+        message: 'Stress can influence gut motility and discomfort. A short break or relaxation practice may help.',
         type: 'suggestion',
         confidence: 'high',
       });
@@ -113,8 +113,8 @@ export default function PatternInsightsWidget({
     if (insights.length === 0) {
       insights.push({
         icon: Brain,
-        title: 'Building your health profile',
-        message: 'Continue logging to help identify patterns. Insights become more accurate over time.',
+        title: 'Log something today',
+        message: 'Once you have a few entries for today, GutWise will surface observations based on what you track.',
         type: 'neutral',
         confidence: 'low',
       });

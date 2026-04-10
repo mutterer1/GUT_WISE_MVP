@@ -75,9 +75,9 @@ const updateMessages = [
 const deleteMessages = [
   'Entry removed.',
   'Deleted successfully.',
-  'Gone. Like it was never there.',
-  'Removed from your records.',
   'Entry cleared.',
+  'Removed from your records.',
+  'Removed.',
 ];
 
 const emptyStateMessages: Record<string, { title: string; subtitle: string; hint: string }> = {
@@ -122,9 +122,9 @@ const emptyStateMessages: Record<string, { title: string; subtitle: string; hint
     hint: 'Log a workout to start tracking how movement affects your gut health.',
   },
   insights: {
-    title: 'Your Insights Are Brewing',
-    subtitle: 'We need a few days of data to find meaningful patterns. The more you log, the smarter your insights become.',
-    hint: 'Try logging across different categories -- meals, symptoms, sleep -- for the richest analysis.',
+    title: 'Patterns are still forming',
+    subtitle: 'GutWise needs a few days of consistent logs to find reliable patterns. The more categories you track, the sharper your insights become.',
+    hint: 'Try logging across meals, symptoms, sleep, and hydration for the richest analysis.',
   },
 };
 
