@@ -9,6 +9,10 @@ import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../
 import { useRankedInsights } from '../hooks/useRankedInsights';
 import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
 
+function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 type InsightSource = 'ranked_primary' | 'legacy_fallback';
 
 export default function Insights() {
@@ -171,16 +175,26 @@ export default function Insights() {
             </div>
           ) : hasRankedCandidates ? (
             <section className="mb-10">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your Insights</h2>
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Insights</h2>
+                    {explanationOrigin !== 'none' && !explanationError && (
+                      <span className="rounded-full bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/12 border border-[#7C5CFF]/20 px-2 py-0.5 text-xs font-medium text-[#7C5CFF] dark:text-[#B8A8FF]">
+                        {explanationOrigin === 'cache' ? 'Explanations cached' : 'Explanations generated'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {rankedInsights?.input_day_count ?? 0} days analyzed
+                    {rankedInsights?.analyzed_from && rankedInsights?.analyzed_to
+                      ? ` · ${formatShortDate(rankedInsights.analyzed_from)} – ${formatShortDate(rankedInsights.analyzed_to)}`
+                      : ''}
                     {rankedInsights?.medical_context_applied ? ' · Medical context applied' : ''}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   {explanationError && (
                     <div className="flex items-center gap-1.5 text-sm text-[#8D5D62] dark:text-[#D9B3B7]">
                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -201,7 +215,7 @@ export default function Insights() {
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4" />
-                        Generate explanations
+                        {explanationOrigin === 'none' ? 'Generate explanations' : 'Regenerate'}
                       </>
                     )}
                   </button>
@@ -250,30 +264,30 @@ export default function Insights() {
             /* Fallback: legacy insights path */
             loading ? (
               <div className="flex h-64 items-center justify-center">
-                <RefreshCw className="h-8 w-8 animate-spin text-teal-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-[#4A8FA8]" />
               </div>
             ) : insights.length === 0 ? (
               <div
-                className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[100px]"
+                className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] p-12 text-center shadow-sm mt-[60px]"
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-50 dark:bg-teal-900/30"
+                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4A8FA8]/08 dark:bg-[#4A8FA8]/12"
                   style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
                 >
-                  <Brain className="h-10 w-10 text-teal-400" />
+                  <Brain className="h-8 w-8 text-[#4A8FA8] dark:text-[#8EBFD8]" />
                 </div>
 
-                <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  Your Insights Are Brewing
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  Building your pattern library
                 </h3>
 
                 <p className="mx-auto mb-2 max-w-md text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                  We need a few days of data to identify meaningful patterns. The more consistently you log, the better your insights become.
+                  GutWise needs several days of consistent logging to identify reliable patterns. The more you log, the sharper your insights become.
                 </p>
 
                 <p className="mx-auto mb-8 max-w-sm text-xs text-gray-400 dark:text-gray-500">
-                  Logging meals, symptoms, hydration, sleep, and stress creates the strongest analysis.
+                  Log meals, symptoms, hydration, sleep, and stress for the strongest analysis.
                 </p>
 
                 <Button onClick={handleGenerateInsights} disabled={generating}>
