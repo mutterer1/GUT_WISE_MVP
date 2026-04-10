@@ -214,12 +214,12 @@ export default function Insights() {
                     {explanationLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Explaining patterns…
+                        Explaining...
                       </>
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4" />
-                        {explanationOrigin === 'none' ? 'Explain these patterns' : 'Refresh explanations'}
+                        {explanationOrigin === 'none' ? 'Explain Patterns' : 'Refresh Explanations'}
                       </>
                     )}
                   </button>
@@ -296,7 +296,7 @@ export default function Insights() {
                 </p>
 
                 <Button onClick={handleGenerateInsights} disabled={generating}>
-                  {generating ? 'Analyzing…' : 'Check for patterns now'}
+                  {generating ? 'Analyzing...' : 'Analyze Patterns'}
                 </Button>
               </div>
             ) : (

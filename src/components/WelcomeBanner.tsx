@@ -25,7 +25,7 @@ export default function WelcomeBanner({ userName }: WelcomeBannerProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [steps, setSteps] = useState<OnboardingStep[]>([
     { key: 'bm', label: 'Log a bowel movement', icon: Activity, path: '/bm-log', table: 'bm_logs', done: false },
-    { key: 'food', label: 'Record a meal', icon: Utensils, path: '/food-log', table: 'food_logs', done: false },
+    { key: 'food', label: 'Log a meal', icon: Utensils, path: '/food-log', table: 'food_logs', done: false },
     { key: 'hydration', label: 'Track hydration', icon: Droplet, path: '/hydration-log', table: 'hydration_logs', done: false },
     { key: 'sleep', label: 'Log your sleep', icon: Moon, path: '/sleep-log', table: 'sleep_logs', done: false },
   ]);

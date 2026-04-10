@@ -225,7 +225,7 @@ export default function Landing() {
             </div>
 
             <div className="border-t border-neutral-border dark:border-dark-border mt-xl pt-xl text-center text-body-sm text-neutral-muted dark:text-dark-muted">
-              <p>&copy; 2024 GutWise. All rights reserved.</p>
+              <p>&copy; 2026 GutWise. All rights reserved.</p>
             </div>
           </div>
         </footer>
