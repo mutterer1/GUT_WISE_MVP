@@ -25,19 +25,70 @@ import HydrationWidget from '../components/dashboard/HydrationWidget';
 import MedicationWidget from '../components/dashboard/MedicationWidget';
 import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget';
 
+interface QuickActionHoverClasses {
+  button: string;
+  iconBg: string;
+  iconColor: string;
+}
+
 interface QuickAction {
   label: string;
   shortLabel: string;
   path: string;
   icon: LucideIcon;
   tier: 'primary' | 'secondary';
+  hoverClasses?: QuickActionHoverClasses;
 }
 
 const quickActions: QuickAction[] = [
-  { label: 'Bowel Movement', shortLabel: 'BM', path: '/bm-log', icon: Activity, tier: 'primary' },
-  { label: 'Symptoms', shortLabel: 'Symptoms', path: '/symptoms-log', icon: AlertCircle, tier: 'primary' },
-  { label: 'Food', shortLabel: 'Food', path: '/food-log', icon: Utensils, tier: 'primary' },
-  { label: 'Hydration', shortLabel: 'Hydration', path: '/hydration-log', icon: Droplet, tier: 'primary' },
+  {
+    label: 'Bowel Movement',
+    shortLabel: 'BM',
+    path: '/bm-log',
+    icon: Activity,
+    tier: 'primary',
+    hoverClasses: {
+      button: 'hover:bg-amber-400/10 hover:border-amber-500/30 dark:hover:bg-amber-400/10 dark:hover:border-amber-500/25',
+      iconBg: 'group-hover:bg-amber-400/20 dark:group-hover:bg-amber-400/20',
+      iconColor: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
+    },
+  },
+  {
+    label: 'Symptoms',
+    shortLabel: 'Symptoms',
+    path: '/symptoms-log',
+    icon: AlertCircle,
+    tier: 'primary',
+    hoverClasses: {
+      button: 'hover:bg-rose-400/10 hover:border-rose-400/30 dark:hover:bg-rose-400/10 dark:hover:border-rose-400/25',
+      iconBg: 'group-hover:bg-rose-400/20 dark:group-hover:bg-rose-400/20',
+      iconColor: 'group-hover:text-rose-500 dark:group-hover:text-rose-400',
+    },
+  },
+  {
+    label: 'Food',
+    shortLabel: 'Food',
+    path: '/food-log',
+    icon: Utensils,
+    tier: 'primary',
+    hoverClasses: {
+      button: 'hover:bg-emerald-400/10 hover:border-emerald-500/30 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-500/25',
+      iconBg: 'group-hover:bg-emerald-400/20 dark:group-hover:bg-emerald-400/20',
+      iconColor: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
+    },
+  },
+  {
+    label: 'Hydration',
+    shortLabel: 'Hydration',
+    path: '/hydration-log',
+    icon: Droplet,
+    tier: 'primary',
+    hoverClasses: {
+      button: 'hover:bg-sky-400/10 hover:border-sky-400/30 dark:hover:bg-sky-400/10 dark:hover:border-sky-400/25',
+      iconBg: 'group-hover:bg-sky-400/20 dark:group-hover:bg-sky-400/20',
+      iconColor: 'group-hover:text-sky-500 dark:group-hover:text-sky-400',
+    },
+  },
   { label: 'Sleep', shortLabel: 'Sleep', path: '/sleep-log', icon: Moon, tier: 'secondary' },
   { label: 'Stress', shortLabel: 'Stress', path: '/stress-log', icon: Brain, tier: 'secondary' },
   { label: 'Exercise', shortLabel: 'Exercise', path: '/exercise-log', icon: Dumbbell, tier: 'secondary' },
@@ -106,14 +157,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 mb-3">
               {primaryActions.map((action) => {
                 const Icon = action.icon;
+                const hc = action.hoverClasses;
                 return (
                   <button
                     key={action.path}
                     onClick={() => navigate(action.path)}
-                    className="flex flex-col items-center gap-2.5 p-4 rounded-xl bg-brand-500/8 dark:bg-brand-500/12 border border-brand-500/20 dark:border-brand-500/25 hover:bg-brand-500/14 dark:hover:bg-brand-500/20 hover:border-brand-500/35 transition-all group"
+                    className={`flex flex-col items-center gap-2.5 p-4 rounded-xl bg-brand-500/8 dark:bg-brand-500/12 border border-brand-500/20 dark:border-brand-500/25 transition-all group ${hc?.button ?? 'hover:bg-brand-500/14 dark:hover:bg-brand-500/20 hover:border-brand-500/35'}`}
                   >
-                    <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/15 dark:bg-brand-500/20 group-hover:bg-brand-500/25 transition-colors">
-                      <Icon className="h-4 w-4 text-brand-600 dark:text-brand-300 group-hover:scale-110 transition-transform" />
+                    <div className={`flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/15 dark:bg-brand-500/20 transition-colors ${hc?.iconBg ?? 'group-hover:bg-brand-500/25'}`}>
+                      <Icon className={`h-4 w-4 text-brand-600 dark:text-brand-300 group-hover:scale-110 transition-transform transition-colors ${hc?.iconColor ?? ''}`} />
                     </div>
                     <span className="text-xs font-semibold text-neutral-text dark:text-dark-text text-center leading-tight">
                       {action.label}
