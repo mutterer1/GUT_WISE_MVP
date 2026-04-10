@@ -39,22 +39,22 @@ export default function BristolDistributionChart({ data }: BristolDistributionCh
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Bristol Stool Scale Distribution</h3>
+      <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Bristol Stool Scale Distribution</h3>
 
       <div className="space-y-3">
         {data.map((item) => (
           <div key={item.type} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700 w-6">Type {item.type}</span>
-                <span className="text-gray-600 text-xs">{bristolLabels[item.type]}</span>
+                <span className="font-medium text-neutral-text dark:text-dark-text w-6">Type {item.type}</span>
+                <span className="text-neutral-muted dark:text-dark-muted text-xs">{bristolLabels[item.type]}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-600">{item.count}</span>
-                <span className="font-semibold text-gray-900 w-12 text-right">{item.percentage}%</span>
+                <span className="text-neutral-muted dark:text-dark-muted">{item.count}</span>
+                <span className="font-semibold text-neutral-text dark:text-dark-text w-12 text-right">{item.percentage}%</span>
               </div>
             </div>
-            <div className="relative h-6 bg-gray-100 rounded-full overflow-hidden">
+            <div className="relative h-6 bg-neutral-border dark:bg-dark-border rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500 flex items-center justify-end px-2"
                 style={{
@@ -73,8 +73,8 @@ export default function BristolDistributionChart({ data }: BristolDistributionCh
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-        <p className="text-xs text-blue-800">
+      <div className="mt-4 p-3 bg-brand-500/8 dark:bg-brand-500/12 rounded-lg border border-brand-500/20 dark:border-brand-500/25">
+        <p className="text-xs text-brand-700 dark:text-brand-300">
           <strong>Ideal range:</strong> Types 3-4 indicate normal, healthy stools
         </p>
       </div>

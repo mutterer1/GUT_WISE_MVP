@@ -21,7 +21,7 @@ export default function SleepSymptomChart({ data }: SleepSymptomChartProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Sleep Quality vs Symptom Severity</h3>
+      <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Sleep Quality vs Symptom Severity</h3>
 
       <div className="relative" style={{ height: `${chartHeight}px` }}>
         <svg width="100%" height={chartHeight} className="overflow-visible">
@@ -117,19 +117,19 @@ export default function SleepSymptomChart({ data }: SleepSymptomChartProps) {
         </svg>
       </div>
 
-      <div className="flex gap-6 pt-2 border-t text-sm">
+      <div className="flex gap-6 pt-2 border-t border-neutral-border dark:border-dark-border text-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-0.5 bg-blue-600 rounded" />
-          <span className="text-gray-700">Sleep Hours</span>
+          <span className="text-neutral-muted dark:text-dark-muted">Sleep Hours</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-0.5 bg-red-500 rounded border-t-2 border-dashed border-red-500" />
-          <span className="text-gray-700">Symptom Severity</span>
+          <span className="text-neutral-muted dark:text-dark-muted">Symptom Severity</span>
         </div>
       </div>
 
-      <div className="p-3 bg-amber-50 rounded-lg">
-        <p className="text-xs text-amber-800">
+      <div className="p-3 bg-brand-500/8 dark:bg-brand-500/12 rounded-lg border border-brand-500/20 dark:border-brand-500/25">
+        <p className="text-xs text-brand-700 dark:text-brand-300">
           <strong>Note:</strong> Better sleep quality (higher hours) typically correlates with lower symptom severity
         </p>
       </div>

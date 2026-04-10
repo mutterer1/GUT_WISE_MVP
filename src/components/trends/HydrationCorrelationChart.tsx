@@ -20,7 +20,7 @@ export default function HydrationCorrelationChart({ data }: HydrationCorrelation
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Hydration vs Stool Consistency</h3>
+      <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Hydration vs Stool Consistency</h3>
 
       <div className="relative" style={{ height: `${chartHeight}px` }}>
         <div className="absolute inset-0 flex items-end justify-between gap-1">
@@ -59,7 +59,7 @@ export default function HydrationCorrelationChart({ data }: HydrationCorrelation
                   <div>{item.totalHydration}ml water</div>
                   {bristolScale !== null && <div>Bristol: {bristolScale.toFixed(1)}</div>}
                 </div>
-                <div className="mt-2 text-xs text-gray-600 text-center">
+                <div className="mt-2 text-xs text-neutral-muted dark:text-dark-muted text-center">
                   {index % Math.ceil(data.length / 7) === 0 ? dateLabel : ''}
                 </div>
               </div>
@@ -68,32 +68,32 @@ export default function HydrationCorrelationChart({ data }: HydrationCorrelation
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-2 border-t text-xs">
+      <div className="grid grid-cols-2 gap-4 pt-2 border-t border-neutral-border dark:border-dark-border text-xs">
         <div>
-          <div className="font-semibold text-gray-700 mb-2">Hydration Scale</div>
+          <div className="font-semibold text-neutral-text dark:text-dark-text mb-2">Hydration Scale</div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-400 rounded" />
-            <span className="text-gray-600">Daily water intake (ml)</span>
+            <span className="text-neutral-muted dark:text-dark-muted">Daily water intake (ml)</span>
           </div>
         </div>
         <div>
-          <div className="font-semibold text-gray-700 mb-2">Bristol Scale</div>
+          <div className="font-semibold text-neutral-text dark:text-dark-text mb-2">Bristol Scale</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#8B4513' }} />
-              <span className="text-gray-600">Hard (1-2)</span>
+              <span className="text-neutral-muted dark:text-dark-muted">Hard (1-2)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#10B981' }} />
-              <span className="text-gray-600">Normal (3-4)</span>
+              <span className="text-neutral-muted dark:text-dark-muted">Normal (3-4)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#F59E0B' }} />
-              <span className="text-gray-600">Soft (5)</span>
+              <span className="text-neutral-muted dark:text-dark-muted">Soft (5)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#EF4444' }} />
-              <span className="text-gray-600">Liquid (6-7)</span>
+              <span className="text-neutral-muted dark:text-dark-muted">Liquid (6-7)</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Droplet, Activity, Calendar, CheckCircle } from 'lucide-react';
+import { Sun, Moon, Calendar, CheckCircle } from 'lucide-react';
 import Card from '../Card';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -136,7 +136,7 @@ export default function TodaySummaryWidget({
     return (
       <Card variant="elevated">
         <div className="animate-pulse">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between">
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
@@ -145,11 +145,6 @@ export default function TodaySummaryWidget({
               <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-3/4"></div>
             </div>
             <div className="ml-4 h-10 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0"></div>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 bg-neutral-border dark:bg-dark-border rounded-xl"></div>
-            ))}
           </div>
         </div>
       </Card>
@@ -161,7 +156,7 @@ export default function TodaySummaryWidget({
       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/08 dark:to-transparent pointer-events-none" />
 
       <div className="relative">
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 flex-shrink-0">
@@ -206,53 +201,6 @@ export default function TodaySummaryWidget({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="h-3.5 w-3.5 text-signal-500" />
-              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">BM</span>
-            </div>
-            <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-              {bmCount}
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="h-3.5 w-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Meals</span>
-            </div>
-            <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-              {totalFood}
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Droplet className="h-3.5 w-3.5 text-brand-300" />
-              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Water</span>
-            </div>
-            <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-              {hydrationLiters}<span className="text-body-sm font-normal text-neutral-muted dark:text-dark-muted">L</span>
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-neutral-surface dark:bg-dark-surface border border-neutral-border dark:border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Moon className="h-3.5 w-3.5 text-brand-700 dark:text-brand-300" />
-              <span className="text-xs font-medium text-neutral-muted dark:text-dark-muted uppercase tracking-wide">Sleep</span>
-            </div>
-            <p className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text">
-              {sleepHours !== null ? (
-                <>{sleepHours}<span className="text-body-sm font-normal text-neutral-muted dark:text-dark-muted">h</span></>
-              ) : (
-                <span className="text-neutral-muted dark:text-dark-muted">—</span>
-              )}
-            </p>
-          </div>
-        </div>
       </div>
     </Card>
   );

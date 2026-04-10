@@ -40,7 +40,7 @@ export default function SymptomIntensityChart({ data }: SymptomIntensityChartPro
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Symptom Intensity Over Time</h3>
+      <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Symptom Intensity Over Time</h3>
 
       <div className="relative" style={{ height: `${chartHeight}px` }}>
         <svg width="100%" height={chartHeight} className="overflow-visible">
@@ -134,14 +134,14 @@ export default function SymptomIntensityChart({ data }: SymptomIntensityChartPro
         </svg>
       </div>
 
-      <div className="flex flex-wrap gap-3 pt-2 border-t">
+      <div className="flex flex-wrap gap-3 pt-2 border-t border-neutral-border dark:border-dark-border">
         {symptomTypes.map(symptom => (
           <div key={symptom} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: symptomColors[symptom] || symptomColors.default }}
             />
-            <span className="text-sm text-gray-700 capitalize">{symptom}</span>
+            <span className="text-sm text-neutral-muted dark:text-dark-muted capitalize">{symptom}</span>
           </div>
         ))}
       </div>

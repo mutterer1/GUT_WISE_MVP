@@ -19,9 +19,9 @@ export default function BMFrequencyChart({ data }: BMFrequencyChartProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Daily Frequency Trend</h3>
-        <div className="text-sm text-gray-600">
-          Avg: <span className="font-semibold text-blue-600">{avgFrequency}</span> per day
+        <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Daily Frequency Trend</h3>
+        <div className="text-sm text-neutral-muted dark:text-dark-muted">
+          Avg: <span className="font-semibold text-brand-500 dark:text-brand-300">{avgFrequency}</span> per day
         </div>
       </div>
 
@@ -44,7 +44,7 @@ export default function BMFrequencyChart({ data }: BMFrequencyChartProps) {
                     {item.count} BM{item.count !== 1 ? 's' : ''}
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-600 rotate-0 text-center">
+                <div className="mt-2 text-xs text-neutral-muted dark:text-dark-muted rotate-0 text-center">
                   {index % Math.ceil(data.length / 7) === 0 ? dateLabel : ''}
                 </div>
               </div>
@@ -53,7 +53,7 @@ export default function BMFrequencyChart({ data }: BMFrequencyChartProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
+      <div className="flex items-center justify-between text-xs text-neutral-muted dark:text-dark-muted pt-2 border-t border-neutral-border dark:border-dark-border">
         <span>0 BMs</span>
         <span>{maxCount} BMs</span>
       </div>

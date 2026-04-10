@@ -117,11 +117,13 @@ export default function Sidebar() {
             <Menu className="h-6 w-6 text-neutral-text dark:text-dark-text" />
           )}
         </button>
-        <img
-          src="/logos/gutwise-horizontal-dark.svg"
-          alt="GutWise"
-          style={{ height: '64px', width: 'auto', imageRendering: 'auto' }}
-        />
+        <Link to="/dashboard" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+          <img
+            src="/logos/gutwise-horizontal-dark.svg"
+            alt="GutWise"
+            style={{ height: '64px', width: 'auto', imageRendering: 'auto' }}
+          />
+        </Link>
       </div>
 
       <aside
@@ -134,11 +136,13 @@ export default function Sidebar() {
       >
         <div className="flex h-full flex-col">
           <div className="relative flex items-center justify-start border-b border-neutral-border px-4 py-6 dark:border-dark-border">
-            <img
-              src="/logos/gutwise-horizontal-dark.svg"
-              alt="GutWise"
-              style={{ height: '65px', width: 'auto' }}
-            />
+            <Link to="/dashboard" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+              <img
+                src="/logos/gutwise-horizontal-dark.svg"
+                alt="GutWise"
+                style={{ height: '65px', width: 'auto' }}
+              />
+            </Link>
             <button
               onClick={toggleTheme}
               className="absolute right-4 rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"

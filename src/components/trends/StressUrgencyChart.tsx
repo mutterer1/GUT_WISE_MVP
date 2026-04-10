@@ -20,7 +20,7 @@ export default function StressUrgencyChart({ data }: StressUrgencyChartProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Stress Level vs Bowel Urgency</h3>
+      <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Stress Level vs Bowel Urgency</h3>
 
       <div className="relative" style={{ height: `${chartHeight + 40}px` }}>
         <svg width="100%" height={chartHeight} className="overflow-visible">
@@ -96,24 +96,24 @@ export default function StressUrgencyChart({ data }: StressUrgencyChartProps) {
           })}
         </svg>
 
-        <div className="absolute bottom-0 left-0 right-0 text-center text-xs text-gray-500">
+        <div className="absolute bottom-0 left-0 right-0 text-center text-xs text-neutral-muted dark:text-dark-muted">
           Red numbers indicate high urgency episodes (≥7/10)
         </div>
       </div>
 
-      <div className="flex gap-6 pt-2 border-t text-sm">
+      <div className="flex gap-6 pt-2 border-t border-neutral-border dark:border-dark-border text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-purple-500 rounded opacity-60" />
-          <span className="text-gray-700">Stress Level (bars)</span>
+          <span className="text-neutral-muted dark:text-dark-muted">Stress Level (bars)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-amber-500 rounded-full border-2 border-white" />
-          <span className="text-gray-700">Urgency Level (dots)</span>
+          <span className="text-neutral-muted dark:text-dark-muted">Urgency Level (dots)</span>
         </div>
       </div>
 
-      <div className="p-3 bg-purple-50 rounded-lg">
-        <p className="text-xs text-purple-800">
+      <div className="p-3 bg-brand-500/8 dark:bg-brand-500/12 rounded-lg border border-brand-500/20 dark:border-brand-500/25">
+        <p className="text-xs text-brand-700 dark:text-brand-300">
           <strong>Insight:</strong> Higher stress levels often correlate with increased bowel urgency and frequency
         </p>
       </div>
