@@ -155,7 +155,7 @@ export default function MedicalContextSettings() {
   return (
     <SettingsPageLayout
       title="Medical Context"
-      description="Help GutWise understand your health background so it can give you more relevant insights"
+      description="Your health background helps GutWise surface patterns specific to your situation — not just population-level averages."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -167,8 +167,8 @@ export default function MedicalContextSettings() {
         <div className="space-y-3">
           <Card padding="sm" className="bg-brand-50/50 dark:bg-brand-900/10 border-brand-200/60 dark:border-brand-800/20">
             <p className="text-xs text-brand-700 dark:text-brand-300 leading-relaxed">
-              This information is used only to personalize your gut health insights — not for any other purpose.
-              You control what you add, and you can remove any entry at any time.
+              This stays private to your account and is used only to make your insights more relevant to your health background.
+              You control everything you add here, and can edit or remove any entry at any time.
             </p>
           </Card>
 
@@ -292,8 +292,8 @@ export default function MedicalContextSettings() {
 
           <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              GutWise uses this to make your insights more relevant to your situation. It does not provide medical advice.
-              If anything looks wrong, you can edit or remove it above.
+              GutWise uses this context to surface patterns relevant to your health background. This is not medical advice — always work with your care team for medical decisions.
+              You can update or remove any entry above at any time.
             </p>
           </Card>
         </div>

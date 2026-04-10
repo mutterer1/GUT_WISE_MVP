@@ -146,26 +146,31 @@ export default function MedicalFactForm({
           )}
 
           <div>
-            <label className={labelClasses}>Notes (optional)</label>
+            <label className={labelClasses}>Personal notes <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span></label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any additional notes about this entry"
+              placeholder="e.g. dosage, when diagnosed, or anything that helps you remember context"
               className={inputClasses}
             />
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-white/[0.08]">
-          <Button type="submit" disabled={saving} size="sm">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/[0.08] space-y-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Saved privately to your account. Used only to make your gut health insights more relevant to your situation.
+          </p>
+          <div className="flex gap-3">
+            <Button type="submit" disabled={saving} size="sm">
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
         </div>
       </form>
     </Card>

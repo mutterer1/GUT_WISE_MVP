@@ -33,7 +33,7 @@ interface SeedForm {
 const INTAKE_STATUS_META: Record<string, { icon: typeof Clock; label: string; className: string }> = {
   uploaded: { icon: Upload, label: 'Uploaded', className: 'text-blue-600 dark:text-blue-400' },
   processing: { icon: Clock, label: 'Processing', className: 'text-amber-600 dark:text-amber-400' },
-  review_ready: { icon: AlertTriangle, label: 'Review Ready', className: 'text-amber-600 dark:text-amber-400' },
+  review_ready: { icon: AlertTriangle, label: 'Ready to Review', className: 'text-amber-600 dark:text-amber-400' },
   completed: { icon: CheckCircle, label: 'Completed', className: 'text-green-600 dark:text-green-400' },
   failed: { icon: XCircle, label: 'Failed', className: 'text-red-600 dark:text-red-400' },
 };
@@ -173,8 +173,8 @@ export default function MedicalDocumentIntake() {
     const config = CATEGORY_CONFIGS.find(c => c.key === seedForm.category)!;
     return (
       <SettingsPageLayout
-        title="Add Medical Detail"
-        description="Manually enter a detail from your document. It will be held for your review before influencing any insights."
+        title="Add a Detail from Your Document"
+        description="Enter the detail below. You'll confirm it before it influences any of your insights."
       >
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
         <Card>
@@ -273,7 +273,7 @@ export default function MedicalDocumentIntake() {
   return (
     <SettingsPageLayout
       title="Medical Documents"
-      description="Upload documents from your care team. You review and approve any details before they inform your insights."
+      description="Share documents from your care team. You choose which details to apply — nothing reaches your insights until you personally review and approve it."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -342,7 +342,7 @@ export default function MedicalDocumentIntake() {
                                 <>
                                   <span className="text-[11px] text-gray-300 dark:text-gray-600">&middot;</span>
                                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    {intake.candidate_count} candidate{intake.candidate_count !== 1 ? 's' : ''}
+                                    {intake.candidate_count} detail{intake.candidate_count !== 1 ? 's' : ''} to review
                                   </span>
                                 </>
                               )}
@@ -377,7 +377,7 @@ export default function MedicalDocumentIntake() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Details Awaiting Review</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Details to Review</h2>
                 {pendingCount > 0 && (
                   <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[10px] font-medium">
                     {pendingCount}
@@ -421,11 +421,10 @@ export default function MedicalDocumentIntake() {
           <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
             <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed space-y-1">
               <p>
-                Nothing from an uploaded document affects your insights until you review and approve it.
-                You stay in control at every step.
+                Nothing from an uploaded document is applied to your insights until you personally review and approve it.
               </p>
               <p>
-                To add a detail from a document, open the document and tap "Add Detail."
+                To extract a detail, tap "Add Detail" next to the document above, then confirm it before it becomes active.
               </p>
             </div>
           </Card>
