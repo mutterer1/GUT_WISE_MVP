@@ -18,7 +18,7 @@ export default function SettingsPageLayout({
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 pt-20 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:ml-64 pt-20 sm:pt-20 lg:pt-8 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <button
