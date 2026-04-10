@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Save, X, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, Save, X, ShieldCheck, MonitorSmartphone } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -49,7 +49,7 @@ export default function PrivacySecuritySettings() {
 
       if (updateError) throw updateError;
 
-      setMessage('Password changed successfully');
+      setMessage('Password updated. You\'ll be signed out momentarily.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -85,11 +85,14 @@ export default function PrivacySecuritySettings() {
   return (
     <SettingsPageLayout
       title="Privacy & Security"
-      description="Manage your data privacy and security settings"
+      description="Control how your account is secured and how your health data is handled"
     >
       <div className="space-y-6">
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Account Password</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            A strong password keeps your health data accessible only to you.
+          </p>
 
           {!showPasswordForm ? (
             <Button
@@ -97,7 +100,7 @@ export default function PrivacySecuritySettings() {
               onClick={() => setShowPasswordForm(true)}
             >
               <Lock className="h-4 w-4 mr-2" />
-              Update Password
+              Change Password
             </Button>
           ) : (
             <div className="space-y-4">
@@ -202,12 +205,15 @@ export default function PrivacySecuritySettings() {
         </Card>
 
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Two-Factor Authentication</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Adds a second verification step when signing in — useful if you share a device or want extra protection for your health data.
+          </p>
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Enable 2FA</p>
-              <p className="text-sm text-gray-600 mt-1">
-                Add an extra layer of security to your account
+              <p className="text-sm text-gray-500 mt-0.5">
+                Verify your identity with a second step at sign-in
               </p>
             </div>
             <Button variant="outline" disabled>
@@ -217,33 +223,44 @@ export default function PrivacySecuritySettings() {
         </Card>
 
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Sessions</h3>
-          <div className="space-y-3">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">Current Session</p>
-              <p className="text-sm text-gray-600 mt-2">
-                Browser: {typeof navigator !== 'undefined' ? navigator.userAgent.split('(')[0].trim() : 'Unknown'}
+          <div className="flex items-start gap-3">
+            <MonitorSmartphone className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900 mb-1">Active Session</h3>
+              <p className="text-sm text-gray-500">
+                You're signed in on this device. Only one session is shown at a time.
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                You're currently logged in on this device
+              <p className="text-xs text-gray-400 mt-2">
+                Signed in as {user?.email}
               </p>
             </div>
           </div>
         </Card>
 
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy Policy</h3>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              Your data privacy is important to us. Review our privacy policy to understand how we collect, use, and protect your information.
-            </p>
-            <a
-              href="/privacy"
-              className="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium transition-colors"
-            >
-              View Privacy Policy
-              <span className="ml-2">→</span>
-            </a>
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="h-5 w-5 text-brand-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Your data is private by design</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>
+                  GutWise stores your health data securely and encrypted. It is never sold, shared with advertisers, or used to train models outside your own insights.
+                </p>
+                <p>
+                  You can export or permanently delete your data at any time from{' '}
+                  <a href="/settings/data" className="text-brand-600 hover:text-brand-700 font-medium">
+                    Data Management
+                  </a>.
+                </p>
+                <a
+                  href="/privacy"
+                  className="inline-flex items-center text-brand-600 hover:text-brand-700 font-medium transition-colors mt-1"
+                >
+                  Read our full Privacy Policy
+                  <span className="ml-1">→</span>
+                </a>
+              </div>
+            </div>
           </div>
         </Card>
 

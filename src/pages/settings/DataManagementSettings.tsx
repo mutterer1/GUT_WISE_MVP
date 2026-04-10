@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Upload, Trash2, AlertCircle, Save, X, CheckCircle } from 'lucide-react';
+import { Download, Upload, Trash2, Save, X, CheckCircle } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -110,13 +110,13 @@ export default function DataManagementSettings() {
   return (
     <SettingsPageLayout
       title="Data Management"
-      description="Export, backup, or delete your health data"
+      description="Your health data belongs to you — export it, restore it, or delete it at any time"
     >
       <div className="space-y-6">
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Your Data</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Download all your health data in JSON format for backup or transfer to another service
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Export Your Data</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Download a complete copy of your logged health data. Useful as a personal backup or to share with your care team.
           </p>
           <Button
             onClick={handleExportData}
@@ -124,55 +124,43 @@ export default function DataManagementSettings() {
             className="w-full md:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
-            {exporting ? 'Exporting...' : 'Export Data'}
+            {exporting ? 'Exporting...' : 'Download My Data'}
           </Button>
         </Card>
 
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Import Data</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Import previously exported health data to restore or migrate records
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Restore from Export</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Re-import data from a previous export to restore your records.
           </p>
           <Button variant="outline" className="w-full md:w-auto">
             <Upload className="h-4 w-4 mr-2" />
             Import Data
           </Button>
-          <p className="text-xs text-gray-500 mt-2">
-            Supported format: JSON files from previous exports
+          <p className="text-xs text-gray-400 mt-2">
+            Accepts JSON files from a previous GutWise export
           </p>
         </Card>
 
-        <Card className="bg-yellow-50 border border-yellow-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-yellow-900">Data Retention</h4>
-              <p className="text-sm text-yellow-800 mt-1">
-                Your data is retained as long as your account is active. We recommend regularly exporting your data as a backup.
-              </p>
-            </div>
-          </div>
-        </Card>
-
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Privacy</h3>
-          <div className="space-y-3 text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">How your data is handled</h3>
+          <div className="space-y-2 text-sm text-gray-600">
             <p>
-              All your health data is stored securely in encrypted databases. We comply with international data protection regulations including GDPR and HIPAA.
+              Your health data is stored encrypted and is never sold or shared with third parties. It is used solely to generate your personal insights within GutWise.
             </p>
             <p>
-              You have full control over your data and can request deletion at any time. See our Privacy Policy for more details.
+              Your data is kept for as long as your account is active. Export it regularly if you'd like a personal copy.
             </p>
-            <a href="/privacy" className="inline-flex text-teal-600 hover:text-teal-700 font-medium">
+            <a href="/privacy" className="inline-flex text-brand-600 hover:text-brand-700 font-medium mt-1">
               Read our Privacy Policy →
             </a>
           </div>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
-          <h3 className="text-lg font-semibold text-red-900 mb-4">Danger Zone</h3>
-          <p className="text-sm text-red-800 mb-4">
-            Permanently delete all your health data. This action cannot be undone.
+        <Card className="border-red-200/60 bg-red-50/40">
+          <h3 className="text-base font-semibold text-red-900 mb-1">Delete All Health Data</h3>
+          <p className="text-sm text-red-700/80 mb-4">
+            Permanently removes all your logs and records. This cannot be undone — consider downloading a copy first.
           </p>
 
           {!showDeleteConfirm ? (
@@ -186,8 +174,11 @@ export default function DataManagementSettings() {
             </Button>
           ) : (
             <div className="p-4 bg-white rounded-lg border border-red-200">
-              <p className="font-medium text-gray-900 mb-4">
-                Are you sure? This will permanently delete all your health records.
+              <p className="font-medium text-gray-900 mb-1">
+                Delete all health data permanently?
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                This removes all logs and cannot be undone.
               </p>
               <div className="flex gap-3">
                 <Button

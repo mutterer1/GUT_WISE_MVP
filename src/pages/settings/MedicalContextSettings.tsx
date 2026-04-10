@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -155,7 +155,7 @@ export default function MedicalContextSettings() {
   return (
     <SettingsPageLayout
       title="Medical Context"
-      description="Add your confirmed medical information to help personalize insights"
+      description="Help GutWise understand your health background so it can give you more relevant insights"
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -165,6 +165,13 @@ export default function MedicalContextSettings() {
         </Card>
       ) : (
         <div className="space-y-3">
+          <Card padding="sm" className="bg-brand-50/50 dark:bg-brand-900/10 border-brand-200/60 dark:border-brand-800/20">
+            <p className="text-xs text-brand-700 dark:text-brand-300 leading-relaxed">
+              This information is used only to personalize your gut health insights — not for any other purpose.
+              You control what you add, and you can remove any entry at any time.
+            </p>
+          </Card>
+
           {CATEGORY_CONFIGS.map((config) => {
             const categoryFacts = factsByCategory(config.key);
             const isExpanded = expandedCategories.has(config.key);
@@ -283,14 +290,11 @@ export default function MedicalContextSettings() {
             );
           })}
 
-          <Card padding="sm" className="bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                This information is self-reported and used only to personalize your gut health insights.
-                It does not replace professional medical advice.
-              </p>
-            </div>
+          <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              GutWise uses this to make your insights more relevant to your situation. It does not provide medical advice.
+              If anything looks wrong, you can edit or remove it above.
+            </p>
           </Card>
         </div>
       )}

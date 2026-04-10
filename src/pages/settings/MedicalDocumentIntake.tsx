@@ -173,8 +173,8 @@ export default function MedicalDocumentIntake() {
     const config = CATEGORY_CONFIGS.find(c => c.key === seedForm.category)!;
     return (
       <SettingsPageLayout
-        title="Seed Candidate Fact"
-        description="Manually add a candidate fact from an intake document for review"
+        title="Add Medical Detail"
+        description="Manually enter a detail from your document. It will be held for your review before influencing any insights."
       >
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
         <Card>
@@ -245,20 +245,20 @@ export default function MedicalDocumentIntake() {
 
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Extraction Notes
+                Source Note <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 value={seedForm.notes}
                 onChange={(e) => setSeedForm({ ...seedForm, notes: e.target.value })}
-                placeholder="Optional notes about where this fact came from in the document"
+                placeholder="Where in the document did you find this? e.g. page 2, discharge summary"
                 className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
 
             <div className="flex items-center gap-2 pt-2">
               <Button onClick={handleSeedCandidate} disabled={saving}>
-                {saving ? 'Saving...' : 'Add as Candidate'}
+                {saving ? 'Saving...' : 'Submit for Review'}
               </Button>
               <Button variant="outline" onClick={() => { setSeedForm(null); setViewMode('overview'); }}>
                 Cancel
@@ -272,8 +272,8 @@ export default function MedicalDocumentIntake() {
 
   return (
     <SettingsPageLayout
-      title="Document Intake & Review"
-      description="Upload medical documents and review extracted candidate facts before they become active context"
+      title="Medical Documents"
+      description="Upload documents from your care team. You review and approve any details before they inform your insights."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -285,7 +285,7 @@ export default function MedicalDocumentIntake() {
         <div className="space-y-6">
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Document Intakes</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Uploaded Documents</h2>
               <label className="cursor-pointer">
                 <input
                   ref={fileInputRef}
@@ -311,7 +311,7 @@ export default function MedicalDocumentIntake() {
                 <div className="flex items-center gap-3 py-2">
                   <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No documents uploaded yet. Upload a medical document to begin the intake process.
+                    No documents yet. You can upload lab results, discharge summaries, or other documents from your care team.
                   </p>
                 </div>
               </Card>
@@ -364,7 +364,7 @@ export default function MedicalDocumentIntake() {
                           }}
                         >
                           <Plus className="h-3.5 w-3.5 mr-1" />
-                          Seed Fact
+                          Add Detail
                         </Button>
                       </div>
                     </Card>
@@ -377,7 +377,7 @@ export default function MedicalDocumentIntake() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Candidate Facts</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Details Awaiting Review</h2>
                 {pendingCount > 0 && (
                   <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[10px] font-medium">
                     {pendingCount}
@@ -418,18 +418,15 @@ export default function MedicalDocumentIntake() {
             />
           </section>
 
-          <Card padding="sm" className="bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed space-y-1">
-                <p>
-                  Candidate facts remain isolated until you explicitly accept them.
-                  Accepted facts become part of your active medical context with full provenance tracking.
-                </p>
-                <p>
-                  Document processing is not yet automated. Use "Seed Fact" to manually add candidate facts from your uploaded documents.
-                </p>
-              </div>
+          <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
+            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed space-y-1">
+              <p>
+                Nothing from an uploaded document affects your insights until you review and approve it.
+                You stay in control at every step.
+              </p>
+              <p>
+                To add a detail from a document, open the document and tap "Add Detail."
+              </p>
             </div>
           </Card>
         </div>
