@@ -138,7 +138,7 @@ export default function NotificationsSettings() {
               >
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-100">{option.label}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{option.description}</p>
+                  <p className="text-sm text-gray-700 mt-1">{option.description}</p>
                 </div>
                 <button
                   onClick={() => togglePreference(option.key)}
