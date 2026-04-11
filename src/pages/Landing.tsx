@@ -72,7 +72,7 @@ export default function Landing() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
 
           <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
-            <div className="text-center">
+            <div className="flex flex-col items-center text-center">
               <div className="relative inline-block mb-lg">
                 <button
                   onClick={() => setIntelligenceModalOpen(true)}
@@ -86,19 +86,20 @@ export default function Landing() {
                 <BadgeOnboardingHint visible={hintVisible} />
               </div>
 
-             <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-lg leading-tight">
-  Understand What Your <br />
-  <span className="text-signal-500">Body</span> Is Telling{' '}
-  <span className="text-discovery-500">You</span>
-</h1>
+              <div className="w-full max-w-2xl mx-auto mb-lg">
+                <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-md leading-tight">
+                  Understand What Your <br />
+                  <span className="text-signal-500">Body</span> Is Telling{' '}
+                  <span className="text-discovery-500">You</span>
+                </h1>
+                <p className="text-body-lg text-neutral-muted dark:text-dark-muted leading-relaxed">
+                  GutWise transforms scattered health logs into clear insights.
+                  See the patterns. Understand the connections. Make informed decisions
+                  about your digestive wellness.
+                </p>
+              </div>
 
-              <p className="text-body-lg text-neutral-muted dark:text-dark-muted mb-lg max-w-2xl mx-auto leading-relaxed">
-                GutWise transforms scattered health logs into clear insights.
-                See the patterns. Understand the connections. Make informed decisions
-                about your digestive wellness.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-md justify-center items-center">
+              <div className="flex flex-col sm:flex-row gap-md justify-center items-center mb-md">
                 <Link to="/signup">
                   <Button size="lg" className="w-full sm:w-auto">
                     Start Understanding
@@ -112,7 +113,7 @@ export default function Landing() {
                 </Link>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-lg mt-2xl text-body-sm text-neutral-muted dark:text-dark-muted">
+              <div className="flex flex-wrap justify-center gap-lg mt-lg text-body-sm text-neutral-muted dark:text-dark-muted">
                 {trustSignals.map((signal) => {
                   const Icon = signal.icon;
                   return (
@@ -128,13 +129,15 @@ export default function Landing() {
         </section>
 
         <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
-          <div className="text-center mb-2xl">
-            <h2 className="text-h2 font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">
-              Intelligence, Not Just Tracking
-            </h2>
-            <p className="text-body-lg text-neutral-muted dark:text-dark-muted max-w-2xl mx-auto">
-              Most health apps give you charts. GutWise gives you understanding.
-            </p>
+          <div className="flex flex-col items-center text-center mb-2xl">
+            <div className="max-w-2xl w-full mx-auto">
+              <h2 className="text-h2 font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">
+                Intelligence, Not Just Tracking
+              </h2>
+              <p className="text-body-lg text-neutral-muted dark:text-dark-muted">
+                Most health apps give you charts. GutWise gives you understanding.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-md lg:gap-lg">
@@ -181,27 +184,34 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-br from-brand-700 to-brand-900 dark:from-brand-900 dark:to-dark-bg" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(124,92,255,0.15)_0%,_transparent_70%)]" />
 
-          <div className="relative max-w-4xl mx-auto px-lg sm:px-lg lg:px-lg py-xl sm:py-2xl text-center">
-            <div className="inline-flex items-center gap-2 mb-md">
-              <Brain className="h-5 w-5 text-discovery-300" />
-              <span className="text-body-sm text-brand-200">Powered by AI</span>
-            </div>
+          <div className="relative max-w-4xl mx-auto px-lg sm:px-lg lg:px-lg py-xl sm:py-2xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="inline-flex items-center gap-2 mb-md">
+                <Brain className="h-5 w-5 text-discovery-300" />
+                <span className="text-body-sm text-brand-200">Powered by AI</span>
+              </div>
 
-            <h2 className="text-h2 sm:text-display-md font-sora font-semibold text-white mb-md">
-              Your Gut Health Story, Understood
-            </h2>
-            <p className="text-body-lg text-brand-100 mb-lg max-w-xl mx-auto">
-              Every body is different. GutWise learns your patterns and surfaces insights
-              that matter specifically to you.
-            </p>
-            <Link to="/signup">
-              <Button size="lg" className="!bg-white !text-brand-700 hover:!bg-brand-50">
-                Begin Your Journey
-              </Button>
-            </Link>
-            <p className="text-body-sm text-brand-200 mt-md">
-              Free 14-day trial. No credit card required.
-            </p>
+              <div className="max-w-xl w-full mx-auto mb-lg">
+                <h2 className="text-h2 sm:text-display-md font-sora font-semibold text-white mb-md">
+                  Your Gut Health Story, Understood
+                </h2>
+                <p className="text-body-lg text-brand-100">
+                  Every body is different. GutWise learns your patterns and surfaces insights
+                  that matter specifically to you.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center gap-sm">
+                <Link to="/signup">
+                  <Button size="lg" className="!bg-white !text-brand-700 hover:!bg-brand-50">
+                    Begin Your Journey
+                  </Button>
+                </Link>
+                <p className="text-body-sm text-brand-200">
+                  Free 14-day trial. No credit card required.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
