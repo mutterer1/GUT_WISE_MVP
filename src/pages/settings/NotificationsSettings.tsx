@@ -145,7 +145,6 @@ export default function NotificationsSettings() {
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ml-4 flex-shrink-0 ${
                     preferences[option.key] ? 'bg-teal-500' : 'bg-gray-300'
                   }`}
-                >
         </Card>
 
         <Card className="bg-blue-50 border border-blue-200">
