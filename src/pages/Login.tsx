@@ -67,7 +67,7 @@ export default function Login() {
             >
               Welcome Back
             </h1>
-            <p className="text-base" style={{ color: '#94A3B8' }}>
+            <p className="text-base text-center" style={{ color: '#94A3B8' }}>
               Your insights are waiting for you.
             </p>
           </div>
