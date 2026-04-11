@@ -11,9 +11,38 @@ interface ProfileData {
   email: string;
   date_of_birth: string;
   gender: string;
-  height_cm: number | null;
-  weight_kg: number | null;
+  height_ft: number | null;
+  height_in: number | null;
+  weight_lbs: number | null;
 }
+
+function cmToFtIn(cm: number | null): { ft: number | null; inches: number | null } {
+  if (!cm) return { ft: null, inches: null };
+  const totalInches = cm / 2.54;
+  const ft = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  return { ft, inches };
+}
+
+function ftInToCm(ft: number | null, inches: number | null): number | null {
+  if (ft === null && inches === null) return null;
+  return ((ft ?? 0) * 12 + (inches ?? 0)) * 2.54;
+}
+
+function kgToLbs(kg: number | null): number | null {
+  if (!kg) return null;
+  return Math.round(kg * 2.20462);
+}
+
+function lbsToKg(lbs: number | null): number | null {
+  if (!lbs) return null;
+  return lbs / 2.20462;
+}
+
+const inputClass =
+  'w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-transparent';
+
+const labelClass = 'block text-sm font-medium text-gray-700 mb-2';
 
 export default function ProfileSettings() {
   const { user, profile } = useAuth();
@@ -22,8 +51,9 @@ export default function ProfileSettings() {
     email: '',
     date_of_birth: '',
     gender: '',
-    height_cm: null,
-    weight_kg: null,
+    height_ft: null,
+    height_in: null,
+    weight_lbs: null,
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -31,15 +61,16 @@ export default function ProfileSettings() {
 
   useEffect(() => {
     if (profile && user?.email) {
-      setFormData((prev) => ({
-        ...prev,
+      const { ft, inches } = cmToFtIn((profile as any).height_cm ?? null);
+      setFormData({
         full_name: profile.full_name || '',
-        email: profile.email || user.email,
+        email: profile.email || user.email || '',
         date_of_birth: '',
         gender: '',
-        height_cm: null,
-        weight_kg: null,
-      }));
+        height_ft: ft,
+        height_in: inches,
+        weight_lbs: kgToLbs((profile as any).weight_kg ?? null),
+      });
     }
   }, [profile, user?.email]);
 
@@ -57,8 +88,8 @@ export default function ProfileSettings() {
           full_name: formData.full_name,
           date_of_birth: formData.date_of_birth || null,
           gender: formData.gender || null,
-          height_cm: formData.height_cm ? parseFloat(formData.height_cm.toString()) : null,
-          weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg.toString()) : null,
+          height_cm: ftInToCm(formData.height_ft, formData.height_in),
+          weight_kg: lbsToKg(formData.weight_lbs),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -76,13 +107,15 @@ export default function ProfileSettings() {
 
   const handleCancel = () => {
     if (profile && user?.email) {
+      const { ft, inches } = cmToFtIn((profile as any).height_cm ?? null);
       setFormData({
         full_name: profile.full_name || '',
-        email: profile.email || user.email,
+        email: profile.email || user.email || '',
         date_of_birth: '',
         gender: '',
-        height_cm: null,
-        weight_kg: null,
+        height_ft: ft,
+        height_in: inches,
+        weight_lbs: kgToLbs((profile as any).weight_kg ?? null),
       });
     }
     setError('');
@@ -93,7 +126,7 @@ export default function ProfileSettings() {
       title="Profile Settings"
       description="Manage your personal information and profile details"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 pt-4">
         <Card>
           <div className="mb-6">
             <div className="flex items-center justify-center w-20 h-20 bg-teal-50 rounded-full mx-auto mb-4">
@@ -109,7 +142,7 @@ export default function ProfileSettings() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="full_name" className={labelClass}>
                 Full Name
               </label>
               <input
@@ -117,12 +150,12 @@ export default function ProfileSettings() {
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-100 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className={labelClass}>
                 Email Address
               </label>
               <input
@@ -139,7 +172,7 @@ export default function ProfileSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="date_of_birth" className={labelClass}>
                   Date of Birth
                 </label>
                 <input
@@ -147,19 +180,19 @@ export default function ProfileSettings() {
                   id="date_of_birth"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="gender" className={labelClass}>
                   Gender
                 </label>
                 <select
                   id="gender"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className={inputClass}
                 >
                   <option value="">Not specified</option>
                   <option value="male">Male</option>
@@ -172,33 +205,75 @@ export default function ProfileSettings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="height_cm" className="block text-sm font-medium text-gray-700 mb-2">
-                  Height (cm)
-                </label>
-                <input
-                  type="number"
-                  id="height_cm"
-                  value={formData.height_cm || ''}
-                  onChange={(e) => setFormData({ ...formData, height_cm: e.target.value ? parseFloat(e.target.value) : null })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  min="50"
-                  max="250"
-                />
+                <label className={labelClass}>Height</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="number"
+                      id="height_ft"
+                      placeholder="0"
+                      value={formData.height_ft ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          height_ft: e.target.value ? parseInt(e.target.value) : null,
+                        })
+                      }
+                      className={inputClass}
+                      min="0"
+                      max="8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                      ft
+                    </span>
+                  </div>
+                  <div className="flex-1 relative">
+                    <input
+                      type="number"
+                      id="height_in"
+                      placeholder="0"
+                      value={formData.height_in ?? ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          height_in: e.target.value ? parseInt(e.target.value) : null,
+                        })
+                      }
+                      className={inputClass}
+                      min="0"
+                      max="11"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                      in
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label htmlFor="weight_kg" className="block text-sm font-medium text-gray-700 mb-2">
-                  Weight (kg)
+                <label htmlFor="weight_lbs" className={labelClass}>
+                  Weight
                 </label>
-                <input
-                  type="number"
-                  id="weight_kg"
-                  value={formData.weight_kg || ''}
-                  onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  min="20"
-                  max="300"
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    id="weight_lbs"
+                    placeholder="0"
+                    value={formData.weight_lbs ?? ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        weight_lbs: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                    className={inputClass}
+                    min="44"
+                    max="660"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                    lbs
+                  </span>
+                </div>
               </div>
             </div>
           </div>
