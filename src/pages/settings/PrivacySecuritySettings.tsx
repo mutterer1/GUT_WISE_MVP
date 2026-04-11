@@ -226,7 +226,7 @@ export default function PrivacySecuritySettings() {
           <div className="flex items-start gap-3">
             <MonitorSmartphone className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">Active Session</h3>
+              <h3 className="text-base font-semibold text-gray-100 mb-1">Active Session</h3>
               <p className="text-sm text-gray-500">
                 You're signed in on this device. Only one session is shown at a time.
               </p>
