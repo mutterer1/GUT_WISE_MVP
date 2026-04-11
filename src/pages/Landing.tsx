@@ -92,7 +92,7 @@ export default function Landing() {
                   <span className="text-signal-500">Body</span> Is Telling{' '}
                   <span className="text-discovery-500">You</span>
                 </h1>
-                <p className="text-body-lg text-neutral-muted dark:text-dark-muted leading-relaxed">
+                <p className="text-body-lg text-neutral-muted dark:text-dark-muted leading-relaxed text-center">
                   GutWise transforms scattered health logs into clear insights.
                   See the patterns. Understand the connections. Make informed decisions
                   about your digestive wellness.
