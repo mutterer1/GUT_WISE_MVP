@@ -105,7 +105,7 @@ export default function PrivacySecuritySettings() {
           ) : (
             <div className="space-y-4">
               <div>
-                <label htmlFor="current_password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="current_password" className="block text-sm font-medium text-gray-100 mb-2">
                   Current Password
                 </label>
                 <div className="relative">
