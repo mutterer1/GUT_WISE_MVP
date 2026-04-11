@@ -90,7 +90,7 @@ export default function PrivacySecuritySettings() {
       <div className="space-y-6">
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">Account Password</h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-100 mb-4">
             A strong password keeps your health data accessible only to you.
           </p>
 
