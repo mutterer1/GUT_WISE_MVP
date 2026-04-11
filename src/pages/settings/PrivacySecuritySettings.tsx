@@ -205,7 +205,7 @@ export default function PrivacySecuritySettings() {
         </Card>
 
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Two-Factor Authentication</h3>
+          <h3 className="text-lg font-semibold text-gray-100 mb-1">Two-Factor Authentication</h3>
           <p className="text-sm text-gray-500 mb-4">
             Adds a second verification step when signing in — useful if you share a device or want extra protection for your health data.
           </p>
