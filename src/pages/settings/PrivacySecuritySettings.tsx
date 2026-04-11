@@ -241,7 +241,7 @@ export default function PrivacySecuritySettings() {
           <div className="flex items-start gap-3">
             <ShieldCheck className="h-5 w-5 text-brand-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Your data is private by design</h3>
+              <h3 className="text-base font-semibold text-gray-100 mb-2">Your data is private by design</h3>
               <div className="space-y-2 text-sm text-gray-600">
                 <p>
                   GutWise stores your health data securely and encrypted. It is never sold, shared with advertisers, or used to train models outside your own insights.
