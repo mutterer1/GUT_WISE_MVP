@@ -22,7 +22,7 @@
     font-family: var(--gw-font-body);
     background-color: var(--bg);
     color: var(--text-primary);
-    line-height: var(--gw-line-height-normal);
+    line-height: 1.6;
   }
 
   * {
@@ -80,7 +80,10 @@
   p {
     @apply text-body-md;
     color: var(--text-secondary);
-    line-height: var(--gw-line-height-relaxed);
+    line-height: 1.6;
+    text-align: left;
+    margin-bottom: 1em;
+    word-spacing: 0.05em;
   }
 
   a {
@@ -91,11 +94,22 @@
   label {
     @apply text-label font-medium;
     color: var(--text-secondary);
+    word-spacing: 0.05em;
   }
 
   small {
     @apply text-body-sm;
     color: var(--text-muted);
+  }
+
+  li {
+    line-height: 1.6;
+    word-spacing: 0.05em;
+  }
+
+  em, i {
+    font-style: normal;
+    font-weight: 600;
   }
 
   hr {
