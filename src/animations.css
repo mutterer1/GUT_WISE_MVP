@@ -90,3 +90,19 @@
     opacity: 0;
   }
 }
+
+@keyframes hintSoftPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.hint-pulse {
+  animation: hintSoftPulse 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-pulse {
+    animation: none;
+    opacity: 0.75;
+  }
+}

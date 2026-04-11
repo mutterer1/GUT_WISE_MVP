@@ -4,6 +4,8 @@ import { X, Brain, Layers, TrendingUp, ShieldCheck } from 'lucide-react';
 interface GutIntelligenceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  showHintDismiss?: boolean;
+  onDismissHint?: () => void;
 }
 
 const SIGNAL_ITEMS = [
@@ -18,7 +20,7 @@ const SIGNAL_ITEMS = [
   { label: 'Optional medical context' },
 ];
 
-export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenceModalProps) {
+export default function GutIntelligenceModal({ isOpen, onClose, showHintDismiss, onDismissHint }: GutIntelligenceModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -209,6 +211,17 @@ export default function GutIntelligenceModal({ isOpen, onClose }: GutIntelligenc
               </p>
             </div>
           </div>
+
+          {showHintDismiss && onDismissHint && (
+            <div className="mt-5 pt-4 border-t border-white/5 flex justify-center">
+              <button
+                onClick={onDismissHint}
+                className="text-xs text-slate-600 hover:text-slate-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-discovery-500 rounded px-1"
+              >
+                Hide this hint next time
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import GutIntelligenceModal from '../components/GutIntelligenceModal';
+import BadgeOnboardingHint from '../components/BadgeOnboardingHint';
 import {
   Brain,
   Shield,
@@ -16,8 +17,18 @@ import {
   Heart
 } from 'lucide-react';
 
+const HINT_DISMISSED_KEY = 'gutwise_badge_hint_dismissed';
+
 export default function Landing() {
   const [intelligenceModalOpen, setIntelligenceModalOpen] = useState(false);
+  const [hintVisible, setHintVisible] = useState(
+    () => !localStorage.getItem(HINT_DISMISSED_KEY)
+  );
+
+  const handleDismissHint = () => {
+    localStorage.setItem(HINT_DISMISSED_KEY, 'true');
+    setHintVisible(false);
+  };
   const features = [
     {
       icon: Brain,
@@ -62,15 +73,18 @@ export default function Landing() {
 
           <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
             <div className="text-center">
-              <button
-                onClick={() => setIntelligenceModalOpen(true)}
-                aria-haspopup="dialog"
-                aria-label="Learn how GutWise AI intelligence works"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-dark-elevated dark:bg-dark-elevated bg-brand-100 border border-dark-border dark:border-dark-border border-brand-200 rounded-full text-body-sm font-medium mb-lg cursor-pointer select-none transition-all duration-200 hover:border-discovery-500/50 hover:bg-discovery-500/5 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent group"
-              >
-                <Sparkles className="h-4 w-4 text-discovery-500 transition-transform duration-200 group-hover:scale-110" />
-                <span className="text-neutral-text dark:text-dark-text">AI-Powered Gut Intelligence</span>
-              </button>
+              <div className="relative inline-block mb-lg">
+                <button
+                  onClick={() => setIntelligenceModalOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-label="Learn how GutWise AI intelligence works"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-dark-elevated dark:bg-dark-elevated bg-brand-100 border border-dark-border dark:border-dark-border border-brand-200 rounded-full text-body-sm font-medium cursor-pointer select-none transition-all duration-200 hover:border-discovery-500/50 hover:bg-discovery-500/5 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent group"
+                >
+                  <Sparkles className="h-4 w-4 text-discovery-500 transition-transform duration-200 group-hover:scale-110" />
+                  <span className="text-neutral-text dark:text-dark-text">AI-Powered Gut Intelligence</span>
+                </button>
+                <BadgeOnboardingHint visible={hintVisible} />
+              </div>
 
              <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-lg leading-tight">
   Understand What Your <br />
@@ -245,6 +259,8 @@ export default function Landing() {
       <GutIntelligenceModal
         isOpen={intelligenceModalOpen}
         onClose={() => setIntelligenceModalOpen(false)}
+        showHintDismiss={hintVisible}
+        onDismissHint={handleDismissHint}
       />
     </div>
   );
