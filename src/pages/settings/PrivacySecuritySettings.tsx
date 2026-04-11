@@ -212,7 +212,7 @@ export default function PrivacySecuritySettings() {
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium text-gray-900">Enable 2FA</p>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <p className="text-sm text-gray-700 mt-0.5">
                 Verify your identity with a second step at sign-in
               </p>
             </div>
