@@ -71,7 +71,7 @@ export default function Landing() {
           <div className="absolute inset-0 gradient-dark-radial dark:opacity-100 opacity-0" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
 
-          <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-2xl lg:pt-xl sm:pt-2xl pb-xl sm:pb-2xl">
+          <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-4xl lg:pt-3xl sm:pt-3xl pb-xl sm:pb-2xl">
             <div className="flex flex-col items-center text-center">
               <div className="relative inline-block mb-lg">
                 <button
