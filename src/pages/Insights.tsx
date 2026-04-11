@@ -107,7 +107,7 @@ export default function Insights() {
       <Sidebar />
 
       <main
-        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg relative"
+        className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg relative"
         data-insight-source={insightSource}
         data-explanation-origin={explanationOrigin}
       >
@@ -277,25 +277,25 @@ export default function Insights() {
               </div>
             ) : insights.length === 0 ? (
               <div
-                className="rounded-2xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface p-14 text-center shadow-soft"
+                className="rounded-2xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface px-6 py-10 sm:px-10 sm:py-12 text-center shadow-soft"
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-lg flex h-16 w-16 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
+                  className="mx-auto mb-md flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
                   style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite', boxShadow: '0 0 0 1px rgba(124,92,255,0.14), 0 0 18px 2px rgba(124,92,255,0.10)' }}
                 >
-                  <Brain className="h-8 w-8 text-[#7C5CFF] dark:text-[#B8A8FF]" />
+                  <Brain className="h-7 w-7 text-[#7C5CFF] dark:text-[#B8A8FF]" />
                 </div>
 
-                <h3 className="mb-2.5 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                <h3 className="mb-2 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
                   Your patterns are still forming
                 </h3>
 
-                <p className="mx-auto mb-2 max-w-md text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                <p className="mx-auto mb-1.5 max-w-md text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
                   GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
                 </p>
 
-                <p className="mx-auto mb-9 max-w-sm text-body-xs text-neutral-muted dark:text-dark-muted">
+                <p className="mx-auto mb-6 max-w-sm text-body-xs text-neutral-muted dark:text-dark-muted">
                   Check back after a few more days of logging to see your first patterns.
                 </p>
 

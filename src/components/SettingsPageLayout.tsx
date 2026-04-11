@@ -16,20 +16,20 @@ export default function SettingsPageLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 pt-20 sm:pt-20 lg:pt-8 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
         <div className="max-w-2xl mx-auto">
-          <div className="mb-8">
+          <div className="mb-lg">
             <button
               onClick={() => navigate('/settings')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              className="inline-flex items-center gap-1.5 text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text mb-lg transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Settings
             </button>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
-            <p className="text-gray-600">{description}</p>
+            <h1 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text mb-1">{title}</h1>
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">{description}</p>
           </div>
 
           {children}

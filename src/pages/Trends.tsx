@@ -134,23 +134,17 @@ export default function Trends() {
   };
 
   return (
-    <div className="flex min-h-screen bg-dark-bg">
+    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-0">
-        <div className="mx-auto max-w-7xl space-y-6 pt-6">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
+        <div className="mx-auto max-w-7xl space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 p-3 shadow-sm">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trends & Analytics</h1>
-                <p className="mt-1 text-gray-600 dark:text-gray-400">
-                  Visualize patterns across bowel activity, symptoms, sleep, stress, and hydration.
-                </p>
-              </div>
+            <div>
+              <h1 className="mb-1 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Trends & Analytics</h1>
+              <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+                Visualize patterns across bowel activity, symptoms, sleep, stress, and hydration.
+              </p>
             </div>
 
             <div className="print:hidden flex flex-wrap items-center gap-3">
@@ -177,9 +171,9 @@ export default function Trends() {
 
           <Card className="print:hidden">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <div className="flex items-center gap-2 text-neutral-text dark:text-dark-text">
                 <Calendar className="h-5 w-5" />
-                <span className="font-medium">Time Period</span>
+                <span className="text-body-sm font-medium">Time Period</span>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -187,10 +181,10 @@ export default function Trends() {
                   <button
                     key={range.days}
                     onClick={() => setSelectedRange(range)}
-                    className={`rounded-lg px-4 py-2 font-medium transition-all ${
+                    className={`rounded-lg px-4 py-2 text-body-sm font-medium transition-all ${
                       selectedRange.days === range.days
                         ? 'bg-brand-500 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-white/[0.04] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/[0.08] border border-transparent dark:border-white/[0.08]'
+                        : 'bg-neutral-bg dark:bg-dark-elevated text-neutral-text dark:text-dark-text hover:bg-neutral-border/40 dark:hover:bg-dark-surface border border-neutral-border dark:border-dark-border'
                     }`}
                   >
                     {range.label}
@@ -203,8 +197,8 @@ export default function Trends() {
           {loading && (
             <Card>
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading analytics data...</span>
+                <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+                <span className="ml-3 text-body-sm text-neutral-muted dark:text-dark-muted">Loading analytics data...</span>
               </div>
             </Card>
           )}
@@ -212,7 +206,7 @@ export default function Trends() {
           {error && (
             <Card>
               <div className="py-12 text-center">
-                <p className="font-medium text-red-600">{error}</p>
+                <p className="text-body-sm font-medium text-signal-700 dark:text-signal-300">{error}</p>
               </div>
             </Card>
           )}
@@ -253,12 +247,12 @@ export default function Trends() {
                 />
               </div>
 
-              <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 border border-blue-100 dark:border-blue-900/30">
+              <Card className="border-brand-700/18 bg-brand-500/04 dark:bg-brand-500/05">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-body-md font-semibold text-neutral-text dark:text-dark-text">
                     What to look for in your trends
                   </h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                     Focus on repeated patterns rather than one-off spikes. The most useful signals
                     usually show up when food, hydration, stress, sleep, and symptoms are logged
                     consistently over time.
@@ -294,20 +288,20 @@ export default function Trends() {
                 <StressUrgencyChart data={data.stressUrgencyCorrelation} />
               </Card>
 
-              <Card className="print:break-inside-avoid bg-gradient-to-br from-blue-600 to-green-600 text-white">
+              <Card className="print:break-inside-avoid border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface">
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">How to use this page</h3>
+                  <h3 className="text-body-md font-semibold text-neutral-text dark:text-dark-text">How to use this page</h3>
 
-                  <div className="space-y-2 text-sm opacity-95">
-                    <p>
+                  <div className="space-y-2">
+                    <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                       Compare symptom spikes with sleep, hydration, and stress patterns to spot
                       repeated contributors.
                     </p>
-                    <p>
+                    <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                       Bring exported or printed summaries to healthcare appointments for more
                       informed conversations.
                     </p>
-                    <p>
+                    <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                       These visualizations are informational and should support — not replace —
                       clinical judgment.
                     </p>
@@ -338,12 +332,12 @@ function SummaryCard({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           {icon}
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</p>
+          <p className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted">{label}</p>
         </div>
 
         <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{helper}</p>
+          <p className="text-2xl font-bold text-neutral-text dark:text-dark-text">{value}</p>
+          <p className="mt-1 text-body-xs text-neutral-muted dark:text-dark-muted">{helper}</p>
         </div>
       </div>
     </Card>

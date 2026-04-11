@@ -59,37 +59,37 @@ export default function Settings() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-dark-bg">
+    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-0">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8 pt-2">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Settings</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your account and preferences</p>
+          <div className="mb-lg">
+            <h1 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text mb-1">Settings</h1>
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">Manage your account and preferences</p>
           </div>
 
-          <div className="space-y-4 mb-8">
+          <div className="space-y-4 mb-lg">
             {sections.map((section) => {
               const Icon = section.icon;
               return (
                 <Card key={section.title} padding="md">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="flex-shrink-0 w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
-                        <Icon className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                      <div className="flex-shrink-0 w-10 h-10 bg-brand-500/10 dark:bg-brand-500/15 rounded-xl flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-brand-500 dark:text-brand-300" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                        <h3 className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-0.5">
                           {section.title}
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">{section.description}</p>
+                        <p className="text-body-sm text-neutral-muted dark:text-dark-muted">{section.description}</p>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="ml-4"
+                      className="ml-4 flex-shrink-0"
                       onClick={() => navigate(section.path)}
                     >
                       Configure
@@ -102,12 +102,12 @@ export default function Settings() {
 
           <Card padding="sm">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="flex-shrink-0 w-9 h-9 bg-brand-500/10 dark:bg-brand-500/15 rounded-xl flex items-center justify-center">
+                <HelpCircle className="h-5 w-5 text-brand-500 dark:text-brand-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Need Help?</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-xs">
+                <h3 className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">Need Help?</h3>
+                <p className="text-body-xs text-neutral-muted dark:text-dark-muted">
                   Our support team is here to assist you with any questions or concerns
                 </p>
               </div>
@@ -122,8 +122,8 @@ export default function Settings() {
             </div>
           </Card>
 
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-white/[0.08]">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Actions</h3>
+          <div className="mt-lg pt-lg border-t border-neutral-border dark:border-dark-border">
+            <h3 className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-md">Account Actions</h3>
             <div className="space-y-3">
               <Card padding="md" className="border-yellow-200 dark:border-yellow-800/30 bg-yellow-50 dark:bg-yellow-900/20">
                 <div className="flex items-center justify-between">

@@ -104,24 +104,24 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 flex h-20 items-center gap-0 border-b border-neutral-border bg-neutral-surface px-4 lg:hidden dark:border-dark-border dark:bg-dark-bg">
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-1 border-b border-neutral-border bg-neutral-surface px-3 lg:hidden dark:border-dark-border dark:bg-dark-bg">
         <button
           type="button"
-          className="rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
+          className="flex-shrink-0 rounded-lg p-2 transition-colors hover:bg-neutral-bg dark:hover:bg-dark-surface"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
           {isMobileMenuOpen ? (
-            <X className="h-6 w-6 text-neutral-text dark:text-dark-text" />
+            <X className="h-5 w-5 text-neutral-text dark:text-dark-text" />
           ) : (
-            <Menu className="h-6 w-6 text-neutral-text dark:text-dark-text" />
+            <Menu className="h-5 w-5 text-neutral-text dark:text-dark-text" />
           )}
         </button>
         <Link to="/dashboard" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
           <img
             src="/logos/gutwise-horizontal-dark.svg"
             alt="GutWise"
-            style={{ height: '64px', width: 'auto', imageRendering: 'auto' }}
+            style={{ height: '48px', width: 'auto', imageRendering: 'auto' }}
           />
         </Link>
       </div>

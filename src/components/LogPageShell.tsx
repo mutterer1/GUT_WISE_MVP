@@ -27,7 +27,7 @@ export default function LogPageShell({
   return (
     <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
         <div className="max-w-2xl mx-auto">
           <button
             onClick={() => navigate('/dashboard')}

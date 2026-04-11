@@ -121,7 +121,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-20 sm:pt-20 lg:pt-lg">
+      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
         <div className="max-w-7xl mx-auto space-y-lg">
           {error && (
             <div className="rounded-xl border border-signal-500/30 bg-signal-500/10 p-md text-body-sm text-signal-500">
