@@ -195,7 +195,7 @@ export default function Landing() {
                 <h2 className="text-h2 sm:text-display-md font-sora font-semibold text-white mb-md">
                   Your Gut Health Story, Understood
                 </h2>
-                <p className="text-body-lg text-brand-100">
+                <p className="text-body-lg text-brand-100 text-center">
                   Every body is different. GutWise learns your patterns and surfaces insights
                   that matter specifically to you.
                 </p>
