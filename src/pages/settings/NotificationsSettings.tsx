@@ -146,15 +146,6 @@ export default function NotificationsSettings() {
                     preferences[option.key] ? 'bg-teal-500' : 'bg-gray-300'
                   }`}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white ${
-                      preferences[option.key] ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
         </Card>
 
         <Card className="bg-blue-50 border border-blue-200">
