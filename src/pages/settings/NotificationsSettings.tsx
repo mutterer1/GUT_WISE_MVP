@@ -134,7 +134,7 @@ export default function NotificationsSettings() {
             {notificationOptions.map((option) => (
               <div
                 key={option.key}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{option.label}</h3>
