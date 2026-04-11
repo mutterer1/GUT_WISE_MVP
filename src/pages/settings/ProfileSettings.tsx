@@ -130,7 +130,7 @@ export default function ProfileSettings() {
                 id="email"
                 value={formData.email}
                 disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-100 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Contact support to change your email address
