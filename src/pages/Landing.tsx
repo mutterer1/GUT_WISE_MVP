@@ -134,7 +134,7 @@ export default function Landing() {
               <h2 className="text-h2 font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">
                 Intelligence, Not Just Tracking
               </h2>
-              <p className="text-body-lg text-neutral-muted dark:text-dark-muted">
+              <p className="text-body-lg text-neutral-muted dark:text-dark-muted text-center">
                 Most health apps give you charts. GutWise gives you understanding.
               </p>
             </div>
