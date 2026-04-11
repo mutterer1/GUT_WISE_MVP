@@ -96,7 +96,7 @@ export default function ProfileSettings() {
       <div className="space-y-6">
         <Card>
           <div className="mb-6">
-            <div className="flex items-center justify-center w-20 h-20 bg-teal-100 rounded-full mx-auto mb-4">
+            <div className="flex items-center justify-center w-20 h-20 bg-teal-50 rounded-full mx-auto mb-4">
               <User className="h-10 w-10 text-teal-600" />
             </div>
             <div className="text-center">
