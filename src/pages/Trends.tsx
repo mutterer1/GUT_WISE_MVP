@@ -4,7 +4,7 @@ import {
   Calendar,
   Download,
   Loader2,
-  Activity,
+  Wave,
   Droplet,
   Moon,
   Brain,
