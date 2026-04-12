@@ -205,7 +205,7 @@ export default function Trends() {
             <>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                  icon={<Activity className="h-5 w-5 text-teal-600" />}
+                  icon={<Wave className="h-5 w-5 text-orange-600" />}
                   label="Bowel Movements"
                   value={String(summaryStats.totalBMs)}
                   helper={`Across ${selectedRange.label.toLowerCase()}`}
