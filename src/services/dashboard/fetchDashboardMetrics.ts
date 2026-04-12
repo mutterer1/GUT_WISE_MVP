@@ -65,6 +65,7 @@ export async function fetchDashboardMetrics(userId: string): Promise<DashboardMe
       .from('sleep_logs')
       .select('duration_minutes, quality, felt_rested, sleep_start')
       .eq('user_id', userId)
+      .gte('sleep_start', todayISO)
       .order('sleep_start', { ascending: false })
       .limit(1),
 
