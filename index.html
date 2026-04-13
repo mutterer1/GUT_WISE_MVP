@@ -24,6 +24,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      document.documentElement.style.background = '#0F172A';
+      document.body && (document.body.style.background = '#0F172A');
+      window.onerror = function(msg, src, line, col, err) {
+        var d = document.getElementById('root');
+        if (d) d.innerHTML = '<div style="background:#0F172A;color:#F1F5F9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui;"><div style="max-width:560px;"><p style="color:#C28F94;font-size:13px;font-weight:600;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px">Startup Error</p><p style="color:#F1F5F9;font-size:16px;font-weight:600;margin:0 0 8px">' + (msg || 'Unknown error') + '</p><p style="color:#64748B;font-size:12px;margin:0">' + (src || '') + (line ? ':' + line : '') + '</p><button onclick="location.reload()" style="margin-top:20px;padding:8px 20px;background:#4A8FA8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button></div></div>';
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled promise rejection';
+        var d = document.getElementById('root');
+        if (d && d.childNodes.length === 0) d.innerHTML = '<div style="background:#0F172A;color:#F1F5F9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui;"><div style="max-width:560px;"><p style="color:#C28F94;font-size:13px;font-weight:600;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px">Async Error</p><p style="color:#F1F5F9;font-size:16px;font-weight:600;margin:0 0 8px">' + msg + '</p><button onclick="location.reload()" style="margin-top:20px;padding:8px 20px;background:#4A8FA8;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Reload</button></div></div>';
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
