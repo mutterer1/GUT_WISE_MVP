@@ -172,7 +172,7 @@ export default function TodaySummaryWidget({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GreetingIcon className="h-4 w-4 text-neutral-muted dark:text-dark-muted flex-shrink-0" />
-            <span className="text-body-md text-neutral-muted dark:text-dark-muted">
+            <span className="text-body-lg text-neutral-muted dark:text-dark-muted">
               {greeting.text}{userName ? `, ${userName}` : ''}
             </span>
           </div>
