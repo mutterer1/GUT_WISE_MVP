@@ -1,4 +1,4 @@
-import { Activity, TrendingUp, Minus } from 'lucide-react';
+import { Waves, TrendingUp, Minus } from 'lucide-react';
 import Card from '../Card';
 
 interface BMCountWidgetProps {
@@ -63,7 +63,7 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
           <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{count}</p>
         </div>
         <div className="w-11 h-11 bg-signal-500/10 dark:bg-signal-500/15 rounded-xl flex items-center justify-center">
-          <Activity className="h-5 w-5 text-signal-500" />
+          <Waves className="h-5 w-5 text-signal-500" />
         </div>
       </div>
 
