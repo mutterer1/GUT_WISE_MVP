@@ -205,14 +205,14 @@ export default function Trends() {
             <>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                  icon={<Wave className="h-6 w-5 text-orange-600" />}
+                  icon={<Wave className="h-10 w-5 text-orange-600" />}
                   label="Bowel Movements"
                   value={String(summaryStats.totalBMs)}
                   helper={`Across ${selectedRange.label.toLowerCase()}`}
                 />
 
                 <SummaryCard
-                  icon={<TrendingUp className="h-6 w-5 text-blue-600" />}
+                  icon={<TrendingUp className="h-5 w-5 text-blue-600" />}
                   label="Ideal Bristol Types"
                   value={String(summaryStats.idealBristolCount)}
                   helper="Type 3–4 entries"
@@ -230,7 +230,7 @@ export default function Trends() {
                 />
 
                 <SummaryCard
-                  icon={<Droplet className="h-6 w-5 text-cyan-600" />}
+                  icon={<Droplet className="h-5 w-5 text-cyan-600" />}
                   label="Hydration Data Points"
                   value={String(summaryStats.hydrationEntries)}
                   helper="Used in hydration analysis"
