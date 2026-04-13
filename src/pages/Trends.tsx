@@ -219,7 +219,7 @@ export default function Trends() {
                 />
 
                 <SummaryCard
-                  icon={<Frown className="h-6 w-5 text-red-500" />}
+                  icon={<Frown className="h-8 w-5 text-red-500" />}
                   label="Avg Symptom Severity"
                   value={
                     summaryStats.avgSymptomSeverity !== null
