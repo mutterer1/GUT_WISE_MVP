@@ -118,7 +118,7 @@ export default function Insights() {
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="mb-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="mb-3 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Health Insights</h1>
+              <h1 className="mb-5 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Health Insights</h1>
               <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
                 Pattern-based analysis of your digestive health data.
               </p>
