@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Brain,
+  Frown,
   FileText,
   Users,
   Settings,
@@ -46,7 +47,7 @@ const loggingSubmenu: LoggingMenuItem[] = [
   { name: 'Food Intake', href: '/food-log', icon: Utensils, group: 'core' },
   { name: 'Hydration', href: '/hydration-log', icon: Droplet, group: 'core' },
   { name: 'Sleep', href: '/sleep-log', icon: Moon, group: 'lifestyle' },
-  { name: 'Stress', href: '/stress-log', icon: Brain, group: 'lifestyle' },
+  { name: 'Stress', href: '/stress-log', icon: Frown, group: 'lifestyle' },
   { name: 'Exercise', href: '/exercise-log', icon: Dumbbell, group: 'lifestyle' },
   { name: 'Medication', href: '/medication-log', icon: Pill, group: 'context' },
   { name: 'Menstrual Cycle', href: '/menstrual-cycle-log', icon: Heart, group: 'context' },

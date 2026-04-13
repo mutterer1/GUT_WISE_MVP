@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Brain, Pencil } from 'lucide-react';
+import { Save, Clock, Activity, Frown, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -134,7 +134,7 @@ export default function StressLog() {
 
             <div>
               <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Brain className="mr-1 inline h-4 w-4" />
+                <Frown className="mr-1 inline h-4 w-4" />
                 Stress Level: <span className="text-neutral-text dark:text-dark-text">{formData.stress_level}/10</span>
               </label>
               <input
@@ -253,7 +253,7 @@ export default function StressLog() {
       ) : (
         <Card>
           {history.length === 0 ? (
-            <EmptyState category="stress" icon={<Brain className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
+            <EmptyState category="stress" icon={<Frown className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
           ) : (
             <div className="space-y-3">
               {history.map((log) => (

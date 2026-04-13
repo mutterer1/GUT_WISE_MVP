@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { TrendingUp, Calendar, Download, Loader2, Waves as Wave, Droplet, Moon, Brain, FileText, Activity } from 'lucide-react';
+import { TrendingUp, Calendar, Download, Loader2, Waves as Wave, Droplet, Moon, Frown, FileText, Activity } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -219,7 +219,7 @@ export default function Trends() {
                 />
 
                 <SummaryCard
-                  icon={<Brain className="h-5 w-5 text-red-500" />}
+                  icon={<Frown className="h-5 w-5 text-red-500" />}
                   label="Avg Symptom Severity"
                   value={
                     summaryStats.avgSymptomSeverity !== null
