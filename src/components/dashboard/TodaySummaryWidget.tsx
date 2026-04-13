@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Calendar, CheckCircle, Activity, Utensils, Droplet, AlertCircle } from 'lucide-react';
+import { Sun, Moon, Calendar, CheckCircle, Waves, Utensils, Droplet, AlertCircle } from 'lucide-react';
 import Card from '../Card';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -102,7 +102,7 @@ export default function TodaySummaryWidget({
   const totalFood = mealsCount + snacksCount;
 
   const domains: Domain[] = [
-    { label: 'BM', logged: bmCount > 0, icon: Activity },
+    { label: 'BM', logged: bmCount > 0, icon: Waves },
     { label: 'Food', logged: totalFood > 0, icon: Utensils },
     { label: 'Hydration', logged: hydrationMl > 0, icon: Droplet },
     { label: 'Sleep', logged: sleepHours !== null, icon: Moon },
