@@ -9,7 +9,7 @@ import {
   Settings,
   Menu,
   X,
-  Activity,
+  Waves,
   TrendingUp,
   ChevronDown,
   Droplet,
@@ -37,12 +37,12 @@ const mainNavigation = [
 interface LoggingMenuItem {
   name: string;
   href: string;
-  icon: typeof Activity;
+  icon: typeof Waves;
   group: 'core' | 'lifestyle' | 'context';
 }
 
 const loggingSubmenu: LoggingMenuItem[] = [
-  { name: 'Bowel Movement', href: '/bm-log', icon: Activity, group: 'core' },
+  { name: 'Bowel Movement', href: '/bm-log', icon: Waves, group: 'core' },
   { name: 'Symptoms', href: '/symptoms-log', icon: AlertCircle, group: 'core' },
   { name: 'Food Intake', href: '/food-log', icon: Utensils, group: 'core' },
   { name: 'Hydration', href: '/hydration-log', icon: Droplet, group: 'core' },
