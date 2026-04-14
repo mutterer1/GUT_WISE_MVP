@@ -346,4 +346,17 @@ export default function PatternInsightsWidget({
               </div>
             </div>
           </div>
-        )} 
+        )}
+
+        <div className="mt-5 flex items-center gap-2">
+          <Sparkles className="h-3 w-3 text-discovery-500/55 flex-shrink-0" />
+          <p className="text-xs text-neutral-muted/75 dark:text-dark-muted/75 leading-relaxed">
+            {hasInsights
+              ? 'Logging across more categories strengthens pattern detection'
+              : 'The more complete today\'s picture, the sharper your observations get'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
