@@ -9,7 +9,7 @@ export default function Header() {
             <img
               src="/logos/gutwise-horizontal-dark.svg"
               alt="GutWise"
-              style={{ height: '300px', width: 'auto', marginLeft: '-21px' }}
+              style={{ height: '79px', width: 'auto', marginLeft: '-21px' }}
             />
           </Link>
 
