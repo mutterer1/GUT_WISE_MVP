@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sun, Moon, Calendar, CheckCircle, Waves, Utensils, Droplet, AlertCircle, ArrowRight } from 'lucide-react';
+import { Sun, Moon, Calendar, CheckCircle, Waves, Utensils, Droplet, AlertCircle } from 'lucide-react';
 import Card from '../Card';
 import DailyProgressCircle from './DailyProgressCircle';
 import { useAuth } from '../../contexts/AuthContext';
@@ -268,53 +268,51 @@ export default function TodaySummaryWidget({
             {(() => {
               const guidance = getGuidanceStrip();
               return (
-                <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-brand-500/6 dark:bg-brand-500/10 border-l-2 border-brand-500/40 dark:border-brand-500/50">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400 mb-0.5">
-                      Next best step
-                    </p>
-                    <p className="text-xs text-neutral-text dark:text-dark-text leading-relaxed">
-                      {guidance.message}
-                    </p>
-                  </div>
-                  {guidance.ctaText && guidance.ctaPath && (
-                    <button
-                      onClick={() => navigate(guidance.ctaPath!)}
-                      className="flex-shrink-0 flex items-center gap-1 text-[11px] font-medium text-brand-600 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-200 transition-colors pt-4"
-                    >
-                      {guidance.ctaText}
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  )}
+                <div className="px-3 py-2 rounded-lg bg-brand-500/4 dark:bg-brand-500/7 border border-brand-500/14 dark:border-brand-500/18 max-w-[88%]">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500/60 dark:text-brand-400/60 mb-0.5">
+                    Next best step
+                  </p>
+                  <p className="text-[11px] text-neutral-muted dark:text-dark-muted leading-relaxed">
+                    {guidance.message}
+                    {guidance.ctaText && guidance.ctaPath && (
+                      <button
+                        onClick={() => navigate(guidance.ctaPath!)}
+                        className="ml-1.5 text-brand-500 dark:text-brand-400 hover:text-brand-600 dark:hover:text-brand-300 transition-colors hover:underline underline-offset-2"
+                      >
+                        {guidance.ctaText}
+                      </button>
+                    )}
+                  </p>
                 </div>
               );
             })()}
           </div>
 
-          <div className="flex-shrink-0 flex flex-col items-center gap-3 pt-1">
-            <span className="text-xs font-medium tracking-wide uppercase text-neutral-muted dark:text-dark-muted select-none">
+          <div className="flex-shrink-0 flex flex-col items-center gap-2 pt-1">
+            <span className="text-[10px] font-medium tracking-wide uppercase text-neutral-muted/70 dark:text-dark-muted/70 select-none">
               Today's Snapshot
             </span>
 
-            <DailyProgressCircle
-              bmLogged={bmCount > 0}
-              foodLogged={totalFood > 0}
-              hydrationLogged={hydrationMl > 0}
-              sleepLogged={sleepHours !== null}
-              symptomsLogged={symptomsCount > 0}
-              size={120}
-              stroke={8}
-            />
+            <div className="flex flex-col items-center gap-1.5">
+              <DailyProgressCircle
+                bmLogged={bmCount > 0}
+                foodLogged={totalFood > 0}
+                hydrationLogged={hydrationMl > 0}
+                sleepLogged={sleepHours !== null}
+                symptomsLogged={symptomsCount > 0}
+                size={120}
+                stroke={8}
+              />
 
-            <p className="text-xs text-neutral-muted dark:text-dark-muted text-center leading-snug max-w-[130px]">
-              {getSnapshotSupportLine()}
-            </p>
+              <p className="text-[11px] text-neutral-muted dark:text-dark-muted text-center leading-snug max-w-[120px]">
+                {getSnapshotSupportLine()}
+              </p>
+            </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-0.5">
               {domains.map((domain) => (
                 <div
                   key={domain.label}
-                  className="flex flex-col items-center gap-1"
                   title={domain.label}
                 >
                   <div
