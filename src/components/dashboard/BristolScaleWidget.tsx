@@ -48,21 +48,21 @@ export default function BristolScaleWidget({
 
   if (count === 0 || averageScale === null) {
     return (
-      <Card variant="elevated">
+      <Card variant="elevated" className="transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:hover:shadow-dark-md">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+            <p className="text-[11px] font-medium text-neutral-muted dark:text-dark-muted mb-1 uppercase tracking-wider">
               Average Stool Type
             </p>
-            <p className="text-display-md font-sora font-semibold text-neutral-muted dark:text-dark-muted">—</p>
+            <p className="text-display-md font-sora font-bold text-neutral-muted/50 dark:text-dark-muted/50 leading-none">&mdash;</p>
           </div>
           <div className="w-11 h-11 bg-neutral-bg dark:bg-dark-surface rounded-xl flex items-center justify-center">
             <Droplets className="h-5 w-5 text-neutral-muted dark:text-dark-muted" />
           </div>
         </div>
-        <div className="bg-neutral-bg dark:bg-dark-surface px-4 py-3 rounded-xl">
+        <div className="bg-neutral-bg dark:bg-dark-surface px-4 py-3 rounded-xl border border-neutral-border/50 dark:border-dark-border">
           <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-            No entries recorded yet today
+            Log a bowel movement to see your stool type
           </p>
         </div>
       </Card>
@@ -73,10 +73,10 @@ export default function BristolScaleWidget({
   const roundedScale = Math.round(averageScale * 10) / 10;
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:hover:shadow-dark-md">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+          <p className="text-[11px] font-medium text-neutral-muted dark:text-dark-muted mb-1 uppercase tracking-wider">
             Average Stool Type
           </p>
           <div className="flex items-baseline gap-2">

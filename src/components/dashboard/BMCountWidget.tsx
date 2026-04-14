@@ -54,13 +54,13 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
   const StatusIcon = status.icon;
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:hover:shadow-dark-md">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+          <p className="text-[11px] font-medium text-neutral-muted dark:text-dark-muted mb-1 uppercase tracking-wider">
             Bowel Movements
           </p>
-          <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{count}</p>
+          <p className="text-display-md font-sora font-bold text-neutral-text dark:text-dark-text leading-none">{count}</p>
         </div>
         <div className="w-11 h-11 bg-signal-500/10 dark:bg-signal-500/15 rounded-xl flex items-center justify-center">
           <Waves className="h-5 w-5 text-signal-500" />
@@ -72,8 +72,8 @@ export default function BMCountWidget({ count, loading }: BMCountWidgetProps) {
         <span className={`text-body-sm font-medium ${status.color}`}>{status.message}</span>
       </div>
 
-      <p className="mt-3.5 text-xs text-neutral-muted dark:text-dark-muted">
-        Typical range: 1–3 movements per day
+      <p className="mt-3 text-xs text-neutral-muted dark:text-dark-muted">
+        Typical range: 1\u20133 movements per day
       </p>
     </Card>
   );

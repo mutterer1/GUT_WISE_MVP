@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sun, Moon, Calendar, CheckCircle, Waves, Utensils, Droplet, AlertCircle } from 'lucide-react';
 import Card from '../Card';
+import DailyProgressCircle from './DailyProgressCircle';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -124,20 +125,40 @@ export default function TodaySummaryWidget({
 
   const getStatusHeadline = () => {
     if (loggedCount === 0) return 'Your health picture starts here';
-    if (loggedCount === totalDomains) return 'Today\'s picture is complete';
+    if (loggedCount === totalDomains) return "Today's picture is complete";
     if (loggedCount >= 3) return 'Good progress today';
-    return 'Building today\'s picture';
+    return "Building today's picture";
   };
 
-  const getStatusDetail = () => {
+  const getSupportLine = () => {
     if (loggedCount === 0) {
-      return 'Log your first entry to activate your daily snapshot.';
+      return 'Log your first entry to begin today\'s snapshot';
     }
-    const nextUnlogged = domains.find((d) => !d.logged);
-    if (nextUnlogged) {
-      return `${loggedCount} of ${totalDomains} areas tracked\u2002\u00b7\u2002${nextUnlogged.label} not yet logged`;
+    if (loggedCount === totalDomains) {
+      return `All ${totalDomains} core signals captured today`;
     }
-    return `All ${totalDomains} key areas tracked today`;
+
+    const remaining = totalDomains - loggedCount;
+
+    if (remaining === 1) {
+      const last = domains.find((d) => !d.logged);
+      return `One more signal to go \u2014 ${last?.label.toLowerCase()} completes the picture`;
+    }
+
+    const hour = new Date().getHours();
+    const unlogged = domains.filter((d) => !d.logged);
+
+    const bestNext =
+      unlogged.find((d) => d.label === 'Sleep' && hour < 12) ||
+      unlogged.find((d) => d.label === 'Hydration' && hour >= 12 && hour < 18) ||
+      unlogged.find((d) => d.label === 'Food') ||
+      unlogged[0];
+
+    if (bestNext && loggedCount >= 2) {
+      return `${loggedCount} of ${totalDomains} tracked \u2014 ${bestNext.label.toLowerCase()} is the clearest next step`;
+    }
+
+    return `You've logged ${loggedCount} of ${totalDomains} core signals today`;
   };
 
   if (loading) {
@@ -151,13 +172,18 @@ export default function TodaySummaryWidget({
             </div>
             <div className="h-8 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0" />
           </div>
-          <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-64" />
+          <div className="flex items-center gap-4">
+            <div className="flex-1 space-y-3">
+              <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-64" />
+              <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-56" />
+            </div>
+            <div className="w-[72px] h-[72px] bg-neutral-border dark:bg-dark-border rounded-full flex-shrink-0" />
+          </div>
           <div className="flex gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-7 w-20 bg-neutral-border dark:bg-dark-border rounded-full" />
             ))}
           </div>
-          <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-56" />
         </div>
       </Card>
     );
@@ -196,9 +222,23 @@ export default function TodaySummaryWidget({
           </div>
         </div>
 
-        <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
-          {getStatusHeadline()}
-        </h2>
+        <div className="flex items-center gap-4">
+          <div className="flex-1 min-w-0 space-y-1">
+            <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
+              {getStatusHeadline()}
+            </h2>
+            <p className="text-body-sm text-neutral-muted dark:text-dark-muted leading-relaxed">
+              {getSupportLine()}
+            </p>
+          </div>
+          <DailyProgressCircle
+            bmLogged={bmCount > 0}
+            foodLogged={totalFood > 0}
+            hydrationLogged={hydrationMl > 0}
+            sleepLogged={sleepHours !== null}
+            symptomsLogged={symptomsCount > 0}
+          />
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {domains.map((domain) => {
@@ -227,10 +267,6 @@ export default function TodaySummaryWidget({
             );
           })}
         </div>
-
-        <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-          {getStatusDetail()}
-        </p>
       </div>
     </Card>
   );

@@ -49,13 +49,13 @@ export default function SymptomSnapshotWidget({
 
   if (symptoms.length === 0) {
     return (
-      <Card variant="elevated">
+      <Card variant="elevated" className="transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:hover:shadow-dark-md">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+            <p className="text-[11px] font-medium text-neutral-muted dark:text-dark-muted mb-1 uppercase tracking-wider">
               Symptoms Today
             </p>
-            <p className="text-display-md font-sora font-semibold text-brand-500">0</p>
+            <p className="text-display-md font-sora font-bold text-brand-500 leading-none">0</p>
           </div>
           <div className="w-11 h-11 bg-brand-500/10 dark:bg-brand-500/15 rounded-xl flex items-center justify-center">
             <CheckCircle className="h-5 w-5 text-brand-500" />
@@ -81,13 +81,13 @@ export default function SymptomSnapshotWidget({
   };
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="transition-all duration-200 hover:-translate-y-px hover:shadow-md dark:hover:shadow-dark-md">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1.5 uppercase tracking-wide">
+          <p className="text-[11px] font-medium text-neutral-muted dark:text-dark-muted mb-1 uppercase tracking-wider">
             Symptoms Today
           </p>
-          <p className="text-display-md font-sora font-semibold text-neutral-text dark:text-dark-text">{symptoms.length}</p>
+          <p className="text-display-md font-sora font-bold text-neutral-text dark:text-dark-text leading-none">{symptoms.length}</p>
         </div>
         <div className="w-11 h-11 bg-signal-500/10 dark:bg-signal-500/15 rounded-xl flex items-center justify-center">
           <AlertCircle className="h-5 w-5 text-signal-500" />

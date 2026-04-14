@@ -1,4 +1,4 @@
-import { Brain, Sparkles, TrendingUp, AlertCircle } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertCircle, BarChart3 } from 'lucide-react';
 import Card from '../Card';
 
 interface PatternInsightsWidgetProps {
@@ -18,6 +18,22 @@ interface Insight {
   message: string;
   type: InsightType;
   confidence: InsightConfidence;
+}
+
+function getEmptyStateContent(bmCount: number, symptomsCount: number, hydrationPercentage: number) {
+  const hasAnyData = bmCount > 0 || symptomsCount > 0 || hydrationPercentage > 0;
+
+  if (!hasAnyData) {
+    return {
+      title: 'Not enough signal yet',
+      message: 'Log a few entries today and GutWise will begin surfacing observations.',
+    };
+  }
+
+  return {
+    title: 'Patterns are beginning to form',
+    message: 'A few more data points will help GutWise identify meaningful connections.',
+  };
 }
 
 export default function PatternInsightsWidget({
@@ -111,10 +127,11 @@ export default function PatternInsightsWidget({
     }
 
     if (insights.length === 0) {
+      const empty = getEmptyStateContent(bmCount, symptomsCount, hydrationPercentage);
       insights.push({
-        icon: Brain,
-        title: 'Log something today',
-        message: 'Once you have a few entries for today, GutWise will surface observations based on what you track.',
+        icon: BarChart3,
+        title: empty.title,
+        message: empty.message,
         type: 'neutral',
         confidence: 'low',
       });
@@ -127,6 +144,7 @@ export default function PatternInsightsWidget({
 
   const hasHighConfidenceInsight = insights.some(i => i.confidence === 'high' && i.type !== 'neutral');
   const hasMediumConfidenceInsight = insights.some(i => i.confidence === 'medium');
+  const isEmptyState = insights.length === 1 && insights[0].type === 'neutral';
 
   const glowIntensity = hasHighConfidenceInsight ? 'bright' : hasMediumConfidenceInsight ? 'medium' : 'subtle';
 
@@ -137,7 +155,7 @@ export default function PatternInsightsWidget({
       case 'suggestion':
         return 'bg-signal-500/5 dark:bg-signal-500/08 border-signal-500/15 dark:border-signal-500/15';
       default:
-        return 'bg-neutral-bg dark:bg-dark-surface border-neutral-border dark:border-dark-border';
+        return 'bg-discovery-500/5 dark:bg-discovery-500/08 border-discovery-500/10 dark:border-discovery-500/15';
     }
   };
 
@@ -158,15 +176,17 @@ export default function PatternInsightsWidget({
     <Card variant="discovery" glowIntensity={glowIntensity}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-discovery-500/10 dark:bg-discovery-500/15 shadow-glow-subtle flex-shrink-0">
+          <div className="p-2.5 rounded-xl bg-discovery-500/10 dark:bg-discovery-500/15 shadow-glow-subtle flex-shrink-0">
             <Brain className="h-5 w-5 text-discovery-500" />
           </div>
           <div>
-            <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+            <h3 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
               Today's Patterns
             </h3>
             <p className="text-xs text-neutral-muted dark:text-dark-muted mt-0.5">
-              Patterns based on your recent logs
+              {isEmptyState
+                ? 'Observations appear as your daily picture builds'
+                : 'Observations based on your recent logs'}
             </p>
           </div>
         </div>
@@ -178,7 +198,8 @@ export default function PatternInsightsWidget({
           return (
             <div
               key={index}
-              className={`px-4 py-3.5 rounded-xl border transition-all ${getInsightStyle(insight.type)}`}
+              className={`px-4 py-3.5 rounded-xl border transition-all animate-fade-in ${getInsightStyle(insight.type)}`}
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start gap-3">
                 <div
@@ -210,10 +231,10 @@ export default function PatternInsightsWidget({
         })}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-neutral-border dark:border-dark-border">
+      <div className="mt-4 pt-4 border-t border-neutral-border/60 dark:border-dark-border">
         <div className="flex items-center gap-2 text-xs text-neutral-muted dark:text-dark-muted">
           <Sparkles className="h-3.5 w-3.5 text-discovery-500 flex-shrink-0" />
-          <p>Insights improve with consistent logging over time</p>
+          <p>Logging across more categories strengthens pattern detection</p>
         </div>
       </div>
     </Card>
