@@ -268,21 +268,26 @@ export default function TodaySummaryWidget({
             {(() => {
               const guidance = getGuidanceStrip();
               return (
-                <div className="px-3 py-2 rounded-lg bg-brand-500/4 dark:bg-brand-500/7 border border-brand-500/14 dark:border-brand-500/18 max-w-[88%]">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500/60 dark:text-brand-400/60 mb-0.5">
+                <div
+                  className="px-3.5 py-2.5 rounded-xl bg-brand-500/5 dark:bg-brand-500/6 max-w-[88%]"
+                  style={{ boxShadow: 'inset 0 0 0 1px rgba(74,143,168,0.08), 0 1px 3px rgba(0,0,0,0.04)' }}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500/55 dark:text-brand-400/55 mb-1">
                     Next best step
                   </p>
-                  <p className="text-[11px] text-neutral-muted dark:text-dark-muted leading-relaxed">
-                    {guidance.message}
+                  <div className="flex items-end justify-between gap-4">
+                    <p className="text-[11px] text-neutral-muted dark:text-dark-muted leading-relaxed">
+                      {guidance.message}
+                    </p>
                     {guidance.ctaText && guidance.ctaPath && (
                       <button
                         onClick={() => navigate(guidance.ctaPath!)}
-                        className="ml-1.5 text-brand-500 dark:text-brand-400 hover:text-brand-600 dark:hover:text-brand-300 transition-colors hover:underline underline-offset-2"
+                        className="flex-shrink-0 text-[10px] text-brand-500/65 dark:text-brand-400/65 hover:text-brand-600 dark:hover:text-brand-300 transition-colors whitespace-nowrap"
                       >
                         {guidance.ctaText}
                       </button>
                     )}
-                  </p>
+                  </div>
                 </div>
               );
             })()}
