@@ -280,9 +280,9 @@ export default function PatternInsightsWidget({
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5 pt-0.5 flex-shrink-0 ml-3">
+          <div className="flex flex-col items-end gap-1 pt-0 flex-shrink-0 ml-3">
             <SignalDots count={signalCount} total={3} />
-            <span className="text-[10px] font-medium text-discovery-500/70 tracking-wide">
+            <span className="text-[10px] font-medium text-discovery-500/60 tracking-wide">
               {progressState.label}
             </span>
           </div>
@@ -295,54 +295,44 @@ export default function PatternInsightsWidget({
             ))}
           </div>
         ) : (
-          <div
-            className="rounded-xl border border-discovery-500/12 dark:border-discovery-500/10 px-5 py-5"
-            style={{
-              background: 'linear-gradient(135deg, rgba(124,92,255,0.05) 0%, rgba(124,92,255,0.02) 100%)',
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5"
-                style={{
-                  background: 'rgba(124,92,255,0.10)',
-                  boxShadow: '0 0 10px rgba(124,92,255,0.15)',
-                }}
-              >
-                <Activity className="h-4.5 w-4.5 text-discovery-500" style={{ width: '18px', height: '18px' }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text leading-snug mb-1">
-                  {progressState.headline}
-                </p>
-                {progressState.body && (
-                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
-                    {progressState.body}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-start gap-3.5 px-1 py-1">
+            <div
+              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center mt-0.5"
+              style={{
+                background: 'rgba(124,92,255,0.08)',
+                boxShadow: '0 0 10px rgba(124,92,255,0.12)',
+              }}
+            >
+              <Activity className="text-discovery-500" style={{ width: '16px', height: '16px' }} />
             </div>
-
-            {progressState.cta && (
-              <button
-                onClick={() => navigate('/bm-log')}
-                className="mt-4 w-full text-center text-xs font-medium text-discovery-500 hover:text-discovery-300 transition-colors py-2 rounded-lg border border-discovery-500/15 hover:border-discovery-500/30 hover:bg-discovery-500/5"
-              >
-                {progressState.cta}
-              </button>
-            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text leading-snug mb-1">
+                {progressState.headline}
+              </p>
+              {progressState.body && (
+                <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
+                  {progressState.body}
+                </p>
+              )}
+              {progressState.cta && (
+                <button
+                  onClick={() => navigate('/bm-log')}
+                  className="mt-2.5 text-xs text-discovery-500/70 hover:text-discovery-500 transition-colors hover:underline underline-offset-2"
+                >
+                  {progressState.cta} →
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="mt-4 pt-4 border-t border-neutral-border/50 dark:border-dark-border/60">
-          <div className="flex items-center gap-2 text-xs text-neutral-muted dark:text-dark-muted">
-            <Sparkles className="h-3 w-3 text-discovery-500/70 flex-shrink-0" />
-            <p className="leading-relaxed" style={{ marginBottom: 0 }}>
-              {hasInsights
-                ? 'Logging across more categories strengthens pattern detection'
-                : 'The more complete today\'s picture, the sharper your observations get'}
-            </p>
-          </div>
+        <div className="mt-4 flex items-center gap-2">
+          <Sparkles className="h-3 w-3 text-discovery-500/40 flex-shrink-0" />
+          <p className="text-xs text-neutral-muted/60 dark:text-dark-muted/60 leading-relaxed">
+            {hasInsights
+              ? 'Logging across more categories strengthens pattern detection'
+              : 'The more complete today\'s picture, the sharper your observations get'}
+          </p>
         </div>
       </div>
     </div>
