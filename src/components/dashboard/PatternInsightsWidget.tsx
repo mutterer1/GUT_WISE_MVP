@@ -242,9 +242,17 @@ export default function PatternInsightsWidget({
     <div className={`relative overflow-hidden rounded-2xl bg-neutral-surface dark:bg-dark-surface border transition-all ${borderClass} p-6`}>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full"
+        className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(124,92,255,0.10) 0%, rgba(124,92,255,0.03) 55%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(124,92,255,0.14) 0%, rgba(124,92,255,0.05) 50%, transparent 70%)',
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 rounded-full"
+        style={{
+          background: 'radial-gradient(ellipse, rgba(124,92,255,0.07) 0%, transparent 70%)',
         }}
       />
 
@@ -252,7 +260,7 @@ export default function PatternInsightsWidget({
         aria-hidden="true"
         className="pointer-events-none absolute bottom-0 left-0 w-full h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(124,92,255,0.18) 40%, rgba(124,92,255,0.10) 70%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(124,92,255,0.25) 40%, rgba(124,92,255,0.14) 70%, transparent 100%)',
         }}
       />
 
@@ -295,40 +303,48 @@ export default function PatternInsightsWidget({
             ))}
           </div>
         ) : (
-          <div className="flex items-start gap-3.5 px-1 py-1">
-            <div
-              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center mt-0.5"
-              style={{
-                background: 'rgba(124,92,255,0.08)',
-                boxShadow: '0 0 10px rgba(124,92,255,0.12)',
-              }}
-            >
-              <Activity className="text-discovery-500" style={{ width: '16px', height: '16px' }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text leading-snug mb-1">
-                {progressState.headline}
-              </p>
-              {progressState.body && (
-                <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
-                  {progressState.body}
+          <div
+            className="rounded-xl px-4 py-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(124,92,255,0.06) 0%, rgba(124,92,255,0.02) 60%, transparent 100%)',
+            }}
+          >
+            <div className="flex items-start gap-3.5">
+              <div
+                className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center mt-0.5"
+                style={{
+                  background: 'rgba(124,92,255,0.10)',
+                  boxShadow: '0 0 12px rgba(124,92,255,0.18)',
+                }}
+              >
+                <Activity className="text-discovery-500" style={{ width: '16px', height: '16px' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text leading-snug mb-1">
+                  {progressState.headline}
                 </p>
-              )}
-              {progressState.cta && (
-                <button
-                  onClick={() => navigate('/bm-log')}
-                  className="mt-2.5 text-xs text-discovery-500/70 hover:text-discovery-500 transition-colors hover:underline underline-offset-2"
-                >
-                  {progressState.cta} →
-                </button>
-              )}
+                {progressState.body && (
+                  <p className="text-xs text-neutral-muted dark:text-dark-muted leading-relaxed">
+                    {progressState.body}
+                  </p>
+                )}
+                {progressState.cta && (
+                  <button
+                    onClick={() => navigate('/bm-log')}
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-discovery-500/75 hover:text-discovery-500 transition-colors group"
+                  >
+                    <span className="group-hover:underline underline-offset-2">{progressState.cta}</span>
+                    <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-2">
-          <Sparkles className="h-3 w-3 text-discovery-500/40 flex-shrink-0" />
-          <p className="text-xs text-neutral-muted/60 dark:text-dark-muted/60 leading-relaxed">
+        <div className="mt-5 flex items-center gap-2">
+          <Sparkles className="h-3 w-3 text-discovery-500/55 flex-shrink-0" />
+          <p className="text-xs text-neutral-muted/75 dark:text-dark-muted/75 leading-relaxed">
             {hasInsights
               ? 'Logging across more categories strengthens pattern detection'
               : 'The more complete today\'s picture, the sharper your observations get'}
