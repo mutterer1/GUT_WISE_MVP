@@ -346,4 +346,4 @@ export default function PatternInsightsWidget({
               </div>
             </div>
           </div>
-        )}
+        )} 
