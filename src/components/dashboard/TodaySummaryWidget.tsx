@@ -20,6 +20,7 @@ interface Domain {
   label: string;
   logged: boolean;
   icon: React.ComponentType<{ className?: string }>;
+  dotColor: string;
 }
 
 export default function TodaySummaryWidget({
@@ -103,11 +104,11 @@ export default function TodaySummaryWidget({
   const totalFood = mealsCount + snacksCount;
 
   const domains: Domain[] = [
-    { label: 'BM', logged: bmCount > 0, icon: Waves },
-    { label: 'Food', logged: totalFood > 0, icon: Utensils },
-    { label: 'Hydration', logged: hydrationMl > 0, icon: Droplet },
-    { label: 'Sleep', logged: sleepHours !== null, icon: Moon },
-    { label: 'Symptoms', logged: symptomsCount > 0, icon: AlertCircle },
+    { label: 'BM', logged: bmCount > 0, icon: Waves, dotColor: '#F59E0B' },
+    { label: 'Food', logged: totalFood > 0, icon: Utensils, dotColor: '#F87171' },
+    { label: 'Hydration', logged: hydrationMl > 0, icon: Droplet, dotColor: '#38BDF8' },
+    { label: 'Sleep', logged: sleepHours !== null, icon: Moon, dotColor: '#818CF8' },
+    { label: 'Symptoms', logged: symptomsCount > 0, icon: AlertCircle, dotColor: '#C28F94' },
   ];
 
   const loggedCount = domains.filter((d) => d.logged).length;
@@ -130,35 +131,13 @@ export default function TodaySummaryWidget({
     return "Building today's picture";
   };
 
-  const getSupportLine = () => {
-    if (loggedCount === 0) {
-      return 'Log your first entry to begin today\'s snapshot';
-    }
-    if (loggedCount === totalDomains) {
-      return `All ${totalDomains} core signals captured today`;
-    }
-
+  const getSnapshotSupportLine = () => {
+    if (loggedCount === 0) return 'Log your first entry to bring today into focus';
+    if (loggedCount === totalDomains) return `All ${totalDomains} core signals captured`;
+    if (loggedCount === 1) return 'Each signal sharpens today\'s picture';
     const remaining = totalDomains - loggedCount;
-
-    if (remaining === 1) {
-      const last = domains.find((d) => !d.logged);
-      return `One more signal to go \u2014 ${last?.label.toLowerCase()} completes the picture`;
-    }
-
-    const hour = new Date().getHours();
-    const unlogged = domains.filter((d) => !d.logged);
-
-    const bestNext =
-      unlogged.find((d) => d.label === 'Sleep' && hour < 12) ||
-      unlogged.find((d) => d.label === 'Hydration' && hour >= 12 && hour < 18) ||
-      unlogged.find((d) => d.label === 'Food') ||
-      unlogged[0];
-
-    if (bestNext && loggedCount >= 2) {
-      return `${loggedCount} of ${totalDomains} tracked \u2014 ${bestNext.label.toLowerCase()} is the clearest next step`;
-    }
-
-    return `You've logged ${loggedCount} of ${totalDomains} core signals today`;
+    if (remaining === 1) return 'One more signal completes the picture';
+    return `${remaining} signals left to complete today`;
   };
 
   if (loading) {
@@ -172,17 +151,21 @@ export default function TodaySummaryWidget({
             </div>
             <div className="h-8 w-24 bg-neutral-border dark:bg-dark-border rounded-xl flex-shrink-0" />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-6">
             <div className="flex-1 space-y-3">
               <div className="h-6 bg-neutral-border dark:bg-dark-border rounded w-64" />
               <div className="h-4 bg-neutral-border dark:bg-dark-border rounded w-56" />
+              <div className="flex gap-2 flex-wrap">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-7 w-20 bg-neutral-border dark:bg-dark-border rounded-full" />
+                ))}
+              </div>
             </div>
-            <div className="w-[72px] h-[72px] bg-neutral-border dark:bg-dark-border rounded-full flex-shrink-0" />
-          </div>
-          <div className="flex gap-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-7 w-20 bg-neutral-border dark:bg-dark-border rounded-full" />
-            ))}
+            <div className="flex-shrink-0 flex flex-col items-center gap-3">
+              <div className="h-3 w-24 bg-neutral-border dark:bg-dark-border rounded" />
+              <div className="w-[120px] h-[120px] bg-neutral-border dark:bg-dark-border rounded-full" />
+              <div className="h-3 w-32 bg-neutral-border dark:bg-dark-border rounded" />
+            </div>
           </div>
         </div>
       </Card>
@@ -194,7 +177,7 @@ export default function TodaySummaryWidget({
       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent dark:from-brand-500/08 dark:to-transparent pointer-events-none" />
       <div className="glass-sheen-overlay" aria-hidden="true" />
 
-      <div className="relative space-y-3">
+      <div className="relative space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GreetingIcon className="h-4 w-4 text-neutral-muted dark:text-dark-muted flex-shrink-0" />
@@ -222,50 +205,80 @@ export default function TodaySummaryWidget({
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex-1 min-w-0 space-y-1">
-            <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
-              {getStatusHeadline()}
-            </h2>
-            <p className="text-body-sm text-neutral-muted dark:text-dark-muted leading-relaxed">
-              {getSupportLine()}
-            </p>
-          </div>
-          <DailyProgressCircle
-            bmLogged={bmCount > 0}
-            foodLogged={totalFood > 0}
-            hydrationLogged={hydrationMl > 0}
-            sleepLogged={sleepHours !== null}
-            symptomsLogged={symptomsCount > 0}
-          />
-        </div>
+        <div className="flex items-start gap-6">
+          <div className="flex-1 min-w-0 space-y-3">
+            <div className="space-y-1">
+              <h2 className="text-h3 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
+                {getStatusHeadline()}
+              </h2>
+            </div>
 
-        <div className="flex flex-wrap gap-2">
-          {domains.map((domain) => {
-            const Icon = domain.icon;
-            return (
-              <div
-                key={domain.label}
-                className={[
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-                  domain.logged
-                    ? 'bg-brand-500/12 dark:bg-brand-500/18 border border-brand-500/25 dark:border-brand-500/30 text-brand-700 dark:text-brand-300'
-                    : 'bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted',
-                ].join(' ')}
-              >
-                <Icon
-                  className={[
-                    'h-3 w-3 flex-shrink-0',
-                    domain.logged ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted',
-                  ].join(' ')}
-                />
-                {domain.label}
-                {domain.logged && (
-                  <CheckCircle className="h-3 w-3 text-brand-500 flex-shrink-0" />
-                )}
-              </div>
-            );
-          })}
+            <div className="flex flex-wrap gap-2">
+              {domains.map((domain) => {
+                const Icon = domain.icon;
+                return (
+                  <div
+                    key={domain.label}
+                    className={[
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                      domain.logged
+                        ? 'bg-brand-500/12 dark:bg-brand-500/18 border border-brand-500/25 dark:border-brand-500/30 text-brand-700 dark:text-brand-300'
+                        : 'bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted',
+                    ].join(' ')}
+                  >
+                    <Icon
+                      className={[
+                        'h-3 w-3 flex-shrink-0',
+                        domain.logged ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted',
+                      ].join(' ')}
+                    />
+                    {domain.label}
+                    {domain.logged && (
+                      <CheckCircle className="h-3 w-3 text-brand-500 flex-shrink-0" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 flex flex-col items-center gap-3 pt-1">
+            <span className="text-xs font-medium tracking-wide uppercase text-neutral-muted dark:text-dark-muted select-none">
+              Today's Snapshot
+            </span>
+
+            <DailyProgressCircle
+              bmLogged={bmCount > 0}
+              foodLogged={totalFood > 0}
+              hydrationLogged={hydrationMl > 0}
+              sleepLogged={sleepHours !== null}
+              symptomsLogged={symptomsCount > 0}
+              size={120}
+              stroke={8}
+            />
+
+            <p className="text-xs text-neutral-muted dark:text-dark-muted text-center leading-snug max-w-[130px]">
+              {getSnapshotSupportLine()}
+            </p>
+
+            <div className="flex items-center gap-2">
+              {domains.map((domain) => (
+                <div
+                  key={domain.label}
+                  className="flex flex-col items-center gap-1"
+                  title={domain.label}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full transition-opacity duration-500"
+                    style={{
+                      backgroundColor: domain.dotColor,
+                      opacity: domain.logged ? 1 : 0.2,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </Card>

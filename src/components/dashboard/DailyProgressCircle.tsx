@@ -13,12 +13,10 @@ interface DailyProgressCircleProps {
   hydrationLogged: boolean;
   sleepLogged: boolean;
   symptomsLogged: boolean;
+  size?: number;
+  stroke?: number;
 }
 
-const SIZE = 72;
-const STROKE = 5;
-const RADIUS = (SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const GAP_ANGLE = 6;
 const TOTAL_DEGREES = 360;
 
@@ -28,7 +26,12 @@ export default function DailyProgressCircle({
   hydrationLogged,
   sleepLogged,
   symptomsLogged,
+  size = 120,
+  stroke = 8,
 }: DailyProgressCircleProps) {
+  const RADIUS = (size - stroke) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
   const signals: Signal[] = useMemo(
     () => [
       { label: 'BM', logged: bmLogged, color: '#F59E0B', trackColor: 'rgba(245, 158, 11, 0.12)' },
@@ -47,12 +50,15 @@ export default function DailyProgressCircle({
   const segmentDegrees = availableDegrees / totalSignals;
   const segmentLength = (segmentDegrees / 360) * CIRCUMFERENCE;
 
+  const countFontSize = Math.round(size * 0.22);
+  const labelFontSize = Math.round(size * 0.1);
+
   return (
-    <div className="relative flex-shrink-0" style={{ width: SIZE, height: SIZE }}>
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg
-        width={SIZE}
-        height={SIZE}
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
         className="transform -rotate-90"
         aria-label={`${loggedCount} of ${totalSignals} signals logged`}
         role="img"
@@ -64,23 +70,23 @@ export default function DailyProgressCircle({
           return (
             <g key={signal.label}>
               <circle
-                cx={SIZE / 2}
-                cy={SIZE / 2}
+                cx={size / 2}
+                cy={size / 2}
                 r={RADIUS}
                 fill="none"
                 stroke={signal.trackColor}
-                strokeWidth={STROKE}
+                strokeWidth={stroke}
                 strokeDasharray={`${segmentLength} ${CIRCUMFERENCE - segmentLength}`}
                 strokeDashoffset={-startOffset}
                 strokeLinecap="round"
               />
               <circle
-                cx={SIZE / 2}
-                cy={SIZE / 2}
+                cx={size / 2}
+                cy={size / 2}
                 r={RADIUS}
                 fill="none"
                 stroke={signal.logged ? signal.color : 'transparent'}
-                strokeWidth={STROKE}
+                strokeWidth={stroke}
                 strokeDasharray={`${segmentLength} ${CIRCUMFERENCE - segmentLength}`}
                 strokeDashoffset={-startOffset}
                 strokeLinecap="round"
@@ -95,10 +101,16 @@ export default function DailyProgressCircle({
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-sm font-sora font-semibold text-neutral-text dark:text-dark-text leading-none">
+        <span
+          className="font-sora font-semibold text-neutral-text dark:text-dark-text leading-none"
+          style={{ fontSize: countFontSize }}
+        >
           {loggedCount}
         </span>
-        <span className="text-[9px] text-neutral-muted dark:text-dark-muted leading-none mt-0.5">
+        <span
+          className="text-neutral-muted dark:text-dark-muted leading-none mt-1"
+          style={{ fontSize: labelFontSize }}
+        >
           of {totalSignals}
         </span>
       </div>
