@@ -170,28 +170,30 @@ export default function BMLog() {
                 <span className="text-xs text-neutral-muted dark:text-dark-muted">Type 4 is ideal</span>
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
-                {BRISTOL_SCALE.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, bristol_type: item.value })
-                    }
-                    className={`rounded-xl border-2 p-3 transition-all ${
-                      formData.bristol_type === item.value
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
-                  >
-                    <div className="text-2xl font-bold text-neutral-text dark:text-dark-text">
-                      {item.value}
-                    </div>
-                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
-                      {item.desc}
-                    </div>
-                  </button>
-                ))}
+              <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                <div className="grid grid-cols-7 gap-1.5 min-w-[392px]">
+                  {BRISTOL_SCALE.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, bristol_type: item.value })
+                      }
+                      className={`rounded-xl border-2 px-1 py-3 transition-all ${
+                        formData.bristol_type === item.value
+                          ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
+                          : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
+                      }`}
+                    >
+                      <div className="text-xl font-bold text-neutral-text dark:text-dark-text leading-none">
+                        {item.value}
+                      </div>
+                      <div className="mt-1.5 text-[10px] leading-tight text-neutral-muted dark:text-dark-muted">
+                        {item.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
