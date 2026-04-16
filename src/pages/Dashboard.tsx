@@ -24,6 +24,7 @@ import SymptomSnapshotWidget from '../components/dashboard/SymptomSnapshotWidget
 import HydrationWidget from '../components/dashboard/HydrationWidget';
 import MedicationWidget from '../components/dashboard/MedicationWidget';
 import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget';
+import SignalRibbonBackground from '../components/dashboard/SignalRibbonBackground';
 import type { DashboardMetrics } from '../types/dashboard';
 
 interface QuickActionHoverClasses {
@@ -203,8 +204,9 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
-        <div className="max-w-7xl mx-auto space-y-lg">
+      <main className="relative flex-1 lg:ml-64 p-md sm:p-lg lg:p-lg pt-16 sm:pt-16 lg:pt-lg">
+        <SignalRibbonBackground />
+        <div className="relative max-w-7xl mx-auto space-y-lg" style={{ zIndex: 1 }}>
           {error && (
             <div className="rounded-xl border border-signal-500/30 bg-signal-500/10 p-md text-body-sm text-signal-500">
               {error}
