@@ -281,23 +281,25 @@ export default function Insights() {
                 style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
               >
                 <div
-                  className="mx-auto mb-md flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
+                  className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
                   style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite', boxShadow: '0 0 0 1px rgba(124,92,255,0.14), 0 0 18px 2px rgba(124,92,255,0.10)' }}
                 >
                   <Brain className="h-7 w-7 text-[#7C5CFF] dark:text-[#B8A8FF]" />
                 </div>
 
-                <h3 className="mb-2 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                  Your patterns are still forming
-                </h3>
+                <div className="mx-auto max-w-xs sm:max-w-sm">
+                  <h3 className="mb-3 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                    Your patterns are still forming
+                  </h3>
 
-                <p className="mx-auto mb-1.5 max-w-md text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
-                  GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
-                </p>
+                  <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                    GutWise builds on several days of consistent logs to find reliable patterns. The more categories you track — meals, symptoms, hydration, sleep, stress — the sharper your insights become.
+                  </p>
 
-                <p className="mx-auto mb-6 max-w-sm text-body-xs text-neutral-muted dark:text-dark-muted">
-                  Check back after a few more days of logging to see your first patterns.
-                </p>
+                  <p className="mb-8 text-body-xs text-neutral-muted/70 dark:text-dark-muted/70">
+                    Check back after a few more days of logging to see your first patterns.
+                  </p>
+                </div>
 
                 <Button onClick={handleGenerateInsights} disabled={generating}>
                   {generating ? 'Analyzing...' : 'Analyze Patterns'}
