@@ -174,14 +174,14 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const generateExplanations = useCallback(async () => {
     const llmInput = insights?.llmInput ?? null;
     if (!llmInput) {
-      setExplanationError('No llmInput available. Run ranked insights first.');
+      setExplanationError('Insight analysis is not ready yet. Please try again in a moment.');
       return;
     }
 
     const session = await import('../lib/supabase').then(m => m.supabase.auth.getSession());
     const accessToken = session.data.session?.access_token;
     if (!accessToken) {
-      setExplanationError('No active session. Please sign in.');
+      setExplanationError('Your session has expired. Please sign in again.');
       return;
     }
 
@@ -191,18 +191,34 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
     try {
       const result = await invokeExplanationGeneration(llmInput, accessToken);
       if (!result.success) {
-        setExplanationError(result.error ?? 'Explanation generation failed');
+        setExplanationError('Insight generation is temporarily unavailable. Your logs have been saved.');
+        return;
       }
       setExplanationResult(result);
-      if (result.success) {
-        setExplanationOrigin('live_generation');
-      }
+      setExplanationOrigin('live_generation');
 
-      if (result.success && result.validation.is_safe_to_use && user?.id && lastFingerprintRef.current) {
+      if (result.validation.is_safe_to_use && user?.id && lastFingerprintRef.current) {
         persistExplanation(user.id, lastFingerprintRef.current, result).catch(() => undefined);
       }
     } catch (err) {
-      setExplanationError(err instanceof Error ? err.message : 'Failed to generate explanations');
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      const isTransient =
+        msg.includes('timeout') ||
+        msg.includes('network') ||
+        msg.includes('fetch') ||
+        msg.includes('502') ||
+        msg.includes('503') ||
+        msg.includes('504') ||
+        msg.includes('aborted') ||
+        msg.includes('unavailable');
+
+      if (isTransient) {
+        setExplanationError('Insight generation is temporarily unavailable. Your logs have been saved — try again shortly.');
+      } else {
+        setExplanationError('Unable to generate insights right now. Your logs have been saved.');
+      }
+
+      console.error('Explanation generation failed:', err);
     } finally {
       setExplanationLoading(false);
     }
