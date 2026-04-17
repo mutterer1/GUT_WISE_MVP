@@ -8,6 +8,7 @@ import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
 import { useAuth } from '../contexts/AuthContext';
+import { DEV_CYCLE_LOG_ACCESS } from '../lib/devFlags';
 
 interface MenstrualFormData {
   id?: string;
@@ -131,7 +132,7 @@ export default function MenstrualCycleLog() {
     }
   }, [formData.cycle_start_date]);
 
-  if (profile?.gender === 'male') {
+  if (!DEV_CYCLE_LOG_ACCESS && profile?.gender === 'male') {
     return (
       <LogPageShell
         title="Menstrual Cycle Tracker"

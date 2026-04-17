@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { DEV_CYCLE_LOG_ACCESS } from '../lib/devFlags';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -57,9 +58,6 @@ const loggingGroups: { key: LoggingMenuItem['group']; label: string }[] = [
   { key: 'lifestyle', label: 'Lifestyle' },
   { key: 'context', label: 'Context' },
 ];
-
-// DEV ONLY — set true to bypass cycle-log gating during development. Remove before launch.
-const DEV_CYCLE_LOG_ACCESS = true;
 
 function isCycleTrackingRelevant(gender: string | null | undefined): boolean {
   if (DEV_CYCLE_LOG_ACCESS) return true;
