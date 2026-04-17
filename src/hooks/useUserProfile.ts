@@ -18,7 +18,7 @@ export function useUserProfile(userId?: string) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, gender')
         .eq('id', userId)
         .maybeSingle();
 
@@ -27,6 +27,7 @@ export function useUserProfile(userId?: string) {
       setProfile({
         full_name: data?.full_name || '',
         email: data?.email || '',
+        gender: data?.gender ?? null,
       });
     } catch (err) {
       console.error('Error fetching profile:', err);

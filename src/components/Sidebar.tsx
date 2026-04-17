@@ -58,6 +58,10 @@ const loggingGroups: { key: LoggingMenuItem['group']; label: string }[] = [
   { key: 'context', label: 'Context' },
 ];
 
+function isCycleTrackingRelevant(gender: string | null | undefined): boolean {
+  return gender !== 'male';
+}
+
 export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedLoggingHub, setExpandedLoggingHub] = useState(false);
@@ -65,6 +69,10 @@ export default function Sidebar() {
   const location = useLocation();
   const { user, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  const visibleLoggingSubmenu = isCycleTrackingRelevant(profile?.gender)
+    ? loggingSubmenu
+    : loggingSubmenu.filter((item) => item.href !== '/menstrual-cycle-log');
 
   useEffect(() => {
     const handleResize = () => {
@@ -92,7 +100,7 @@ export default function Sidebar() {
     location.pathname === path ||
     location.pathname.startsWith(`${path}/`);
 
-  const isLoggingHubActive = loggingSubmenu.some((item) =>
+  const isLoggingHubActive = visibleLoggingSubmenu.some((item) =>
     isActive(item.href)
   );
 
@@ -190,7 +198,7 @@ export default function Sidebar() {
                     {expandedLoggingHub && (
                       <div className="mt-1 ml-2 border-l border-neutral-border pl-2 dark:border-dark-border">
                         {loggingGroups.map((group, groupIdx) => {
-                          const groupItems = loggingSubmenu.filter((s) => s.group === group.key);
+                          const groupItems = visibleLoggingSubmenu.filter((s) => s.group === group.key);
                           return (
                             <div key={group.key} className={groupIdx > 0 ? 'mt-1 pt-1 border-t border-neutral-border/50 dark:border-dark-border/50' : ''}>
                               <span className="block px-4 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/40">

@@ -7,6 +7,7 @@ import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
+import { useAuth } from '../contexts/AuthContext';
 
 interface MenstrualFormData {
   id?: string;
@@ -100,6 +101,8 @@ const labelCls = 'mb-2 block text-body-sm font-medium text-neutral-muted dark:te
 const sliderCls = 'h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500';
 
 export default function MenstrualCycleLog() {
+  const { profile } = useAuth();
+
   const {
     formData,
     setFormData,
@@ -127,6 +130,31 @@ export default function MenstrualCycleLog() {
       setFormData((prev) => ({ ...prev, cycle_day: Math.max(1, diffDays) }));
     }
   }, [formData.cycle_start_date]);
+
+  if (profile?.gender === 'male') {
+    return (
+      <LogPageShell
+        title="Menstrual Cycle Tracker"
+        subtitle=""
+        message=""
+        toastVisible={false}
+        onDismissToast={() => {}}
+        error=""
+      >
+        <Card>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Heart className="mb-4 h-10 w-10 text-neutral-muted dark:text-dark-muted" />
+            <p className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+              Cycle tracking is not part of your current profile.
+            </p>
+            <p className="mt-2 text-xs text-neutral-muted dark:text-dark-muted">
+              If this is in error, update your gender in Profile Settings.
+            </p>
+          </div>
+        </Card>
+      </LogPageShell>
+    );
+  }
 
   const toggleSymptom = (symptom: string) => {
     if (symptom === 'None') {
