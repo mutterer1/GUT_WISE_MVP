@@ -70,9 +70,7 @@ export default function Sidebar() {
   const { user, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const visibleLoggingSubmenu = isCycleTrackingRelevant(profile?.gender)
-    ? loggingSubmenu
-    : loggingSubmenu.filter((item) => item.href !== '/menstrual-cycle-log');
+  const cycleRelevant = isCycleTrackingRelevant(profile?.gender);
 
   useEffect(() => {
     const handleResize = () => {
@@ -100,7 +98,7 @@ export default function Sidebar() {
     location.pathname === path ||
     location.pathname.startsWith(`${path}/`);
 
-  const isLoggingHubActive = visibleLoggingSubmenu.some((item) =>
+  const isLoggingHubActive = loggingSubmenu.some((item) =>
     isActive(item.href)
   );
 
@@ -198,7 +196,7 @@ export default function Sidebar() {
                     {expandedLoggingHub && (
                       <div className="mt-1 ml-2 border-l border-neutral-border pl-2 dark:border-dark-border">
                         {loggingGroups.map((group, groupIdx) => {
-                          const groupItems = visibleLoggingSubmenu.filter((s) => s.group === group.key);
+                          const groupItems = loggingSubmenu.filter((s) => s.group === group.key);
                           return (
                             <div key={group.key} className={groupIdx > 0 ? 'mt-1 pt-1 border-t border-neutral-border/50 dark:border-dark-border/50' : ''}>
                               <span className="block px-4 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/40">
@@ -207,6 +205,8 @@ export default function Sidebar() {
                               {groupItems.map((subitem) => {
                                 const SubIcon = subitem.icon;
                                 const subActive = isActive(subitem.href);
+                                const isCycleItem = subitem.href === '/menstrual-cycle-log';
+                                const dimmed = isCycleItem && !cycleRelevant;
                                 return (
                                   <Link
                                     key={subitem.name}
@@ -214,13 +214,16 @@ export default function Sidebar() {
                                     className={`
                                       flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium
                                       transition-colors duration-150
-                                      ${
-                                        subActive
+                                      ${dimmed
+                                        ? 'opacity-40 cursor-default pointer-events-none'
+                                        : subActive
                                           ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
                                           : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
                                       }
                                     `}
-                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    onClick={dimmed ? undefined : () => setIsMobileMenuOpen(false)}
+                                    tabIndex={dimmed ? -1 : undefined}
+                                    aria-disabled={dimmed}
                                   >
                                     <SubIcon className="h-4 w-4" />
                                     <span className="text-xs">{subitem.name}</span>
