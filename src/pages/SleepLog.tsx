@@ -46,37 +46,25 @@ export default function SleepLog() {
       felt_rested: false,
       notes: '' as const,
     },
-    buildInsertPayload: (formData, userId) => {
-      const start = new Date(formData.sleep_start);
-      const end = new Date(formData.sleep_end);
-      const duration_minutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-      return {
-        user_id: userId,
-        logged_at: formData.logged_at,
-        sleep_start: formData.sleep_start,
-        sleep_end: formData.sleep_end,
-        quality: formData.quality,
-        interruptions: formData.interruptions,
-        felt_rested: formData.felt_rested,
-        duration_minutes,
-        notes: formData.notes,
-      };
-    },
-    buildUpdatePayload: (formData) => {
-      const start = new Date(formData.sleep_start);
-      const end = new Date(formData.sleep_end);
-      const duration_minutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
-      return {
-        logged_at: formData.logged_at,
-        sleep_start: formData.sleep_start,
-        sleep_end: formData.sleep_end,
-        quality: formData.quality,
-        interruptions: formData.interruptions,
-        felt_rested: formData.felt_rested,
-        duration_minutes,
-        notes: formData.notes,
-      };
-    },
+    buildInsertPayload: (formData, userId) => ({
+      user_id: userId,
+      logged_at: formData.logged_at,
+      sleep_start: formData.sleep_start,
+      sleep_end: formData.sleep_end,
+      quality: formData.quality,
+      interruptions: formData.interruptions,
+      felt_rested: formData.felt_rested,
+      notes: formData.notes || null,
+    }),
+    buildUpdatePayload: (formData) => ({
+      logged_at: formData.logged_at,
+      sleep_start: formData.sleep_start,
+      sleep_end: formData.sleep_end,
+      quality: formData.quality,
+      interruptions: formData.interruptions,
+      felt_rested: formData.felt_rested,
+      notes: formData.notes || null,
+    }),
   });
 
   const calculateDuration = () => {
@@ -93,6 +81,9 @@ export default function SleepLog() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.sleep_start || !formData.sleep_end) {
+      return;
+    }
     if (new Date(formData.sleep_end) <= new Date(formData.sleep_start)) {
       return;
     }
