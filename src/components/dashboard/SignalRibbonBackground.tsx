@@ -8,8 +8,8 @@ export default function SignalRibbonBackground() {
       <div
         className="absolute inset-0"
         style={{
-          maskImage: 'linear-gradient(to bottom, black 0%, black 35%, transparent 65%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 35%, transparent 65%)',
+          maskImage: 'linear-gradient(to bottom, black 0%, black 34%, transparent 64%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 34%, transparent 64%)',
         }}
       >
         <div
@@ -19,34 +19,36 @@ export default function SignalRibbonBackground() {
             height: '600px',
             top: '-80px',
             left: '-120px',
-            background: 'radial-gradient(circle, rgba(74,143,168,0.06) 0%, rgba(74,143,168,0.02) 50%, transparent 70%)',
+            background:
+              'radial-gradient(circle, rgba(74,143,168,0.06) 0%, rgba(74,143,168,0.02) 50%, transparent 70%)',
           }}
         />
 
         <div
           className="absolute rounded-full ribbon-bloom-secondary"
           style={{
-            width: '500px',
-            height: '500px',
-            top: '40px',
-            right: '-60px',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.075) 0%, rgba(194,143,148,0.025) 50%, transparent 70%)',
+            width: '520px',
+            height: '520px',
+            top: '30px',
+            right: '-40px',
+            background:
+              'radial-gradient(circle, rgba(194,143,148,0.095) 0%, rgba(194,143,148,0.035) 52%, transparent 72%)',
           }}
         />
 
         <div
           className="absolute rounded-full"
           style={{
-            width: '350px',
-            height: '350px',
-            top: '200px',
-            left: '30%',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.045) 0%, transparent 60%)',
+            width: '380px',
+            height: '380px',
+            top: '190px',
+            left: '29%',
+            background: 'radial-gradient(circle, rgba(194,143,148,0.06) 0%, transparent 62%)',
           }}
         />
 
         <svg
-          className="absolute inset-0 w-full h-full ribbon-drift"
+          className="absolute inset-0 h-full w-full ribbon-drift"
           viewBox="0 0 1200 800"
           preserveAspectRatio="xMidYMin slice"
           fill="none"
@@ -60,13 +62,15 @@ export default function SignalRibbonBackground() {
               <stop offset="85%" stopColor="rgba(74,143,168,0.04)" />
               <stop offset="100%" stopColor="rgba(74,143,168,0)" />
             </linearGradient>
+
             <linearGradient id="ribbon-b" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgba(194,143,148,0)" />
-              <stop offset="20%" stopColor="rgba(194,143,148,0.08)" />
-              <stop offset="50%" stopColor="rgba(194,143,148,0.105)" />
-              <stop offset="80%" stopColor="rgba(194,143,148,0.05)" />
+              <stop offset="18%" stopColor="rgba(194,143,148,0.095)" />
+              <stop offset="50%" stopColor="rgba(194,143,148,0.13)" />
+              <stop offset="82%" stopColor="rgba(194,143,148,0.065)" />
               <stop offset="100%" stopColor="rgba(194,143,148,0)" />
             </linearGradient>
+
             <linearGradient id="ribbon-c" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgba(74,143,168,0)" />
               <stop offset="25%" stopColor="rgba(74,143,168,0.035)" />
@@ -85,8 +89,9 @@ export default function SignalRibbonBackground() {
           <path
             d="M -50 220 C 180 300, 350 140, 520 240 S 780 340, 980 200 S 1120 160, 1260 240"
             stroke="url(#ribbon-b)"
-            strokeWidth="1.5"
+            strokeWidth="1.7"
             strokeLinecap="round"
+            opacity="0.92"
           />
 
           <path
@@ -107,9 +112,9 @@ export default function SignalRibbonBackground() {
           <path
             d="M 550 250 C 700 220, 850 270, 1000 230 S 1120 200, 1250 250"
             stroke="url(#ribbon-b)"
-            strokeWidth="0.8"
+            strokeWidth="0.95"
             strokeLinecap="round"
-            opacity="0.45"
+            opacity="0.58"
           />
         </svg>
       </div>
@@ -117,24 +122,24 @@ export default function SignalRibbonBackground() {
       <div
         className="absolute inset-0"
         style={{
-          top: '65%',
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%)',
+          top: '74%',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 34%, black 72%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 34%, black 72%, transparent 100%)',
         }}
       >
         <div
           className="absolute rounded-full ribbon-bloom-tertiary"
           style={{
-            width: '400px',
-            height: '400px',
-            top: '20px',
-            left: '20%',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.05) 0%, transparent 65%)',
+            width: '430px',
+            height: '430px',
+            top: '10px',
+            left: '22%',
+            background: 'radial-gradient(circle, rgba(194,143,148,0.06) 0%, transparent 66%)',
           }}
         />
 
         <svg
-          className="absolute inset-0 w-full h-full ribbon-drift-echo"
+          className="absolute inset-0 h-full w-full ribbon-drift-echo"
           viewBox="0 0 1200 400"
           preserveAspectRatio="xMidYMid slice"
           fill="none"
@@ -145,14 +150,14 @@ export default function SignalRibbonBackground() {
             stroke="url(#ribbon-a)"
             strokeWidth="1"
             strokeLinecap="round"
-            opacity="0.6"
+            opacity="0.52"
           />
           <path
             d="M -50 210 C 180 270, 380 150, 580 220 S 850 280, 1050 190 S 1200 170, 1260 220"
             stroke="url(#ribbon-b)"
-            strokeWidth="1"
+            strokeWidth="1.1"
             strokeLinecap="round"
-            opacity="0.75"
+            opacity="0.88"
           />
         </svg>
       </div>
