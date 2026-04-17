@@ -13,7 +13,7 @@ function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-type InsightSource = 'ranked_primary' | 'ranked_empty' | 'legacy_error_fallback';
+type InsightSource = 'ranked_loading' | 'ranked_primary' | 'ranked_empty' | 'legacy_error_fallback';
 
 export default function Insights() {
   const { user } = useAuth();
@@ -87,7 +87,9 @@ export default function Insights() {
   const isRankedEmpty = rankedSettled && !rankedError && !hasRankedCandidates;
   const isRankedPrimary = rankedSettled && !rankedError && hasRankedCandidates;
 
-  const insightSource: InsightSource = isRankedPrimary
+  const insightSource: InsightSource = rankedLoading
+    ? 'ranked_loading'
+    : isRankedPrimary
     ? 'ranked_primary'
     : isRankedEmpty
     ? 'ranked_empty'
@@ -267,7 +269,7 @@ export default function Insights() {
                 </h3>
 
                 <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
-                  GutWise analyzed your recent logs and didn't find patterns that meet its confidence threshold. That's a signal in itself — not a gap.
+                  GutWise didn't find a strong enough repeated pattern in your recent logs yet.
                 </p>
 
                 <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
@@ -289,7 +291,7 @@ export default function Insights() {
                 <div>
                   <p className="text-body-sm font-medium text-brand-700 dark:text-brand-300">Pattern analysis encountered a problem</p>
                   <p className="mt-0.5 text-body-sm text-brand-700/75 dark:text-brand-300/75">
-                    The ranked insight pipeline couldn't complete. Showing available observations from your logs instead.
+                    Pattern analysis couldn't complete right now. Showing available observations from your logs instead.
                   </p>
                 </div>
               </div>
