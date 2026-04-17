@@ -1,195 +1,107 @@
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Card from '../components/Card';
-import { AlertTriangle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 export default function Disclaimer() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-bg dark:bg-dark-bg">
       <Header />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="h-8 w-8 text-yellow-600" />
-            <h1 className="text-4xl font-bold text-gray-900">Medical Disclaimer</h1>
+          <div className="flex items-center gap-3 mb-3">
+            <Info className="h-7 w-7 text-brand-500 dark:text-brand-300" />
+            <h1 className="text-3xl font-sora font-semibold text-neutral-text dark:text-dark-text">Medical Disclaimer</h1>
           </div>
-          <p className="text-gray-600">Last updated: March 31, 2024</p>
+          <p className="text-sm text-neutral-muted dark:text-dark-muted">Last updated: March 2026</p>
         </div>
 
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
-          <p className="text-yellow-800 font-medium">
-            Important: Please read this disclaimer carefully before using GutWise
+        <div className="rounded-xl border border-brand-300/30 dark:border-brand-700/30 bg-brand-100/20 dark:bg-brand-900/10 px-5 py-4 mb-6">
+          <p className="text-sm text-neutral-text dark:text-dark-text font-medium">
+            GutWise is a personal tracking and intelligence tool — not a medical device, diagnostic platform, or substitute for professional care.
           </p>
         </div>
 
-        <Card className="prose prose-yellow max-w-none">
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Not Medical Advice</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              The information provided by GutWise is for informational and educational purposes only.
-              It is not intended to be, and should not be interpreted as, medical advice, diagnosis, or
-              treatment.
-            </p>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              <strong>GutWise does not provide medical advice.</strong> Always seek the advice of your
-              physician or other qualified health provider with any questions you may have regarding a
-              medical condition or treatment.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Never disregard professional medical advice or delay in seeking it because of something
-              you have read on or accessed through GutWise.
-            </p>
-          </section>
+        <Card>
+          <div className="space-y-8 text-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
 
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">No Doctor-Patient Relationship</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Use of GutWise does not create a doctor-patient relationship between you and GutWise or
-              any of its employees, contractors, or affiliated professionals.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The insights, recommendations, and information provided through our platform are generated
-              by algorithms and should be reviewed with your healthcare provider before making any
-              health-related decisions.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Emergency Situations</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              <strong>If you think you may have a medical emergency, call your doctor or 911
-              immediately.</strong>
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              GutWise is not designed for emergency situations. Do not use GutWise to seek help in an
-              emergency. If you are experiencing severe symptoms, seek immediate medical attention.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Individual Results May Vary</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Health outcomes vary from person to person. Results, testimonials, or case studies
-              presented on GutWise are not typical and should not be interpreted as guarantees of
-              specific results.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Your individual results may differ based on numerous factors including but not limited to
-              your current health status, genetics, lifestyle, adherence to recommendations, and other
-              personal circumstances.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Accuracy of Information</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              While we strive to provide accurate and up-to-date information, GutWise makes no
-              representations or warranties regarding the accuracy, completeness, or reliability of any
-              content on the platform.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Medical knowledge is constantly evolving. Information that is accurate today may be
-              outdated tomorrow. We encourage you to verify any health information with current medical
-              literature and your healthcare provider.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dietary Recommendations</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Dietary suggestions provided by GutWise are general in nature and may not be suitable for
-              everyone. Before making significant changes to your diet, consult with a registered
-              dietitian or your healthcare provider.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              This is especially important if you have:
-            </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li>Food allergies or intolerances</li>
-              <li>Pre-existing medical conditions</li>
-              <li>Are pregnant or nursing</li>
-              <li>Are taking medications that may interact with certain foods</li>
-              <li>Have a history of eating disorders</li>
-            </ul>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Third-Party Content</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              GutWise may contain links to third-party websites or content created by community members.
-              We do not endorse, verify, or assume responsibility for the accuracy or reliability of any
-              third-party information.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Users should independently verify any information before relying on it for health-related
-              decisions.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Limitation of Liability</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              To the fullest extent permitted by law, GutWise and its officers, directors, employees,
-              and agents shall not be liable for any direct, indirect, incidental, special, or
-              consequential damages arising from your use of the platform or reliance on any
-              information provided.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              This includes, but is not limited to, damages for loss of health, personal injury,
-              emotional distress, or any other losses resulting from the use or inability to use
-              GutWise.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Responsibility</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              You are solely responsible for your use of GutWise and for any decisions you make based
-              on information obtained through the platform. You assume full responsibility for any risks
-              associated with such use.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              We strongly encourage you to:
-            </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li>Maintain regular check-ups with your healthcare provider</li>
-              <li>Discuss any insights or recommendations from GutWise with your doctor</li>
-              <li>Report any adverse symptoms or reactions promptly to a medical professional</li>
-              <li>Use GutWise as a complement to, not a replacement for, professional medical care</li>
-            </ul>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Acknowledgment and Acceptance</h2>
-            <p className="text-gray-700 leading-relaxed">
-              By using GutWise, you acknowledge that you have read, understood, and agree to be bound
-              by this Medical Disclaimer. If you do not agree with any part of this disclaimer, you
-              should not use our services.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Questions or Concerns</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              If you have questions about this Medical Disclaimer, please contact us:
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-gray-700 mb-2">
-                <strong>Email:</strong> legal@gutwise.com
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Not medical advice</h2>
+              <p className="mb-3">
+                The information and insights provided by GutWise are for personal informational purposes only. Nothing in GutWise constitutes medical advice, a diagnosis, or a treatment recommendation.
               </p>
-              <p className="text-gray-700 mb-2">
-                <strong>Address:</strong> 123 Health Plaza, Suite 400, San Francisco, CA 94105
+              <p>
+                Always consult a qualified healthcare professional before making decisions about your health, diet, or treatment. Do not delay or disregard professional medical advice based on anything you see in GutWise.
               </p>
-              <p className="text-gray-700">
-                <strong>Phone:</strong> 1-800-GUT-WISE (1-800-488-9473)
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">No clinical relationship</h2>
+              <p>
+                Using GutWise does not create a relationship between you and any clinician or healthcare provider. The insights generated by the platform are produced by software, not by a licensed medical professional reviewing your case.
               </p>
-            </div>
-          </section>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Emergencies</h2>
+              <p className="mb-3">
+                GutWise is not designed for emergencies. If you are experiencing severe or worsening symptoms, seek immediate medical attention — call your doctor or local emergency services.
+              </p>
+              <p>
+                Do not use GutWise to manage an acute or urgent medical situation.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Insight accuracy</h2>
+              <p className="mb-3">
+                GutWise identifies patterns in your personal data. These patterns are generated automatically and reflect statistical associations, not clinical findings.
+              </p>
+              <p>
+                Patterns may not apply to your individual circumstances. Your healthcare provider is the right person to help you interpret and act on any observation you find meaningful.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Dietary observations</h2>
+              <p className="mb-3">
+                Any food-related observations in GutWise are based on the data you log and are general in nature. They are not personalised dietary prescriptions.
+              </p>
+              <p>
+                If you have known food allergies, intolerances, a diagnosed condition, or are pregnant or nursing, consult a registered dietitian or your healthcare provider before changing your diet.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Limitation of liability</h2>
+              <p>
+                To the extent permitted by applicable law, GutWise and its team are not liable for any health outcomes, personal injury, or other harm arising from your use of the platform or reliance on any information it provides.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">How to use GutWise responsibly</h2>
+              <ul className="list-disc pl-5 space-y-1.5">
+                <li>Use it as a personal log and pattern-awareness tool, not as a clinical resource</li>
+                <li>Share observations you find useful with your doctor or specialist</li>
+                <li>Maintain regular care with your healthcare provider</li>
+                <li>Report any new or worsening symptoms to a medical professional promptly</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-base font-semibold text-neutral-text dark:text-dark-text mb-3">Questions</h2>
+              <p>
+                If you have questions about this disclaimer, contact us through the in-app support channel. A dedicated contact address will be published before public launch.
+              </p>
+            </section>
+
+          </div>
         </Card>
 
         <div className="mt-8 text-center">
-          <Link to="/" className="text-teal-600 hover:text-teal-700 font-medium">
+          <Link to="/" className="text-sm text-brand-500 dark:text-brand-300 hover:text-brand-700 dark:hover:text-brand-100 font-medium transition-colors">
             Return to Home
           </Link>
         </div>
