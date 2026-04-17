@@ -1,19 +1,19 @@
 import type { NormalizedTimestampMeta } from '../types/logs';
 
 export function normalizeBMLog<T extends Record<string, unknown>>(raw: T): T {
-  const result = { ...raw };
+  const result: Record<string, unknown> = { ...raw };
 
   if ('bristol_scale' in result && !('bristol_type' in result)) {
-    result.bristol_type = result.bristol_scale;
-    delete result.bristol_scale;
+    result['bristol_type'] = result['bristol_scale'];
+    delete result['bristol_scale'];
   }
 
   if ('urgency_level' in result && !('urgency' in result)) {
-    result.urgency = result.urgency_level;
-    delete result.urgency_level;
+    result['urgency'] = result['urgency_level'];
+    delete result['urgency_level'];
   }
 
-  return result;
+  return result as T;
 }
 
 export function computeNormalizedTimestamp(
