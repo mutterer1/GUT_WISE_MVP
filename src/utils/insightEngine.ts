@@ -49,7 +49,6 @@ interface BMLog {
 interface HydrationLog {
   logged_at: string;
   amount_ml: number;
-  beverage_type: string;
 }
 
 interface FoodLog {
