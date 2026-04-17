@@ -12,6 +12,7 @@ const LOG_TYPE_NAMES: Record<SaveEvent['logType'], string> = {
   hydration: 'Hydration',
   medication: 'Medication',
   'menstrual-cycle': 'Menstrual cycle',
+  exercise: 'Exercise',
 };
 
 const ACTION_NAMES: Record<SaveEvent['type'], string> = {

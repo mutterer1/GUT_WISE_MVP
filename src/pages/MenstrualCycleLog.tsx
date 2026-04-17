@@ -69,7 +69,7 @@ const buildPayload = (formData: MenstrualFormData, userId?: string) => ({
 
 const menstrualConfig = {
   table: 'menstrual_cycle_logs',
-  logType: 'menstrual' as const,
+  logType: 'menstrual-cycle' as const,
   defaultValues: {
     cycle_start_date: new Date().toISOString().split('T')[0],
     cycle_day: 1,

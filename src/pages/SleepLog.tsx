@@ -15,6 +15,7 @@ interface SleepFormData {
   interruptions: number;
   felt_rested: boolean;
   notes: string;
+  duration_minutes?: number;
 }
 
 export default function SleepLog() {
