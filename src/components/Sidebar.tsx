@@ -58,7 +58,11 @@ const loggingGroups: { key: LoggingMenuItem['group']; label: string }[] = [
   { key: 'context', label: 'Context' },
 ];
 
+// DEV ONLY — set true to bypass cycle-log gating during development. Remove before launch.
+const DEV_CYCLE_LOG_ACCESS = true;
+
 function isCycleTrackingRelevant(gender: string | null | undefined): boolean {
+  if (DEV_CYCLE_LOG_ACCESS) return true;
   return gender !== 'male';
 }
 
