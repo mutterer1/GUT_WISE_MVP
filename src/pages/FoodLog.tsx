@@ -6,8 +6,9 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { estimateCalories } from '../utils/calorieEstimator';
+import { type FoodSuggestion } from '../data/foodSuggestions';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface FoodItem {
@@ -143,20 +144,25 @@ export default function FoodLog() {
   const addFoodItem = () => {
     if (!foodItemInput.trim()) return;
 
-    const itemName = foodItemInput.trim();
-    const estimate = estimateCalories(itemName);
-
     setFormData({
       ...formData,
       food_items: [
         ...formData.food_items,
-        {
-          name: itemName,
-          estimated_calories: estimate.calories,
-        },
+        { name: foodItemInput.trim() },
       ],
     });
 
+    setFoodItemInput('');
+  };
+
+  const selectSuggestion = (suggestion: FoodSuggestion) => {
+    setFormData({
+      ...formData,
+      food_items: [
+        ...formData.food_items,
+        { name: suggestion.name, estimated_calories: suggestion.calories },
+      ],
+    });
     setFoodItemInput('');
   };
 
@@ -271,18 +277,11 @@ export default function FoodLog() {
               </label>
 
               <div className="mb-3 flex gap-2">
-                <input
-                  type="text"
+                <FoodAutocompleteInput
                   value={foodItemInput}
-                  onChange={(e) => setFoodItemInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addFoodItem();
-                    }
-                  }}
-                  placeholder="Add food item..."
-                  className="flex-1 rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
+                  onChange={setFoodItemInput}
+                  onSelect={selectSuggestion}
+                  onSubmit={addFoodItem}
                 />
                 <Button type="button" onClick={addFoodItem}>
                   Add
@@ -300,9 +299,9 @@ export default function FoodLog() {
                         <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
                           {item.name}
                         </span>
-                        {item.estimated_calories !== undefined && (
+                        {item.estimated_calories !== undefined && item.estimated_calories > 0 && (
                           <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs text-brand-500 dark:text-brand-300">
-                            {item.estimated_calories} cal
+                            ~{item.estimated_calories} cal
                           </span>
                         )}
                       </div>
