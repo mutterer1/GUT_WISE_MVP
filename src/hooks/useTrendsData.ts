@@ -6,37 +6,37 @@ export interface TimeRange {
   label: string;
 }
 
-interface BMFrequencyData {
+export interface BMFrequencyData {
   date: string;
   count: number;
 }
 
-interface BristolDistribution {
+export interface BristolDistribution {
   type: number;
   count: number;
   percentage: number;
 }
 
-interface SymptomTrend {
+export interface SymptomTrend {
   date: string;
   symptomType: string;
   avgSeverity: number;
 }
 
-interface HydrationCorrelation {
+export interface HydrationCorrelation {
   date: string;
   totalHydration: number;
   avgBristolScale: number | null;
 }
 
-interface SleepSymptomCorrelation {
+export interface SleepSymptomCorrelation {
   date: string;
   sleepHours: number | null;
   sleepQuality: number | null;
   avgSymptomSeverity: number | null;
 }
 
-interface StressUrgencyCorrelation {
+export interface StressUrgencyCorrelation {
   date: string;
   avgStressLevel: number | null;
   avgUrgency: number | null;
