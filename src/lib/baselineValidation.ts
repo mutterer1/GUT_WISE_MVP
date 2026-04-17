@@ -39,6 +39,10 @@ function makeSampleDay(overrides: Partial<UserDailyFeatures> & { date: string })
     cycle_entry_count: 0,
     cycle_day: null,
     cycle_phase: null,
+    exercise_minutes_total: 0,
+    exercise_sessions_count: 0,
+    moderate_vigorous_minutes: 0,
+    movement_low_day: false,
     timezone: 'America/New_York',
     ...overrides,
   };

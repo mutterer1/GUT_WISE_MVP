@@ -47,6 +47,10 @@ function makeDay(
     cycle_entry_count: 0,
     cycle_day: null,
     cycle_phase: null,
+    exercise_minutes_total: 0,
+    exercise_sessions_count: 0,
+    moderate_vigorous_minutes: 0,
+    movement_low_day: false,
     timezone: 'America/New_York',
     ...overrides,
   };
@@ -93,6 +97,20 @@ function makeDemoBaselines(): UserBaselineSet {
     data_quality: {
       average_event_count: 6,
       average_logging_completeness_score: 0.8,
+    },
+    exercise: {
+      median_exercise_minutes: 0,
+      median_moderate_vigorous_minutes: 0,
+      active_day_rate: 0,
+      low_movement_day_rate: 0,
+    },
+    cycle: {
+      menstrual_phase_symptom_burden_median: null,
+      luteal_phase_symptom_burden_median: null,
+      menstrual_phase_bm_count_median: null,
+      luteal_phase_bm_count_median: null,
+      menstrual_phase_loose_stool_rate: null,
+      luteal_phase_loose_stool_rate: null,
     },
     timezone: 'America/New_York',
   };
