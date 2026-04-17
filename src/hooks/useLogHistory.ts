@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-interface UseLogHistoryConfig<T> {
+interface UseLogHistoryConfig {
   table: string;
   userId?: string;
   historyLimit: number;
@@ -13,7 +13,7 @@ export function useLogHistory<T extends { id: string; logged_at: string }>({
   userId,
   historyLimit,
   onError,
-}: UseLogHistoryConfig<T>) {
+}: UseLogHistoryConfig) {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<T[]>([]);
 

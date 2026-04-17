@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Upload, Trash2, Save, X, CheckCircle } from 'lucide-react';
+import { Download, Upload, Trash2, X, CheckCircle } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';

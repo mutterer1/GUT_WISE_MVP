@@ -65,7 +65,6 @@ export default function Account() {
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const startYear = currentYear - 100;
     return Array.from({ length: 101 }, (_, i) => {
       const year = (currentYear - i).toString();
       return { value: year, label: year };

@@ -35,8 +35,6 @@ export default function BristolDistributionChart({ data }: BristolDistributionCh
     );
   }
 
-  const maxPercentage = Math.max(...data.map(d => d.percentage));
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-neutral-text dark:text-dark-text">Bristol Stool Scale Distribution</h3>

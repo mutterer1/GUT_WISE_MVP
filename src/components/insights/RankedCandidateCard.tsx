@@ -144,7 +144,7 @@ function formatFactorLabel(raw: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-export default function RankedCandidateCard({ candidate, explanation, rank }: RankedCandidateCardProps) {
+export default function RankedCandidateCard({ candidate, explanation }: RankedCandidateCardProps) {
   const patternType = getPatternType(candidate.subtype, candidate.category);
   const pt = patternTypeConfig[patternType];
   const status = statusConfig[candidate.status] ?? statusConfig.exploratory;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { TrendingUp, Calendar, Download, Loader2, Waves as Wave, Droplet, Moon, Frown, FileText, Activity } from 'lucide-react';
+import { TrendingUp, Calendar, Download, Loader2, Waves as Wave, Droplet, Frown, FileText } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Card from '../components/Card';
 import Button from '../components/Button';

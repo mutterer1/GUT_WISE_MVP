@@ -1,4 +1,4 @@
-import { CreditCard, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';

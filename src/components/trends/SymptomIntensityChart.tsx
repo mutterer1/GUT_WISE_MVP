@@ -72,7 +72,7 @@ export default function SymptomIntensityChart({ data }: SymptomIntensityChartPro
             );
           })}
 
-          {symptomTypes.map((symptom, symptomIndex) => {
+          {symptomTypes.map((symptom) => {
             const symptomData = symptomDataMap.get(symptom)!;
             const points = dates.map((date, index) => {
               const severity = symptomData.get(date) || 0;

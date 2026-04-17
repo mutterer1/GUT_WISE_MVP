@@ -5,7 +5,6 @@ import {
   Brain,
   Frown,
   FileText,
-  Users,
   Settings,
   Menu,
   X,

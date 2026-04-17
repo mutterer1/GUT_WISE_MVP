@@ -111,7 +111,7 @@ export function useTrendsData(timeRange: TimeRange) {
 
         const bmFrequency = calculateBMFrequency(bmLogs.data || [], timeRange.days);
         const bristolDistribution = calculateBristolDistribution(bmLogs.data || []);
-        const symptomTrends = calculateSymptomTrends(symptomLogs.data || [], timeRange.days);
+        const symptomTrends = calculateSymptomTrends(symptomLogs.data || []);
         const hydrationCorrelation = calculateHydrationCorrelation(
           hydrationLogs.data || [],
           bmLogs.data || [],
@@ -193,7 +193,7 @@ function calculateBristolDistribution(logs: any[]): BristolDistribution[] {
   return distribution;
 }
 
-function calculateSymptomTrends(logs: any[], days: number): SymptomTrend[] {
+function calculateSymptomTrends(logs: any[]): SymptomTrend[] {
   const symptomDateMap = new Map<string, Map<string, number[]>>();
 
   logs.forEach(log => {

@@ -8,7 +8,6 @@ import BadgeOnboardingHint from '../components/BadgeOnboardingHint';
 import {
   Brain,
   Shield,
-  TrendingUp,
   Lock,
   Award,
   ChevronRight,
