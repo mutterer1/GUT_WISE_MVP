@@ -1,7 +1,7 @@
 export default function SignalRibbonBackground() {
   return (
     <div
-      className="absolute inset-0 overflow-hidden pointer-events-none"
+      className="fixed inset-0 overflow-hidden pointer-events-none lg:left-64"
       aria-hidden="true"
       style={{ zIndex: 0 }}
     >
@@ -30,7 +30,7 @@ export default function SignalRibbonBackground() {
             height: '500px',
             top: '40px',
             right: '-60px',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.05) 0%, rgba(194,143,148,0.015) 50%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(194,143,148,0.075) 0%, rgba(194,143,148,0.025) 50%, transparent 70%)',
           }}
         />
 
@@ -41,7 +41,7 @@ export default function SignalRibbonBackground() {
             height: '350px',
             top: '200px',
             left: '30%',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.03) 0%, transparent 60%)',
+            background: 'radial-gradient(circle, rgba(194,143,148,0.045) 0%, transparent 60%)',
           }}
         />
 
@@ -62,9 +62,9 @@ export default function SignalRibbonBackground() {
             </linearGradient>
             <linearGradient id="ribbon-b" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="rgba(194,143,148,0)" />
-              <stop offset="20%" stopColor="rgba(194,143,148,0.055)" />
-              <stop offset="50%" stopColor="rgba(194,143,148,0.07)" />
-              <stop offset="80%" stopColor="rgba(194,143,148,0.035)" />
+              <stop offset="20%" stopColor="rgba(194,143,148,0.08)" />
+              <stop offset="50%" stopColor="rgba(194,143,148,0.105)" />
+              <stop offset="80%" stopColor="rgba(194,143,148,0.05)" />
               <stop offset="100%" stopColor="rgba(194,143,148,0)" />
             </linearGradient>
             <linearGradient id="ribbon-c" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -107,9 +107,9 @@ export default function SignalRibbonBackground() {
           <path
             d="M 550 250 C 700 220, 850 270, 1000 230 S 1120 200, 1250 250"
             stroke="url(#ribbon-b)"
-            strokeWidth="0.6"
+            strokeWidth="0.8"
             strokeLinecap="round"
-            opacity="0.3"
+            opacity="0.45"
           />
         </svg>
       </div>
@@ -129,7 +129,7 @@ export default function SignalRibbonBackground() {
             height: '400px',
             top: '20px',
             left: '20%',
-            background: 'radial-gradient(circle, rgba(194,143,148,0.035) 0%, transparent 65%)',
+            background: 'radial-gradient(circle, rgba(194,143,148,0.05) 0%, transparent 65%)',
           }}
         />
 
@@ -152,7 +152,7 @@ export default function SignalRibbonBackground() {
             stroke="url(#ribbon-b)"
             strokeWidth="1"
             strokeLinecap="round"
-            opacity="0.6"
+            opacity="0.75"
           />
         </svg>
       </div>
