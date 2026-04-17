@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Save, Clock, Activity, Droplet, Pencil } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -6,6 +7,17 @@ import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
+import {
+  type HydrationUnit,
+  mlToOz,
+  ozToMl,
+  formatHydrationAmount,
+  getUnitLabel,
+  getStoredHydrationUnit,
+  setStoredHydrationUnit,
+  QUICK_AMOUNTS_ML,
+  QUICK_AMOUNTS_OZ,
+} from '../utils/hydrationUnits';
 
 interface HydrationFormData {
   logged_at: string;
@@ -26,9 +38,9 @@ const beverageTypes = [
   { label: 'Other', value: 'Other', ml: 250 },
 ];
 
-const quickAmounts = [250, 350, 500, 750, 1000];
-
 export default function HydrationLog() {
+  const [unit, setUnit] = useState<HydrationUnit>(getStoredHydrationUnit);
+
   const {
     formData,
     setFormData,
@@ -71,6 +83,15 @@ export default function HydrationLog() {
     }),
   });
 
+  const displayValue = unit === 'imperial' ? mlToOz(formData.amount_ml) : formData.amount_ml;
+  const unitLabel = getUnitLabel(unit);
+  const quickAmounts = unit === 'imperial' ? QUICK_AMOUNTS_OZ : QUICK_AMOUNTS_ML;
+
+  const handleUnitToggle = (newUnit: HydrationUnit) => {
+    setUnit(newUnit);
+    setStoredHydrationUnit(newUnit);
+  };
+
   const handleBeverageTypeChange = (type: string) => {
     const beverage = beverageTypes.find((b) => b.value === type);
     const hasCaffeine = type === 'Coffee' || type === 'Tea' || type === 'Soda';
@@ -80,6 +101,22 @@ export default function HydrationLog() {
       amount_ml: beverage?.ml || 250,
       caffeine_content: hasCaffeine,
     });
+  };
+
+  const handleQuickAmount = (amount: number) => {
+    const ml = unit === 'imperial' ? ozToMl(amount) : amount;
+    setFormData({ ...formData, amount_ml: ml });
+  };
+
+  const handleCustomAmount = (raw: string) => {
+    const parsed = parseFloat(raw) || 0;
+    const ml = unit === 'imperial' ? ozToMl(parsed) : Math.round(parsed);
+    setFormData({ ...formData, amount_ml: ml });
+  };
+
+  const isQuickSelected = (amount: number) => {
+    const ml = unit === 'imperial' ? ozToMl(amount) : amount;
+    return formData.amount_ml === ml;
   };
 
   return (
@@ -159,35 +196,57 @@ export default function HydrationLog() {
             </div>
 
             <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Quick Amount (ml)
-              </label>
+              <div className="mb-3 flex items-center justify-between">
+                <label className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                  Amount
+                </label>
+                <div className="flex items-center gap-1 rounded-lg border border-neutral-border dark:border-dark-border bg-neutral-bg dark:bg-dark-bg p-0.5">
+                  {(['metric', 'imperial'] as HydrationUnit[]).map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => handleUnitToggle(u)}
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                        unit === u
+                          ? 'bg-brand-500 text-white shadow-sm'
+                          : 'text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
+                      }`}
+                    >
+                      {u === 'metric' ? 'mL / L' : 'oz / gal'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="mb-3 grid grid-cols-5 gap-2">
                 {quickAmounts.map((amount) => (
                   <button
                     key={amount}
                     type="button"
-                    onClick={() => setFormData({ ...formData, amount_ml: amount })}
+                    onClick={() => handleQuickAmount(amount)}
                     className={`rounded-xl border-2 p-3 transition-all ${
-                      formData.amount_ml === amount
+                      isQuickSelected(amount)
                         ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
                         : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
                     }`}
                   >
                     <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">{amount}</div>
+                    <div className="text-xs text-neutral-muted dark:text-dark-muted">{unitLabel}</div>
                   </button>
                 ))}
               </div>
-              <label htmlFor="amount_ml" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Or Enter Custom Amount (ml)
+
+              <label htmlFor="amount_display" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                Custom Amount ({unitLabel})
               </label>
               <input
                 type="number"
-                id="amount_ml"
-                value={formData.amount_ml}
-                onChange={(e) => setFormData({ ...formData, amount_ml: parseInt(e.target.value) || 0 })}
+                id="amount_display"
+                value={displayValue}
+                onChange={(e) => handleCustomAmount(e.target.value)}
                 className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                min="1"
+                min="0.1"
+                step={unit === 'imperial' ? '0.1' : '1'}
                 required
               />
             </div>
@@ -253,7 +312,7 @@ export default function HydrationLog() {
                         {formatDateTime(log.logged_at)}
                       </div>
                       <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
-                        {log.beverage_type} &middot; {log.amount_ml}ml
+                        {log.beverage_type} &middot; {formatHydrationAmount(log.amount_ml, unit)}
                         {log.caffeine_content && ' \u00b7 Contains Caffeine'}
                       </div>
                     </div>

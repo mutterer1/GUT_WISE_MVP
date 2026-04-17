@@ -5,6 +5,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { type HydrationUnit, getStoredHydrationUnit, setStoredHydrationUnit } from '../../utils/hydrationUnits';
 
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
@@ -13,6 +14,7 @@ interface UserPreferences {
   dateFormat: string;
   compactView: boolean;
   animations: boolean;
+  hydrationUnit: HydrationUnit;
 }
 
 const timezones = [
@@ -38,6 +40,7 @@ export default function PreferencesSettings() {
     dateFormat: 'MMM DD, YYYY',
     compactView: false,
     animations: true,
+    hydrationUnit: getStoredHydrationUnit(),
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -88,6 +91,7 @@ export default function PreferencesSettings() {
 
       if (updateError) throw updateError;
 
+      setStoredHydrationUnit(preferences.hydrationUnit);
       localStorage.setItem('app-preferences', JSON.stringify({
         theme: preferences.theme,
         language: preferences.language,
@@ -222,6 +226,34 @@ export default function PreferencesSettings() {
                 <option value="YYYY-MM-DD">2024-03-15</option>
                 <option value="MM/DD/YYYY">03/15/2024</option>
               </select>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Units</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Hydration Unit
+            </label>
+            <div className="flex gap-3">
+              {([
+                { value: 'metric', label: 'Metric (mL / L)' },
+                { value: 'imperial', label: 'Imperial (fl oz / gal)' },
+              ] as { value: HydrationUnit; label: string }[]).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPreferences({ ...preferences, hydrationUnit: value })}
+                  className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                    preferences.hydrationUnit === value
+                      ? 'border-teal-500 bg-teal-50 text-teal-700'
+                      : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         </Card>
