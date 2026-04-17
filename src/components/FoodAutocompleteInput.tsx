@@ -73,7 +73,16 @@ export default function FoodAutocompleteInput({ value, onChange, onSelect, onSub
       />
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface shadow-lg overflow-hidden">
+        <div
+          className="absolute left-0 right-0 top-full z-[200] mt-1.5 rounded-2xl overflow-hidden"
+          style={{
+            background: 'rgba(15, 23, 42, 0.97)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30)',
+            maxHeight: '260px',
+            overflowY: 'auto',
+          }}
+        >
           {suggestions.map((s, i) => (
             <button
               key={s.name}
@@ -84,14 +93,14 @@ export default function FoodAutocompleteInput({ value, onChange, onSelect, onSub
               }}
               className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
                 i === activeIndex
-                  ? 'bg-brand-500/10 dark:bg-brand-500/10'
-                  : 'hover:bg-neutral-bg dark:hover:bg-dark-bg'
+                  ? 'bg-white/[0.08]'
+                  : 'hover:bg-white/[0.05]'
               }`}
             >
-              <span className="text-body-sm text-neutral-text dark:text-dark-text font-medium">
+              <span className="text-sm font-medium text-white/90 truncate">
                 {s.name}
               </span>
-              <span className="text-xs text-neutral-muted dark:text-dark-muted ml-3 shrink-0">
+              <span className="text-xs text-white/40 ml-3 shrink-0 tabular-nums">
                 ~{s.calories} cal &middot; {s.portionLabel}
               </span>
             </button>
@@ -104,9 +113,10 @@ export default function FoodAutocompleteInput({ value, onChange, onSelect, onSub
                 setOpen(false);
                 onSubmit();
               }}
-              className="w-full flex items-center px-4 py-2.5 text-left border-t border-neutral-border dark:border-dark-border hover:bg-neutral-bg dark:hover:bg-dark-bg transition-colors"
+              className="w-full flex items-center px-4 py-2.5 text-left hover:bg-white/[0.05] transition-colors"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
             >
-              <span className="text-body-sm text-neutral-muted dark:text-dark-muted">
+              <span className="text-sm text-white/40">
                 Add &ldquo;{value.trim()}&rdquo; as custom food
               </span>
             </button>
