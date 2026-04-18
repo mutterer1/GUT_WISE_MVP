@@ -31,11 +31,22 @@ interface SeedForm {
   notes: string;
 }
 
-const INTAKE_STATUS_META: Record<string, { icon: typeof Clock; label: string; className: string }> = {
+const INTAKE_STATUS_META: Record<
+  string,
+  { icon: typeof Clock; label: string; className: string }
+> = {
   uploaded: { icon: Upload, label: 'Uploaded', className: 'text-blue-600 dark:text-blue-400' },
   processing: { icon: Clock, label: 'Processing', className: 'text-amber-600 dark:text-amber-400' },
-  review_ready: { icon: AlertTriangle, label: 'Ready to Review', className: 'text-amber-600 dark:text-amber-400' },
-  completed: { icon: CheckCircle, label: 'Completed', className: 'text-green-600 dark:text-green-400' },
+  review_ready: {
+    icon: AlertTriangle,
+    label: 'Ready to Review',
+    className: 'text-amber-600 dark:text-amber-400',
+  },
+  completed: {
+    icon: CheckCircle,
+    label: 'Completed',
+    className: 'text-green-600 dark:text-green-400',
+  },
   failed: { icon: XCircle, label: 'Failed', className: 'text-red-600 dark:text-red-400' },
 };
 
@@ -168,52 +179,61 @@ export default function MedicalDocumentIntake() {
     }
   };
 
-  const pendingCount = candidates.filter(c => c.review_status === 'pending_review').length;
+  const pendingCount = candidates.filter((c) => c.review_status === 'pending_review').length;
 
   if (viewMode === 'seed' && seedForm) {
-    const config = CATEGORY_CONFIGS.find(c => c.key === seedForm.category)!;
+    const config = CATEGORY_CONFIGS.find((c) => c.key === seedForm.category)!;
     return (
       <SettingsPageLayout
         title="Add a Detail from Your Document"
         description="Add one detail from your document. It will stay in review until you confirm it."
       >
+        <TrustExplainer variant="documents" className="mb-4" />
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
         <Card>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </label>
               <select
                 value={seedForm.category}
                 onChange={(e) => {
                   const cat = e.target.value as MedicalFactCategory;
                   setSeedForm({ ...seedForm, category: cat, detail: buildDefaultDetail(cat) });
                 }}
-                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white"
               >
-                {CATEGORY_CONFIGS.map(c => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
+                {CATEGORY_CONFIGS.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             {config.fields.map((field) => (
               <div key={field.key}>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
                   {field.label}
-                  {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                  {field.required && <span className="ml-0.5 text-red-500">*</span>}
                 </label>
                 {field.type === 'select' ? (
                   <select
                     value={(seedForm.detail[field.key] as string) || ''}
-                    onChange={(e) => setSeedForm({
-                      ...seedForm,
-                      detail: { ...seedForm.detail, [field.key]: e.target.value },
-                    })}
-                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white"
+                    onChange={(e) =>
+                      setSeedForm({
+                        ...seedForm,
+                        detail: { ...seedForm.detail, [field.key]: e.target.value },
+                      })
+                    }
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white"
                   >
                     <option value="">Select...</option>
-                    {field.options?.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
+                    {field.options?.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
                     ))}
                   </select>
                 ) : field.type === 'boolean' ? (
@@ -221,10 +241,12 @@ export default function MedicalDocumentIntake() {
                     <input
                       type="checkbox"
                       checked={!!seedForm.detail[field.key]}
-                      onChange={(e) => setSeedForm({
-                        ...seedForm,
-                        detail: { ...seedForm.detail, [field.key]: e.target.checked },
-                      })}
+                      onChange={(e) =>
+                        setSeedForm({
+                          ...seedForm,
+                          detail: { ...seedForm.detail, [field.key]: e.target.checked },
+                        })
+                      }
                       className="rounded border-gray-300 dark:border-white/20"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Yes</span>
@@ -234,26 +256,28 @@ export default function MedicalDocumentIntake() {
                     type={field.type === 'date' ? 'date' : 'text'}
                     value={(seedForm.detail[field.key] as string) || ''}
                     placeholder={field.placeholder}
-                    onChange={(e) => setSeedForm({
-                      ...seedForm,
-                      detail: { ...seedForm.detail, [field.key]: e.target.value },
-                    })}
-                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                    onChange={(e) =>
+                      setSeedForm({
+                        ...seedForm,
+                        detail: { ...seedForm.detail, [field.key]: e.target.value },
+                      })
+                    }
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:placeholder-gray-500"
                   />
                 )}
               </div>
             ))}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Source Note <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                Source Note <span className="font-normal text-gray-400">(optional)</span>
               </label>
               <input
                 type="text"
                 value={seedForm.notes}
                 onChange={(e) => setSeedForm({ ...seedForm, notes: e.target.value })}
                 placeholder="Where in the document did you find this? e.g. page 2, discharge summary"
-                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:placeholder-gray-500"
               />
             </div>
 
@@ -261,7 +285,13 @@ export default function MedicalDocumentIntake() {
               <Button onClick={handleSeedCandidate} disabled={saving}>
                 {saving ? 'Saving...' : 'Submit for Review'}
               </Button>
-              <Button variant="outline" onClick={() => { setSeedForm(null); setViewMode('overview'); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSeedForm(null);
+                  setViewMode('overview');
+                }}
+              >
                 Cancel
               </Button>
             </div>
@@ -274,11 +304,10 @@ export default function MedicalDocumentIntake() {
   return (
     <SettingsPageLayout
       title="Medical Documents"
-      description="Upload documents from your care team. Uploaded docs are records only - details affect your insights only after you review and approve each one."
+      description="Share documents from your care team. You choose which details to apply - nothing reaches your insights until you personally review and approve it."
     >
+      <TrustExplainer variant="documents" className="mb-4" />
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
-
-      <TrustExplainer variant="documents" className="mb-6" />
 
       {loading ? (
         <Card>
@@ -287,8 +316,10 @@ export default function MedicalDocumentIntake() {
       ) : (
         <div className="space-y-6">
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Uploaded Documents</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Uploaded Documents
+              </h2>
               <label className="cursor-pointer">
                 <input
                   ref={fileInputRef}
@@ -298,12 +329,8 @@ export default function MedicalDocumentIntake() {
                   onChange={handleFileSelect}
                   disabled={saving}
                 />
-                <Button
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={saving}
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1.5" />
+                <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={saving}>
+                  <Upload className="mr-1.5 h-3.5 w-3.5" />
                   {saving ? 'Uploading...' : 'Upload Document'}
                 </Button>
               </label>
@@ -314,38 +341,48 @@ export default function MedicalDocumentIntake() {
                 <div className="flex items-center gap-3 py-2">
                   <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No documents yet. Upload lab results, discharge summaries, or other documents from your care team. Any reviewed and approved details will be visible in your medical context.
+                    No documents yet. You can upload lab results, discharge summaries, or other
+                    records from your care team, then add reviewed details from them when you are
+                    ready.
                   </p>
                 </div>
               </Card>
             ) : (
               <div className="space-y-2">
                 {intakes.map((intake) => {
-                  const statusMeta = INTAKE_STATUS_META[intake.intake_status] || INTAKE_STATUS_META.uploaded;
+                  const statusMeta =
+                    INTAKE_STATUS_META[intake.intake_status] || INTAKE_STATUS_META.uploaded;
                   const StatusIcon = statusMeta.icon;
                   return (
                     <Card key={intake.id} padding="sm">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <FileText className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0 flex-1 flex items-center gap-3">
+                          <FileText className="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                               {intake.file_name}
                             </p>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="mt-0.5 flex items-center gap-2">
                               <span className="text-[11px] text-gray-400 dark:text-gray-500">
                                 {formatFileSize(intake.file_size_bytes)}
                               </span>
-                              <span className="text-[11px] text-gray-300 dark:text-gray-600">&middot;</span>
-                              <span className={`flex items-center gap-1 text-[11px] ${statusMeta.className}`}>
+                              <span className="text-[11px] text-gray-300 dark:text-gray-600">
+                                &middot;
+                              </span>
+                              <span
+                                className={`flex items-center gap-1 text-[11px] ${statusMeta.className}`}
+                              >
                                 <StatusIcon className="h-3 w-3" />
                                 {statusMeta.label}
                               </span>
                               {intake.candidate_count > 0 && (
                                 <>
-                                  <span className="text-[11px] text-gray-300 dark:text-gray-600">&middot;</span>
+                                  <span className="text-[11px] text-gray-300 dark:text-gray-600">
+                                    &middot;
+                                  </span>
                                   <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    {intake.candidate_count} detail{intake.candidate_count !== 1 ? 's' : ''} to review
+                                    {intake.candidate_count} detail
+                                    {intake.candidate_count !== 1 ? 's' : ''} to review
                                   </span>
                                 </>
                               )}
@@ -366,7 +403,7 @@ export default function MedicalDocumentIntake() {
                             setViewMode('seed');
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          <Plus className="mr-1 h-3.5 w-3.5" />
                           Add Detail
                         </Button>
                       </div>
@@ -378,11 +415,13 @@ export default function MedicalDocumentIntake() {
           </section>
 
           <section>
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Details to Review</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Details to Review
+                </h2>
                 {pendingCount > 0 && (
-                  <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[10px] font-medium">
+                  <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                     {pendingCount}
                   </span>
                 )}
@@ -391,10 +430,10 @@ export default function MedicalDocumentIntake() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('pending_review')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                     statusFilter === 'pending_review'
-                      ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
+                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   Pending
@@ -402,10 +441,10 @@ export default function MedicalDocumentIntake() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                     statusFilter === 'all'
-                      ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
+                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   All
@@ -421,13 +460,18 @@ export default function MedicalDocumentIntake() {
             />
           </section>
 
-          <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
-            <div className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed space-y-1">
+          <Card
+            padding="sm"
+            className="border-gray-200 bg-gray-50 dark:border-white/[0.06] dark:bg-white/[0.02]"
+          >
+            <div className="space-y-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
               <p>
-                Nothing from an uploaded document is applied to your insights until you personally review and approve it.
+                Nothing from an uploaded document is applied to your insights until you personally
+                review and approve it.
               </p>
               <p>
-                To use something from a document, tap "Add Detail" next to it, then confirm before it becomes active.
+                To use something from a document, tap &quot;Add Detail&quot; next to the document above,
+                then confirm it before it becomes active.
               </p>
             </div>
           </Card>
@@ -439,10 +483,13 @@ export default function MedicalDocumentIntake() {
 
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
-    <Card className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 mb-4">
+    <Card className="mb-4 border border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/20">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm text-red-900 dark:text-red-200">{message}</p>
-        <button onClick={onDismiss} className="text-red-400 hover:text-red-600 dark:hover:text-red-300">
+        <button
+          onClick={onDismiss}
+          className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+        >
           <span className="sr-only">Dismiss</span>
           &times;
         </button>
