@@ -15,17 +15,17 @@ function getPatternType(subtype: string, category: string): PatternType {
   if (subtype.includes('flare') || subtype.includes('recovery') || subtype.includes('episode')) {
     return 'episodic';
   }
+
   if (
     category === 'cycle' ||
     subtype.includes('rolling') ||
     subtype.includes('persistence') ||
-    subtype.includes('low_movement') ||
-    subtype.includes('movement_bm') ||
     subtype.includes('recurrent') ||
     subtype.includes('phase')
   ) {
     return 'recurring';
   }
+
   return 'same_day';
 }
 
@@ -60,10 +60,10 @@ const tierBorder: Record<string, string> = {
 };
 
 const tierPill: Record<string, string> = {
-  high: 'bg-[#4A8FA8]/08 text-[#2C617D] dark:text-[#8EBFD8] border border-[#4A8FA8]/18',
+  high: 'border border-[#4A8FA8]/18 bg-[#4A8FA8]/08 text-[#2C617D] dark:text-[#8EBFD8]',
   medium:
-    'bg-[#C28F94]/08 text-[#8D5D62] dark:text-[#D9B3B7] border border-[#C28F94]/18',
-  low: 'bg-gray-100 dark:bg-white/[0.05] text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08]',
+    'border border-[#C28F94]/18 bg-[#C28F94]/08 text-[#8D5D62] dark:text-[#D9B3B7]',
+  low: 'border border-gray-200 bg-gray-100 text-gray-500 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-gray-400',
 };
 
 const tierLabel: Record<string, string> = {
@@ -74,24 +74,44 @@ const tierLabel: Record<string, string> = {
 
 const subtypeLabels: Record<string, string> = {
   sleep_symptom: 'Poor sleep linked to next-day symptoms',
+  poor_sleep_next_day_symptom_burden: 'Poor sleep linked to next-day symptoms',
+
   stress_urgency: 'High stress linked to bowel urgency',
+  high_stress_same_day_urgency: 'High stress linked to bowel urgency',
   stress_high_day_symptom_burden: 'Stress peaks associated with higher symptom load',
+  high_stress_day_symptom_burden: 'Stress peaks associated with higher symptom load',
+
   hydration_stool_consistency: 'Low hydration linked to stool consistency changes',
+  low_hydration_next_day_hard_stool: 'Low hydration linked to harder stool the next day',
   hydration_low_same_day_symptom_burden: 'Low hydration associated with worse symptoms',
+  low_hydration_same_day_symptom_burden: 'Low hydration associated with worse symptoms',
+
   food_caffeine_same_day_symptom_burden: 'Caffeine intake linked to same-day symptoms',
+  caffeine_same_day_symptom_burden: 'Caffeine intake linked to same-day symptoms',
   food_late_meal_next_day_bm_shift: 'Late eating associated with next-day bowel changes',
+  late_meal_next_day_bm_shift: 'Late eating associated with next-day bowel changes',
   food_meal_regularity_symptom_burden: 'Irregular meal timing linked to worse symptoms',
+  low_meal_regularity_symptom_burden: 'Irregular meal timing linked to worse symptoms',
+
   bm_urgency_rolling_elevation: 'Sustained elevation in bowel urgency',
   flare_symptom_burden_episode: 'Identifiable symptom flare episode',
   flare_recovery_pattern: 'Recovery pattern following a flare period',
+
   cycle_phase_bm_shift: 'Cycle phase associated with bowel changes',
   cycle_phase_symptom_shift: 'Cycle phase associated with symptom changes',
   cycle_phase_recurrent_symptom_burden: 'Recurring symptoms across menstrual phases',
+
   exercise_movement_bm_regularity: 'Regular movement linked to bowel regularity',
+  low_movement_bm_regularity: 'Lower movement linked to bowel irregularity',
   exercise_low_movement_symptom_burden: 'Low activity associated with higher symptom load',
+  low_movement_symptom_burden: 'Low activity associated with higher symptom load',
+
   medication_any_bm_shift: 'Medication timing linked to bowel changes',
   medication_any_symptom_burden: 'Medication timing associated with symptom patterns',
+
   multifactor_stress_sleep_hydration_risk: 'Combined stress, poor sleep, and low hydration',
+  compound_risk_day: 'Combined stress, poor sleep, and low hydration',
+
   symptom_type_persistence: 'Persistent recurring symptom type detected',
 };
 
@@ -159,6 +179,11 @@ function formatFactorLabel(raw: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
+function formatSubtypeFallback(raw: string): string {
+  const spaced = raw.replace(/_/g, ' ');
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return 'N/A';
   return `${Math.round(value * 100)}%`;
@@ -185,7 +210,7 @@ export default function RankedCandidateCard({
   const pt = patternTypeConfig[patternType];
   const status = statusConfig[candidate.status] ?? statusConfig.exploratory;
   const categoryLabel = categoryLabels[candidate.category] ?? candidate.category;
-  const title = subtypeLabels[candidate.subtype] ?? candidate.subtype.replace(/_/g, ' ');
+  const title = subtypeLabels[candidate.subtype] ?? formatSubtypeFallback(candidate.subtype);
   const windowDays = getWindowDays(
     candidate.created_from_start_date,
     candidate.created_from_end_date
@@ -206,7 +231,7 @@ export default function RankedCandidateCard({
         tierBorder[candidate.priority_tier] ?? tierBorder.low
       }`}
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2 flex-wrap">
           <span
             className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${pt.bg} ${pt.color} ${pt.border}`}
@@ -216,7 +241,7 @@ export default function RankedCandidateCard({
           <span className="text-xs text-gray-400 dark:text-gray-500">{categoryLabel}</span>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${
+          className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
             tierPill[candidate.priority_tier] ?? tierPill.low
           }`}
         >
@@ -228,7 +253,7 @@ export default function RankedCandidateCard({
         {title}
       </h3>
 
-      <div className="mb-5 flex items-center gap-1.5 text-sm flex-wrap">
+      <div className="mb-5 flex flex-wrap items-center gap-1.5 text-sm">
         <span className="font-medium text-gray-700 dark:text-gray-300">
           {triggerLabels.join(', ')}
         </span>
@@ -236,12 +261,16 @@ export default function RankedCandidateCard({
         <span className="text-gray-500 dark:text-gray-400">{outcomeLabels.join(', ')}</span>
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-1.5">
-          <span className={`inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${status.dotColor}`} />
+          <span className={`inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full ${status.dotColor}`} />
           <span className={`font-medium ${status.textColor}`}>{status.label}</span>
         </div>
-        {supportDays > 0 && <span>Seen on {supportDays} {supportDays === 1 ? 'day' : 'days'}</span>}
+        {supportDays > 0 && (
+          <span>
+            Seen on {supportDays} {supportDays === 1 ? 'day' : 'days'}
+          </span>
+        )}
         <span>{windowDays}-day lookback</span>
         <span>{evidenceQualityLabels[evidenceQuality] ?? evidenceQuality}</span>
       </div>
@@ -286,17 +315,23 @@ export default function RankedCandidateCard({
         {detailsOpen && (
           <div className="border-t border-gray-200/80 px-4 py-4 dark:border-white/[0.08]">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Metric label="Date window" value={formatDateRange(candidate.created_from_start_date, candidate.created_from_end_date)} />
+              <Metric
+                label="Date window"
+                value={formatDateRange(
+                  candidate.created_from_start_date,
+                  candidate.created_from_end_date
+                )}
+              />
               <Metric label="Support count" value={String(candidate.evidence.support_count)} />
               <Metric label="Exposure count" value={String(candidate.evidence.exposure_count)} />
               <Metric label="Contrast count" value={String(candidate.evidence.contrast_count ?? 0)} />
               <Metric label="Exposed rate" value={formatPercent(candidate.evidence.exposed_rate)} />
               <Metric label="Baseline rate" value={formatPercent(candidate.evidence.baseline_rate)} />
-              <Metric label="Lift" value={candidate.evidence.lift ? `${candidate.evidence.lift}x` : 'N/A'} />
               <Metric
-                label="Contradiction rate"
-                value={formatPercent(contradictionRate)}
+                label="Lift"
+                value={candidate.evidence.lift ? `${candidate.evidence.lift}x` : 'N/A'}
               />
+              <Metric label="Contradiction rate" value={formatPercent(contradictionRate)} />
               <Metric
                 label="Medical context"
                 value={medicalContextApplied ? 'Adjusted ranking' : 'No adjustment'}
