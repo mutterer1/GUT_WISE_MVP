@@ -25,6 +25,25 @@ export type DataSufficiency =
   | 'adequate'
   | 'strong';
 
+export type PriorityTier = 'low' | 'medium' | 'high';
+
+export type CandidateEvidenceQuality =
+  | 'very_low'
+  | 'low'
+  | 'moderate'
+  | 'high';
+
+export interface CandidateEvidenceGap {
+  type:
+    | 'missing_exposure_days'
+    | 'missing_baseline_days'
+    | 'missing_overlap'
+    | 'high_contradiction'
+    | 'stale_pattern'
+    | 'narrow_signal';
+  message: string;
+}
+
 export interface CandidateEvidence {
   support_count: number;
   exposure_count: number;
@@ -33,6 +52,20 @@ export interface CandidateEvidence {
   exposed_rate: number | null;
   lift: number | null;
   sample_dates: string[];
+
+  contrast_count?: number;
+  eligible_day_count?: number;
+  exposed_day_count?: number;
+  baseline_day_count?: number;
+  contradiction_rate?: number | null;
+  recency_weight?: number | null;
+  evidence_quality?: CandidateEvidenceQuality;
+  supporting_log_types?: string[];
+  missing_log_types?: string[];
+  exposed_dates?: string[];
+  baseline_dates?: string[];
+  uncertainty_statement?: string;
+  evidence_gaps?: CandidateEvidenceGap[];
   notes?: string[];
   statistics?: Record<string, unknown>;
 }
@@ -52,12 +85,11 @@ export interface InsightCandidate {
   created_from_end_date: string;
 }
 
-export type PriorityTier = 'low' | 'medium' | 'high';
-
 export interface PrioritizedInsightCandidate extends InsightCandidate {
   priority_score: number;
   priority_tier: PriorityTier;
   ranking_reasons: string[];
+  not_enough_evidence_reasons?: string[];
 }
 
 export interface MedicalContextAnnotatedCandidate extends PrioritizedInsightCandidate {
