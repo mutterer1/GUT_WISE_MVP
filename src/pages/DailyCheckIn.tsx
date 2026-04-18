@@ -74,28 +74,26 @@ export default function DailyCheckIn() {
 
   const completedCount = useMemo(() => {
     return sectionMeta.filter((section) => {
-      const current = draft[section.key];
-      if (!current.enabled) return false;
-
+      if (!draft[section.key].enabled) return false;
       switch (section.key) {
         case 'bowelMovement':
-          return current.bristol_type > 0;
+          return draft.bowelMovement.bristol_type > 0;
         case 'symptoms':
-          return current.symptom_type.trim().length > 0;
+          return draft.symptoms.symptom_type.trim().length > 0;
         case 'food':
-          return current.foods.trim().length > 0;
+          return draft.food.foods.trim().length > 0;
         case 'hydration':
-          return current.amount_ml > 0;
+          return draft.hydration.amount_ml > 0;
         case 'sleep':
-          return current.sleep_start.length > 0 && current.sleep_end.length > 0;
+          return draft.sleep.sleep_start.length > 0 && draft.sleep.sleep_end.length > 0;
         case 'stress':
-          return current.stress_level > 0;
+          return draft.stress.stress_level > 0;
         case 'exercise':
-          return current.exercise_type.trim().length > 0;
+          return draft.exercise.exercise_type.trim().length > 0;
         case 'medication':
-          return current.medication_name.trim().length > 0 && current.dosage.trim().length > 0;
+          return draft.medication.medication_name.trim().length > 0 && draft.medication.dosage.trim().length > 0;
         case 'menstrualCycle':
-          return current.cycle_start_date.length > 0;
+          return draft.menstrualCycle.cycle_start_date.length > 0;
         default:
           return false;
       }
@@ -105,7 +103,8 @@ export default function DailyCheckIn() {
   const saveSections = async (keys: SectionKey[]) => {
     if (!user?.id) return;
 
-    const writes: Promise<unknown>[] = [];
+    type WriteResult = { error: { message?: string } | null };
+    const writes: PromiseLike<WriteResult>[] = [];
 
     for (const key of keys) {
       switch (key) {
@@ -121,7 +120,7 @@ export default function DailyCheckIn() {
               blood_present: draft.bowelMovement.blood_present,
               mucus_present: draft.bowelMovement.mucus_present,
               notes: draft.bowelMovement.notes || null,
-            })
+            }).then((r) => r)
           );
           break;
         case 'symptoms':
@@ -134,7 +133,7 @@ export default function DailyCheckIn() {
               severity: draft.symptoms.severity,
               duration_minutes: draft.symptoms.duration_minutes,
               notes: draft.symptoms.notes || null,
-            })
+            }).then((r) => r)
           );
           break;
         case 'food':
@@ -147,7 +146,7 @@ export default function DailyCheckIn() {
               food_items: splitTags(draft.food.foods).map((name) => ({ name })),
               tags: splitTags(draft.food.tags),
               notes: draft.food.notes || null,
-            })
+            }).then((r) => r)
           );
           break;
         case 'hydration':
@@ -159,7 +158,7 @@ export default function DailyCheckIn() {
               amount_ml: draft.hydration.amount_ml,
               beverage_type: draft.hydration.beverage_type,
               caffeine_content: draft.hydration.caffeine_content,
-            })
+            }).then((r) => r)
           );
           break;
         case 'sleep':
@@ -172,7 +171,7 @@ export default function DailyCheckIn() {
               sleep_end: draft.sleep.sleep_end,
               quality: draft.sleep.quality,
               felt_rested: draft.sleep.felt_rested,
-            })
+            }).then((r) => r)
           );
           break;
         case 'stress':
@@ -183,7 +182,7 @@ export default function DailyCheckIn() {
               logged_at: draft.logged_at,
               stress_level: draft.stress.stress_level,
               notes: draft.stress.notes || null,
-            })
+            }).then((r) => r)
           );
           break;
         case 'exercise':
@@ -195,7 +194,7 @@ export default function DailyCheckIn() {
               exercise_type: draft.exercise.exercise_type.trim(),
               duration_minutes: draft.exercise.duration_minutes,
               intensity_level: draft.exercise.intensity_level,
-            })
+            }).then((r) => r)
           );
           break;
         case 'medication':
@@ -213,7 +212,7 @@ export default function DailyCheckIn() {
               medication_name: draft.medication.medication_name.trim(),
               dosage: draft.medication.dosage.trim(),
               medication_type: draft.medication.medication_type,
-            })
+            }).then((r) => r)
           );
           break;
         case 'menstrualCycle':
@@ -226,7 +225,7 @@ export default function DailyCheckIn() {
               cycle_day: draft.menstrualCycle.cycle_day,
               flow_intensity: draft.menstrualCycle.flow_intensity,
               pain_level: draft.menstrualCycle.pain_level,
-            })
+            }).then((r) => r)
           );
           break;
       }
@@ -236,11 +235,10 @@ export default function DailyCheckIn() {
       throw new Error('Add at least one enabled section with enough detail to save.');
     }
 
-    const results = await Promise.all(writes);
+    const results = await Promise.all(writes as Promise<WriteResult>[]);
     for (const result of results) {
-      const maybeError = result as { error?: { message?: string } | null };
-      if (maybeError.error) {
-        throw new Error(maybeError.error.message || 'Unable to save your check-in.');
+      if (result.error) {
+        throw new Error(result.error.message || 'Unable to save your check-in.');
       }
     }
   };
