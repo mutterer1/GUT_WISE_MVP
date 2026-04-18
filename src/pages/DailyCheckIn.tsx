@@ -1,376 +1,1009 @@
-import { useState } from 'react';
-import { CheckCircle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  CheckCircle2,
+  Circle,
+  ClipboardCheck,
+  Droplet,
+  Heart,
+  Moon,
+  Pill,
+  Save,
+  Sparkles,
+  Waves,
+  AlertCircle,
+  Utensils,
+  Dumbbell,
+  Frown,
+} from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import TrustExplainer from '../components/TrustExplainer';
-import { useDailyCheckInDraft } from '../hooks/useDailyCheckInDraft';
 import { useAuth } from '../contexts/AuthContext';
+import { useDailyCheckInDraft } from '../hooks/useDailyCheckInDraft';
 import { supabase } from '../lib/supabase';
 import type { DailyCheckInDraft } from '../types/dailyCheckIn';
 
-type SectionKey = keyof DailyCheckInDraft;
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type SectionKey =
+  | 'bowelMovement'
+  | 'symptoms'
+  | 'food'
+  | 'hydration'
+  | 'sleep'
+  | 'stress'
+  | 'exercise'
+  | 'medication'
+  | 'menstrualCycle';
 
-const SECTION_LABELS: Record<SectionKey, string> = {
-  bowelMovement: 'Bowel Movement',
-  symptoms: 'Symptoms',
-  food: 'Food',
-  hydration: 'Hydration',
-  sleep: 'Sleep',
-  stress: 'Stress',
-  exercise: 'Exercise',
-  medication: 'Medication',
-  menstrualCycle: 'Menstrual Cycle',
-};
-
-const SYMPTOM_TYPES = [
-  'Abdominal Pain', 'Bloating', 'Nausea', 'Cramping', 'Urgency',
-  'Fatigue', 'Headache', 'Heartburn', 'Gas', 'Other',
+const sectionMeta: Array<{
+  key: SectionKey;
+  label: string;
+  icon: typeof Waves;
+  description: string;
+}> = [
+  { key: 'bowelMovement', label: 'Stool', icon: Waves, description: 'Bristol type, urgency, and anything notable.' },
+  { key: 'symptoms', label: 'Symptoms', icon: AlertCircle, description: 'What you felt and how strong it was.' },
+  { key: 'food', label: 'Food', icon: Utensils, description: 'What you ate and any tags worth remembering.' },
+  { key: 'hydration', label: 'Hydration', icon: Droplet, description: 'A quick drink log helps tie the day together.' },
+  { key: 'sleep', label: 'Sleep', icon: Moon, description: 'Optional, but helpful for stronger pattern matching.' },
+  { key: 'stress', label: 'Stress', icon: Frown, description: 'A simple stress score is often enough.' },
+  { key: 'exercise', label: 'Exercise', icon: Dumbbell, description: 'Movement can add useful context.' },
+  { key: 'medication', label: 'Medication', icon: Pill, description: 'Keep timing and dose in one place.' },
+  { key: 'menstrualCycle', label: 'Cycle', icon: Heart, description: 'Optional context when it is relevant for you.' },
 ];
 
-const EXERCISE_TYPES = ['walking', 'running', 'cycling', 'swimming', 'yoga', 'strength', 'other'];
-const EXERCISE_INTENSITIES = ['light', 'moderate', 'intense'];
-const CYCLE_PHASES = ['menstrual', 'follicular', 'ovulatory', 'luteal'];
-const FLOW_INTENSITIES = ['none', 'light', 'medium', 'heavy', 'spotting'];
-const MEAL_TYPES = ['meal', 'snack', 'drink'];
-const DRINK_TYPES = ['water', 'tea', 'coffee', 'juice', 'soda', 'other'];
-
-async function saveSection(userId: string, sectionKey: SectionKey, draft: DailyCheckInDraft): Promise<void> {
-  const now = draft[sectionKey].logged_at;
-
-  switch (sectionKey) {
-    case 'bowelMovement': {
-      const s = draft.bowelMovement;
-      const { error } = await supabase.from('bm_logs').insert({
-        user_id: userId,
-        bristol_type: s.bristol_type,
-        blood_present: s.blood_present,
-        pain_level: s.pain_level,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'symptoms': {
-      const s = draft.symptoms;
-      const { error } = await supabase.from('symptom_logs').insert({
-        user_id: userId,
-        symptom_type: s.symptom_type,
-        severity: s.severity,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'food': {
-      const s = draft.food;
-      const { error } = await supabase.from('food_logs').insert({
-        user_id: userId,
-        meal_type: s.meal_type,
-        food_items: s.food_items || null,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'hydration': {
-      const s = draft.hydration;
-      const { error } = await supabase.from('hydration_logs').insert({
-        user_id: userId,
-        amount_ml: s.amount_ml,
-        drink_type: s.drink_type,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'sleep': {
-      const s = draft.sleep;
-      const { error } = await supabase.from('sleep_logs').insert({
-        user_id: userId,
-        duration_minutes: s.duration_minutes,
-        quality: s.quality,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'stress': {
-      const s = draft.stress;
-      const { error } = await supabase.from('stress_logs').insert({
-        user_id: userId,
-        stress_level: s.stress_level,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'exercise': {
-      const s = draft.exercise;
-      const { error } = await supabase.from('exercise_logs').insert({
-        user_id: userId,
-        exercise_type: s.exercise_type,
-        duration_minutes: s.duration_minutes,
-        intensity: s.intensity,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'medication': {
-      const s = draft.medication;
-      const { error } = await supabase.from('medication_logs').insert({
-        user_id: userId,
-        medication_name: s.medication_name,
-        dosage: s.dosage || null,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-    case 'menstrualCycle': {
-      const s = draft.menstrualCycle;
-      const { error } = await supabase.from('menstrual_cycle_logs').insert({
-        user_id: userId,
-        cycle_phase: s.cycle_phase,
-        flow_intensity: s.flow_intensity,
-        notes: s.notes || null,
-        logged_at: now,
-      });
-      if (error) throw error;
-      break;
-    }
-  }
-}
-
-function InputLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="block text-xs font-medium text-neutral-muted dark:text-dark-muted mb-1">
-      {children}
-    </label>
-  );
-}
-
-function inputClass() {
-  return 'w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface px-3 py-2 text-sm text-neutral-text dark:text-dark-text placeholder-neutral-muted/50 dark:placeholder-dark-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
-}
-
-function selectClass() {
-  return inputClass();
+function splitTags(value: string): string[] {
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
 }
 
 export default function DailyCheckIn() {
   const { user } = useAuth();
   const { draft, updateDraft, resetDraft } = useDailyCheckInDraft(user?.id);
-  const [expanded, setExpanded] = useState<Record<SectionKey, boolean>>({
-    bowelMovement: true,
-    symptoms: true,
-    food: true,
-    hydration: true,
-    sleep: false,
-    stress: false,
-    exercise: false,
-    medication: false,
-    menstrualCycle: false,
-  });
-  const [sectionStatus, setSectionStatus] = useState<Record<SectionKey, SaveStatus>>({
-    bowelMovement: 'idle',
-    symptoms: 'idle',
-    food: 'idle',
-    hydration: 'idle',
-    sleep: 'idle',
-    stress: 'idle',
-    exercise: 'idle',
-    medication: 'idle',
-    menstrualCycle: 'idle',
-  });
-  const [saveAllStatus, setSaveAllStatus] = useState<SaveStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [savingAll, setSavingAll] = useState(false);
+  const [savingSection, setSavingSection] = useState<SectionKey | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const enabledSections = (Object.keys(draft) as SectionKey[]).filter((k) => draft[k].enabled);
-  const savedSections = (Object.keys(sectionStatus) as SectionKey[]).filter((k) => sectionStatus[k] === 'saved');
+  const enabledSections = useMemo(
+    () => sectionMeta.filter((section) => draft[section.key].enabled),
+    [draft]
+  );
 
-  const toggleEnabled = (key: SectionKey) => {
-    updateDraft({ [key]: { ...draft[key], enabled: !draft[key].enabled } } as Partial<DailyCheckInDraft>);
-  };
+  const completedCount = useMemo(() => {
+    return sectionMeta.filter((section) => {
+      const current = draft[section.key];
+      if (!current.enabled) return false;
 
-  const toggleExpanded = (key: SectionKey) => {
-    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+      switch (section.key) {
+        case 'bowelMovement':
+          return current.bristol_type > 0;
+        case 'symptoms':
+          return current.symptom_type.trim().length > 0;
+        case 'food':
+          return current.foods.trim().length > 0;
+        case 'hydration':
+          return current.amount_ml > 0;
+        case 'sleep':
+          return current.sleep_start.length > 0 && current.sleep_end.length > 0;
+        case 'stress':
+          return current.stress_level > 0;
+        case 'exercise':
+          return current.exercise_type.trim().length > 0;
+        case 'medication':
+          return current.medication_name.trim().length > 0 && current.dosage.trim().length > 0;
+        case 'menstrualCycle':
+          return current.cycle_start_date.length > 0;
+        default:
+          return false;
+      }
+    }).length;
+  }, [draft]);
 
-  const handleSaveSection = async (key: SectionKey) => {
+  const saveSections = async (keys: SectionKey[]) => {
     if (!user?.id) return;
-    setSectionStatus((prev) => ({ ...prev, [key]: 'saving' }));
-    setErrorMsg('');
-    try {
-      await saveSection(user.id, key, draft);
-      setSectionStatus((prev) => ({ ...prev, [key]: 'saved' }));
-    } catch (err) {
-      setSectionStatus((prev) => ({ ...prev, [key]: 'error' }));
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to save. Please try again.');
+
+    const writes: Promise<unknown>[] = [];
+
+    for (const key of keys) {
+      switch (key) {
+        case 'bowelMovement':
+          if (!draft.bowelMovement.enabled) break;
+          writes.push(
+            supabase.from('bm_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              bristol_type: draft.bowelMovement.bristol_type,
+              urgency: draft.bowelMovement.urgency,
+              pain_level: draft.bowelMovement.pain_level,
+              blood_present: draft.bowelMovement.blood_present,
+              mucus_present: draft.bowelMovement.mucus_present,
+              notes: draft.bowelMovement.notes || null,
+            })
+          );
+          break;
+        case 'symptoms':
+          if (!draft.symptoms.enabled || !draft.symptoms.symptom_type.trim()) break;
+          writes.push(
+            supabase.from('symptom_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              symptom_type: draft.symptoms.symptom_type.trim(),
+              severity: draft.symptoms.severity,
+              duration_minutes: draft.symptoms.duration_minutes,
+              notes: draft.symptoms.notes || null,
+            })
+          );
+          break;
+        case 'food':
+          if (!draft.food.enabled || !draft.food.foods.trim()) break;
+          writes.push(
+            supabase.from('food_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              meal_type: draft.food.meal_type,
+              food_items: splitTags(draft.food.foods).map((name) => ({ name })),
+              tags: splitTags(draft.food.tags),
+              notes: draft.food.notes || null,
+            })
+          );
+          break;
+        case 'hydration':
+          if (!draft.hydration.enabled || draft.hydration.amount_ml <= 0) break;
+          writes.push(
+            supabase.from('hydration_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              amount_ml: draft.hydration.amount_ml,
+              beverage_type: draft.hydration.beverage_type,
+              caffeine_content: draft.hydration.caffeine_content,
+            })
+          );
+          break;
+        case 'sleep':
+          if (!draft.sleep.enabled || !draft.sleep.sleep_start || !draft.sleep.sleep_end) break;
+          writes.push(
+            supabase.from('sleep_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              sleep_start: draft.sleep.sleep_start,
+              sleep_end: draft.sleep.sleep_end,
+              quality: draft.sleep.quality,
+              felt_rested: draft.sleep.felt_rested,
+            })
+          );
+          break;
+        case 'stress':
+          if (!draft.stress.enabled) break;
+          writes.push(
+            supabase.from('stress_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              stress_level: draft.stress.stress_level,
+              notes: draft.stress.notes || null,
+            })
+          );
+          break;
+        case 'exercise':
+          if (!draft.exercise.enabled || !draft.exercise.exercise_type.trim()) break;
+          writes.push(
+            supabase.from('exercise_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              exercise_type: draft.exercise.exercise_type.trim(),
+              duration_minutes: draft.exercise.duration_minutes,
+              intensity_level: draft.exercise.intensity_level,
+            })
+          );
+          break;
+        case 'medication':
+          if (
+            !draft.medication.enabled ||
+            !draft.medication.medication_name.trim() ||
+            !draft.medication.dosage.trim()
+          ) {
+            break;
+          }
+          writes.push(
+            supabase.from('medication_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              medication_name: draft.medication.medication_name.trim(),
+              dosage: draft.medication.dosage.trim(),
+              medication_type: draft.medication.medication_type,
+            })
+          );
+          break;
+        case 'menstrualCycle':
+          if (!draft.menstrualCycle.enabled || !draft.menstrualCycle.cycle_start_date) break;
+          writes.push(
+            supabase.from('menstrual_cycle_logs').insert({
+              user_id: user.id,
+              logged_at: draft.logged_at,
+              cycle_start_date: draft.menstrualCycle.cycle_start_date,
+              cycle_day: draft.menstrualCycle.cycle_day,
+              flow_intensity: draft.menstrualCycle.flow_intensity,
+              pain_level: draft.menstrualCycle.pain_level,
+            })
+          );
+          break;
+      }
+    }
+
+    if (writes.length === 0) {
+      throw new Error('Add at least one enabled section with enough detail to save.');
+    }
+
+    const results = await Promise.all(writes);
+    for (const result of results) {
+      const maybeError = result as { error?: { message?: string } | null };
+      if (maybeError.error) {
+        throw new Error(maybeError.error.message || 'Unable to save your check-in.');
+      }
     }
   };
 
   const handleSaveAll = async () => {
-    if (!user?.id) return;
-    setSaveAllStatus('saving');
-    setErrorMsg('');
-    const pending = enabledSections.filter((k) => sectionStatus[k] !== 'saved');
     try {
-      await Promise.all(pending.map((k) => saveSection(user.id!, k, draft)));
-      const updates = {} as Record<SectionKey, SaveStatus>;
-      pending.forEach((k) => { updates[k] = 'saved'; });
-      setSectionStatus((prev) => ({ ...prev, ...updates }));
-      setSaveAllStatus('saved');
+      setSavingAll(true);
+      setError(null);
+      setMessage(null);
+      await saveSections(sectionMeta.map((section) => section.key));
+      setMessage('Daily check-in saved. GutWise can use these entries the next time it looks for patterns.');
+      resetDraft();
     } catch (err) {
-      setSaveAllStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : 'One or more sections failed to save.');
+      setError(err instanceof Error ? err.message : 'Unable to save your check-in.');
+    } finally {
+      setSavingAll(false);
     }
   };
 
-  const handleReset = () => {
-    resetDraft();
-    const resetStatus = {} as Record<SectionKey, SaveStatus>;
-    (Object.keys(sectionStatus) as SectionKey[]).forEach((k) => { resetStatus[k] = 'idle'; });
-    setSectionStatus(resetStatus);
-    setSaveAllStatus('idle');
-    setErrorMsg('');
+  const handleSaveSection = async (key: SectionKey) => {
+    try {
+      setSavingSection(key);
+      setError(null);
+      setMessage(null);
+      await saveSections([key]);
+      setMessage(`${sectionMeta.find((section) => section.key === key)?.label} saved.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save this section.');
+    } finally {
+      setSavingSection(null);
+    }
   };
 
-  const allSaved = enabledSections.length > 0 && enabledSections.every((k) => sectionStatus[k] === 'saved');
+  const renderSectionHeader = (key: SectionKey) => {
+    const section = sectionMeta.find((item) => item.key === key)!;
+    const Icon = section.icon;
+    const enabled = draft[key].enabled;
+
+    return (
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${
+              enabled
+                ? 'bg-brand-500/12 text-brand-500 dark:text-brand-300'
+                : 'bg-neutral-bg text-neutral-muted dark:bg-dark-bg dark:text-dark-muted'
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-body-md font-semibold text-neutral-text dark:text-dark-text">
+              {section.label}
+            </h2>
+            <p className="mt-1 text-body-sm text-neutral-muted dark:text-dark-muted">
+              {section.description}
+            </p>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-medium text-neutral-muted dark:text-dark-muted">
+          Include
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) =>
+              updateDraft(
+                key,
+                { ...draft[key], enabled: e.target.checked } as DailyCheckInDraft[SectionKey]
+              )
+            }
+            className="h-4 w-4 rounded border-neutral-border text-brand-500 focus:ring-brand-500"
+          />
+        </label>
+      </div>
+    );
+  };
 
   return (
     <MainLayout>
-      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">Daily Check-In</h1>
-          <p className="text-body-sm text-neutral-muted dark:text-dark-muted mt-0.5">
-            Log all your health data for today in one place. Enable only what applies.
-          </p>
-        </div>
-
-        {errorMsg && (
-          <div className="mb-4 rounded-xl border border-signal-500/30 bg-signal-500/10 px-4 py-3">
-            <p className="text-body-sm text-signal-700 dark:text-signal-300">{errorMsg}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-          <div className="space-y-4">
-            {(Object.keys(draft) as SectionKey[]).map((key) => {
-              const section = draft[key];
-              const isEnabled = section.enabled;
-              const status = sectionStatus[key];
-              const isOpen = expanded[key];
-
-              return (
-                <Card key={key} variant="elevated" padding="none" className={isEnabled ? '' : 'opacity-60'}>
-                  <div className="flex items-center justify-between px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={isEnabled}
-                        onChange={() => toggleEnabled(key)}
-                        className="h-4 w-4 rounded border-neutral-border dark:border-dark-border accent-brand-500"
-                      />
-                      <span className="text-sm font-semibold text-neutral-text dark:text-dark-text">
-                        {SECTION_LABELS[key]}
-                      </span>
-                      {status === 'saved' && (
-                        <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
-                      )}
-                    </div>
-                    {isEnabled && (
-                      <button
-                        onClick={() => toggleExpanded(key)}
-                        className="text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text"
-                      >
-                        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                    )}
-                  </div>
-
-                  {isEnabled && isOpen && (
-                    <div className="border-t border-neutral-border dark:border-dark-border px-5 py-4 space-y-4">
-                      <SectionFields sectionKey={key} draft={draft} updateDraft={updateDraft} />
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveSection(key)}
-                          disabled={status === 'saving' || status === 'saved'}
-                        >
-                          {status === 'saving' ? (
-                            <span className="flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving...</span>
-                          ) : status === 'saved' ? (
-                            'Saved'
-                          ) : (
-                            'Save This Section'
-                          )}
-                        </Button>
-                        {status === 'error' && (
-                          <span className="text-xs text-signal-700 dark:text-signal-300">Failed to save</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="space-y-4">
-            <Card variant="elevated" padding="md">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-muted dark:text-dark-muted mb-3">Progress</p>
-              <p className="text-2xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-0.5">
-                {savedSections.length} / {enabledSections.length}
-              </p>
-              <p className="text-body-xs text-neutral-muted dark:text-dark-muted mb-4">sections saved</p>
-
-              <div className="space-y-1.5 mb-4">
-                {enabledSections.map((k) => (
-                  <div key={k} className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-muted dark:text-dark-muted">{SECTION_LABELS[k]}</span>
-                    <span className={`text-xs font-medium ${sectionStatus[k] === 'saved' ? 'text-green-500 dark:text-green-400' : 'text-neutral-muted/50 dark:text-dark-muted/50'}`}>
-                      {sectionStatus[k] === 'saved' ? 'Saved' : 'Pending'}
-                    </span>
-                  </div>
-                ))}
+      <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.65fr]">
+          <div className="space-y-6">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/6 px-3 py-1 text-xs font-medium uppercase tracking-widest text-brand-500 dark:text-brand-300">
+                <ClipboardCheck className="h-3.5 w-3.5" />
+                Daily Check-In
               </div>
-
-              <Button
-                onClick={handleSaveAll}
-                disabled={saveAllStatus === 'saving' || allSaved || enabledSections.length === 0}
-                className="w-full"
-              >
-                {saveAllStatus === 'saving' ? (
-                  <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Saving...</span>
-                ) : allSaved ? (
-                  'All Saved'
-                ) : (
-                  'Save All Enabled Sections'
-                )}
-              </Button>
-
-              {(allSaved || savedSections.length > 0) && (
-                <button
-                  onClick={handleReset}
-                  className="mt-2 w-full text-center text-xs text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
-                >
-                  Start a new check-in
-                </button>
-              )}
-            </Card>
+              <h1 className="mt-3 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                Log the whole day in one pass
+              </h1>
+              <p className="mt-2 max-w-2xl text-body-sm text-neutral-muted dark:text-dark-muted">
+                This is the fastest way to give GutWise enough overlap across stool, food,
+                symptoms, hydration, sleep, stress, exercise, medication, and cycle data to find
+                clearer patterns.
+              </p>
+            </div>
 
             <TrustExplainer variant="insights" />
+
+            {message && (
+              <div className="rounded-xl border border-brand-500/20 bg-brand-500/8 p-4 text-body-sm text-brand-700 dark:text-brand-300">
+                {message}
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-xl border border-signal-500/30 bg-signal-500/10 p-4 text-body-sm text-signal-700 dark:text-signal-300">
+                {error}
+              </div>
+            )}
+
+            <Card variant="elevated" className="overflow-hidden">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl bg-brand-500/8 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-300">
+                    Included Today
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-neutral-text dark:text-dark-text">
+                    {enabledSections.length}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                    sections enabled
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-neutral-bg p-4 dark:bg-dark-bg">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-neutral-muted dark:text-dark-muted">
+                    Ready To Save
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-neutral-text dark:text-dark-text">
+                    {completedCount}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                    sections with enough detail
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-discovery-500/8 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-discovery-500 dark:text-discovery-300">
+                    Best Signal
+                  </p>
+                  <p className="mt-2 text-body-md font-semibold text-neutral-text dark:text-dark-text">
+                    Overlap matters most
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                    Stool, symptoms, meals, hydration, sleep, and stress together create the
+                    strongest starting point.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card variant="elevated">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex-1">
+                  <label
+                    htmlFor="daily-logged-at"
+                    className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted"
+                  >
+                    Check-in time
+                  </label>
+                  <input
+                    id="daily-logged-at"
+                    type="datetime-local"
+                    value={draft.logged_at}
+                    onChange={(e) => updateDraft('logged_at', e.target.value)}
+                    className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={resetDraft}>
+                    Reset Draft
+                  </Button>
+                  <Button onClick={handleSaveAll} disabled={savingAll}>
+                    <Save className="mr-2 inline h-4 w-4" />
+                    {savingAll ? 'Saving...' : 'Save All Enabled Sections'}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            <div className="space-y-5">
+              <Card>
+                {renderSectionHeader('bowelMovement')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Bristol type
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="7"
+                      step="1"
+                      value={draft.bowelMovement.bristol_type}
+                      onChange={(e) =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          bristol_type: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: Type {draft.bowelMovement.bristol_type}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Urgency
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value={draft.bowelMovement.urgency}
+                      onChange={(e) =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          urgency: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-orange-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.bowelMovement.urgency}/5
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Pain
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={draft.bowelMovement.pain_level}
+                      onChange={(e) =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          pain_level: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.bowelMovement.pain_level}/10
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <ToggleChip
+                      label="Blood"
+                      active={draft.bowelMovement.blood_present}
+                      onToggle={() =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          blood_present: !draft.bowelMovement.blood_present,
+                        })
+                      }
+                    />
+                    <ToggleChip
+                      label="Mucus"
+                      active={draft.bowelMovement.mucus_present}
+                      onToggle={() =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          mucus_present: !draft.bowelMovement.mucus_present,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Notes
+                    </label>
+                    <textarea
+                      value={draft.bowelMovement.notes}
+                      onChange={(e) =>
+                        updateDraft('bowelMovement', {
+                          ...draft.bowelMovement,
+                          notes: e.target.value,
+                        })
+                      }
+                      rows={2}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                      placeholder="Optional details"
+                    />
+                  </div>
+                </div>
+                <SectionActions
+                  saving={savingSection === 'bowelMovement'}
+                  onSave={() => handleSaveSection('bowelMovement')}
+                />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('symptoms')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Main symptom"
+                    value={draft.symptoms.symptom_type}
+                    onChange={(value) =>
+                      updateDraft('symptoms', { ...draft.symptoms, symptom_type: value })
+                    }
+                    placeholder="Bloating, cramping, nausea..."
+                  />
+                  <NumberField
+                    label="Duration (minutes)"
+                    value={draft.symptoms.duration_minutes}
+                    onChange={(value) =>
+                      updateDraft('symptoms', { ...draft.symptoms, duration_minutes: value })
+                    }
+                    min={1}
+                  />
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Severity
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={draft.symptoms.severity}
+                      onChange={(e) =>
+                        updateDraft('symptoms', {
+                          ...draft.symptoms,
+                          severity: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.symptoms.severity}/10
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Notes
+                    </label>
+                    <textarea
+                      value={draft.symptoms.notes}
+                      onChange={(e) =>
+                        updateDraft('symptoms', { ...draft.symptoms, notes: e.target.value })
+                      }
+                      rows={2}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                      placeholder="Anything that made this stand out"
+                    />
+                  </div>
+                </div>
+                <SectionActions
+                  saving={savingSection === 'symptoms'}
+                  onSave={() => handleSaveSection('symptoms')}
+                />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('food')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Meal type
+                    </label>
+                    <select
+                      value={draft.food.meal_type}
+                      onChange={(e) =>
+                        updateDraft('food', {
+                          ...draft.food,
+                          meal_type: e.target.value as DailyCheckInDraft['food']['meal_type'],
+                        })
+                      }
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    >
+                      <option value="breakfast">Breakfast</option>
+                      <option value="lunch">Lunch</option>
+                      <option value="dinner">Dinner</option>
+                      <option value="snack">Snack</option>
+                    </select>
+                  </div>
+                  <Field
+                    label="Tags"
+                    value={draft.food.tags}
+                    onChange={(value) => updateDraft('food', { ...draft.food, tags: value })}
+                    placeholder="Comma separated, for example dairy, spicy, caffeine"
+                  />
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Foods
+                    </label>
+                    <textarea
+                      value={draft.food.foods}
+                      onChange={(e) => updateDraft('food', { ...draft.food, foods: e.target.value })}
+                      rows={2}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                      placeholder="Comma separated, for example eggs, toast, coffee"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Notes
+                    </label>
+                    <textarea
+                      value={draft.food.notes}
+                      onChange={(e) => updateDraft('food', { ...draft.food, notes: e.target.value })}
+                      rows={2}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                      placeholder="Optional context like restaurant, cravings, or timing"
+                    />
+                  </div>
+                </div>
+                <SectionActions saving={savingSection === 'food'} onSave={() => handleSaveSection('food')} />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('hydration')}
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  <NumberField
+                    label="Amount (mL)"
+                    value={draft.hydration.amount_ml}
+                    onChange={(value) =>
+                      updateDraft('hydration', { ...draft.hydration, amount_ml: value })
+                    }
+                    min={1}
+                  />
+                  <Field
+                    label="Beverage"
+                    value={draft.hydration.beverage_type}
+                    onChange={(value) =>
+                      updateDraft('hydration', { ...draft.hydration, beverage_type: value })
+                    }
+                    placeholder="Water"
+                  />
+                  <div className="flex items-end">
+                    <ToggleChip
+                      label="Contains caffeine"
+                      active={draft.hydration.caffeine_content}
+                      onToggle={() =>
+                        updateDraft('hydration', {
+                          ...draft.hydration,
+                          caffeine_content: !draft.hydration.caffeine_content,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <SectionActions
+                  saving={savingSection === 'hydration'}
+                  onSave={() => handleSaveSection('hydration')}
+                />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('sleep')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <DateTimeField
+                    label="Sleep start"
+                    value={draft.sleep.sleep_start}
+                    onChange={(value) => updateDraft('sleep', { ...draft.sleep, sleep_start: value })}
+                  />
+                  <DateTimeField
+                    label="Wake time"
+                    value={draft.sleep.sleep_end}
+                    onChange={(value) => updateDraft('sleep', { ...draft.sleep, sleep_end: value })}
+                  />
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Sleep quality
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={draft.sleep.quality}
+                      onChange={(e) =>
+                        updateDraft('sleep', {
+                          ...draft.sleep,
+                          quality: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.sleep.quality}/10
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <ToggleChip
+                      label="Felt rested"
+                      active={draft.sleep.felt_rested}
+                      onToggle={() =>
+                        updateDraft('sleep', {
+                          ...draft.sleep,
+                          felt_rested: !draft.sleep.felt_rested,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <SectionActions saving={savingSection === 'sleep'} onSave={() => handleSaveSection('sleep')} />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('stress')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Stress level
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={draft.stress.stress_level}
+                      onChange={(e) =>
+                        updateDraft('stress', {
+                          ...draft.stress,
+                          stress_level: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-pink-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.stress.stress_level}/10
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Notes
+                    </label>
+                    <textarea
+                      value={draft.stress.notes}
+                      onChange={(e) => updateDraft('stress', { ...draft.stress, notes: e.target.value })}
+                      rows={2}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                      placeholder="Optional trigger or context"
+                    />
+                  </div>
+                </div>
+                <SectionActions saving={savingSection === 'stress'} onSave={() => handleSaveSection('stress')} />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('exercise')}
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  <Field
+                    label="Exercise type"
+                    value={draft.exercise.exercise_type}
+                    onChange={(value) =>
+                      updateDraft('exercise', { ...draft.exercise, exercise_type: value })
+                    }
+                    placeholder="Walk, run, yoga..."
+                  />
+                  <NumberField
+                    label="Duration (minutes)"
+                    value={draft.exercise.duration_minutes}
+                    onChange={(value) =>
+                      updateDraft('exercise', { ...draft.exercise, duration_minutes: value })
+                    }
+                    min={1}
+                  />
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Intensity
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value={draft.exercise.intensity_level}
+                      onChange={(e) =>
+                        updateDraft('exercise', {
+                          ...draft.exercise,
+                          intensity_level: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-blue-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.exercise.intensity_level}/5
+                    </div>
+                  </div>
+                </div>
+                <SectionActions saving={savingSection === 'exercise'} onSave={() => handleSaveSection('exercise')} />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('medication')}
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  <Field
+                    label="Medication"
+                    value={draft.medication.medication_name}
+                    onChange={(value) =>
+                      updateDraft('medication', { ...draft.medication, medication_name: value })
+                    }
+                    placeholder="Name"
+                  />
+                  <Field
+                    label="Dosage"
+                    value={draft.medication.dosage}
+                    onChange={(value) =>
+                      updateDraft('medication', { ...draft.medication, dosage: value })
+                    }
+                    placeholder="10 mg"
+                  />
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Type
+                    </label>
+                    <select
+                      value={draft.medication.medication_type}
+                      onChange={(e) =>
+                        updateDraft('medication', {
+                          ...draft.medication,
+                          medication_type:
+                            e.target.value as DailyCheckInDraft['medication']['medication_type'],
+                        })
+                      }
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    >
+                      <option value="prescription">Prescription</option>
+                      <option value="otc">OTC</option>
+                      <option value="supplement">Supplement</option>
+                    </select>
+                  </div>
+                </div>
+                <SectionActions saving={savingSection === 'medication'} onSave={() => handleSaveSection('medication')} />
+              </Card>
+
+              <Card>
+                {renderSectionHeader('menstrualCycle')}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Cycle start date
+                    </label>
+                    <input
+                      type="date"
+                      value={draft.menstrualCycle.cycle_start_date}
+                      onChange={(e) =>
+                        updateDraft('menstrualCycle', {
+                          ...draft.menstrualCycle,
+                          cycle_start_date: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    />
+                  </div>
+                  <NumberField
+                    label="Cycle day"
+                    value={draft.menstrualCycle.cycle_day}
+                    onChange={(value) =>
+                      updateDraft('menstrualCycle', {
+                        ...draft.menstrualCycle,
+                        cycle_day: value,
+                      })
+                    }
+                    min={1}
+                  />
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Flow
+                    </label>
+                    <select
+                      value={draft.menstrualCycle.flow_intensity}
+                      onChange={(e) =>
+                        updateDraft('menstrualCycle', {
+                          ...draft.menstrualCycle,
+                          flow_intensity:
+                            e.target.value as DailyCheckInDraft['menstrualCycle']['flow_intensity'],
+                        })
+                      }
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    >
+                      <option value="none">None</option>
+                      <option value="spotting">Spotting</option>
+                      <option value="light">Light</option>
+                      <option value="medium">Medium</option>
+                      <option value="heavy">Heavy</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Pain
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={draft.menstrualCycle.pain_level}
+                      onChange={(e) =>
+                        updateDraft('menstrualCycle', {
+                          ...draft.menstrualCycle,
+                          pain_level: parseInt(e.target.value, 10),
+                        })
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-rose-500"
+                    />
+                    <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      Current: {draft.menstrualCycle.pain_level}/10
+                    </div>
+                  </div>
+                </div>
+                <SectionActions
+                  saving={savingSection === 'menstrualCycle'}
+                  onSave={() => handleSaveSection('menstrualCycle')}
+                />
+              </Card>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <Card variant="discovery">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-discovery-500/12 text-discovery-500 dark:text-discovery-300">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-body-md font-semibold text-neutral-text dark:text-dark-text">
+                    What to log first
+                  </h2>
+                  <p className="mt-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                    If you want the strongest first insights, start with stool, symptoms, meals,
+                    hydration, sleep, and stress.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-body-md font-semibold text-neutral-text dark:text-dark-text">
+                Today&apos;s progress
+              </h2>
+              <div className="mt-4 space-y-3">
+                {sectionMeta.map((section) => {
+                  const enabled = draft[section.key].enabled;
+                  return (
+                    <div key={section.key} className="flex items-center gap-3 text-body-sm">
+                      {enabled ? (
+                        <CheckCircle2 className="h-4 w-4 text-brand-500 dark:text-brand-300" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
+                      )}
+                      <span
+                        className={
+                          enabled
+                            ? 'text-neutral-text dark:text-dark-text'
+                            : 'text-neutral-muted dark:text-dark-muted'
+                        }
+                      >
+                        {section.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
+            <TrustExplainer variant="documents" />
           </div>
         </div>
       </div>
@@ -378,288 +1011,120 @@ export default function DailyCheckIn() {
   );
 }
 
-function SectionFields({
-  sectionKey,
-  draft,
-  updateDraft,
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
 }: {
-  sectionKey: SectionKey;
-  draft: DailyCheckInDraft;
-  updateDraft: (u: Partial<DailyCheckInDraft>) => void;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }) {
-  const patch = (values: Record<string, unknown>) => {
-    updateDraft({ [sectionKey]: { ...draft[sectionKey], ...values } } as Partial<DailyCheckInDraft>);
-  };
+  return (
+    <div>
+      <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+        {label}
+      </label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+      />
+    </div>
+  );
+}
 
-  switch (sectionKey) {
-    case 'bowelMovement': {
-      const s = draft.bowelMovement;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Bristol Type (1-7)</InputLabel>
-            <input
-              type="number"
-              min={1}
-              max={7}
-              value={s.bristol_type ?? ''}
-              onChange={(e) => patch({ bristol_type: e.target.value ? Number(e.target.value) : null })}
-              className={inputClass()}
-            />
-          </div>
-          <div>
-            <InputLabel>Pain Level (0-10)</InputLabel>
-            <input
-              type="number"
-              min={0}
-              max={10}
-              value={s.pain_level ?? ''}
-              onChange={(e) => patch({ pain_level: e.target.value ? Number(e.target.value) : null })}
-              className={inputClass()}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={s.blood_present}
-              onChange={(e) => patch({ blood_present: e.target.checked })}
-              className="h-4 w-4 rounded border-neutral-border accent-brand-500"
-            />
-            <span className="text-sm text-neutral-muted dark:text-dark-muted">Blood present</span>
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input
-              type="text"
-              value={s.notes}
-              onChange={(e) => patch({ notes: e.target.value })}
-              placeholder="Optional notes"
-              className={inputClass()}
-            />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input
-              type="datetime-local"
-              value={s.logged_at}
-              onChange={(e) => patch({ logged_at: e.target.value })}
-              className={inputClass()}
-            />
-          </div>
-        </div>
-      );
-    }
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+        {label}
+      </label>
+      <input
+        type="number"
+        value={value}
+        min={min}
+        onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
+        className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+      />
+    </div>
+  );
+}
 
-    case 'symptoms': {
-      const s = draft.symptoms;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Symptom Type</InputLabel>
-            <select value={s.symptom_type} onChange={(e) => patch({ symptom_type: e.target.value })} className={selectClass()}>
-              {SYMPTOM_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Severity (1-10, current: {s.severity})</InputLabel>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              value={s.severity}
-              onChange={(e) => patch({ severity: Number(e.target.value) })}
-              className="w-full accent-brand-500"
-            />
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
+function DateTimeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+        {label}
+      </label>
+      <input
+        type="datetime-local"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+      />
+    </div>
+  );
+}
 
-    case 'food': {
-      const s = draft.food;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Meal Type</InputLabel>
-            <select value={s.meal_type} onChange={(e) => patch({ meal_type: e.target.value })} className={selectClass()}>
-              {MEAL_TYPES.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Food Items</InputLabel>
-            <input type="text" value={s.food_items} onChange={(e) => patch({ food_items: e.target.value })} placeholder="e.g. oatmeal, banana, coffee" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
+function ToggleChip({
+  label,
+  active,
+  onToggle,
+}: {
+  label: string;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`inline-flex items-center justify-center rounded-xl border px-4 py-3 text-body-sm font-medium transition-colors ${
+        active
+          ? 'border-brand-500 bg-brand-500/10 text-brand-600 dark:text-brand-300'
+          : 'border-neutral-border text-neutral-muted hover:border-brand-300 hover:text-neutral-text dark:border-dark-border dark:text-dark-muted dark:hover:border-brand-700 dark:hover:text-dark-text'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
 
-    case 'hydration': {
-      const s = draft.hydration;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Amount (ml)</InputLabel>
-            <input type="number" min={0} value={s.amount_ml} onChange={(e) => patch({ amount_ml: Number(e.target.value) })} className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Drink Type</InputLabel>
-            <select value={s.drink_type} onChange={(e) => patch({ drink_type: e.target.value })} className={selectClass()}>
-              {DRINK_TYPES.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    case 'sleep': {
-      const s = draft.sleep;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Duration (minutes)</InputLabel>
-            <input type="number" min={0} value={s.duration_minutes ?? ''} onChange={(e) => patch({ duration_minutes: e.target.value ? Number(e.target.value) : null })} className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Quality (1-10{s.quality ? `, current: ${s.quality}` : ''})</InputLabel>
-            <input type="range" min={1} max={10} value={s.quality ?? 5} onChange={(e) => patch({ quality: Number(e.target.value) })} className="w-full accent-brand-500" />
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at (sleep start)</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    case 'stress': {
-      const s = draft.stress;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Stress Level (1-10, current: {s.stress_level})</InputLabel>
-            <input type="range" min={1} max={10} value={s.stress_level} onChange={(e) => patch({ stress_level: Number(e.target.value) })} className="w-full accent-brand-500" />
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    case 'exercise': {
-      const s = draft.exercise;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Exercise Type</InputLabel>
-            <select value={s.exercise_type} onChange={(e) => patch({ exercise_type: e.target.value })} className={selectClass()}>
-              {EXERCISE_TYPES.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Duration (minutes)</InputLabel>
-            <input type="number" min={0} value={s.duration_minutes ?? ''} onChange={(e) => patch({ duration_minutes: e.target.value ? Number(e.target.value) : null })} className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Intensity</InputLabel>
-            <select value={s.intensity} onChange={(e) => patch({ intensity: e.target.value })} className={selectClass()}>
-              {EXERCISE_INTENSITIES.map((i) => <option key={i} value={i}>{i.charAt(0).toUpperCase() + i.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    case 'medication': {
-      const s = draft.medication;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Medication Name</InputLabel>
-            <input type="text" value={s.medication_name} onChange={(e) => patch({ medication_name: e.target.value })} placeholder="e.g. Mesalazine 400mg" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Dosage</InputLabel>
-            <input type="text" value={s.dosage} onChange={(e) => patch({ dosage: e.target.value })} placeholder="e.g. 400mg" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    case 'menstrualCycle': {
-      const s = draft.menstrualCycle;
-      return (
-        <div className="space-y-3">
-          <div>
-            <InputLabel>Cycle Phase</InputLabel>
-            <select value={s.cycle_phase} onChange={(e) => patch({ cycle_phase: e.target.value })} className={selectClass()}>
-              {CYCLE_PHASES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Flow Intensity</InputLabel>
-            <select value={s.flow_intensity} onChange={(e) => patch({ flow_intensity: e.target.value })} className={selectClass()}>
-              {FLOW_INTENSITIES.map((f) => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <InputLabel>Notes</InputLabel>
-            <input type="text" value={s.notes} onChange={(e) => patch({ notes: e.target.value })} placeholder="Optional notes" className={inputClass()} />
-          </div>
-          <div>
-            <InputLabel>Logged at</InputLabel>
-            <input type="datetime-local" value={s.logged_at} onChange={(e) => patch({ logged_at: e.target.value })} className={inputClass()} />
-          </div>
-        </div>
-      );
-    }
-
-    default:
-      return null;
-  }
+function SectionActions({
+  saving,
+  onSave,
+}: {
+  saving: boolean;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mt-5 flex justify-end">
+      <Button variant="outline" onClick={onSave} disabled={saving}>
+        <Save className="mr-2 inline h-4 w-4" />
+        {saving ? 'Saving...' : 'Save This Section'}
+      </Button>
+    </div>
+  );
 }
