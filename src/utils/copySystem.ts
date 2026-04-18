@@ -123,8 +123,10 @@ const emptyStateMessages: Record<string, { title: string; subtitle: string; hint
   },
   insights: {
     title: 'Patterns are still forming',
-    subtitle: 'GutWise needs repeated overlap across your logs before it can show a reliable pattern. More shared context leads to better insights.',
-    hint: 'Try the daily check-in and include stool, symptoms, meals, hydration, sleep, and stress whenever you can.',
+    subtitle:
+      'GutWise needs repeated overlap across your logs before it can show a reliable pattern. More shared context leads to better insights.',
+    hint:
+      'Try the daily check-in and include stool, symptoms, meals, hydration, sleep, and stress whenever you can.',
   },
 };
 
@@ -168,7 +170,9 @@ export function getEmptyStateMessage(category: string) {
 
 export function getStreakCelebration(days: number): string | null {
   if (streakCelebrations[days]) return streakCelebrations[days];
-  const milestones = Object.keys(streakCelebrations).map(Number).sort((a, b) => a - b);
+  const milestones = Object.keys(streakCelebrations)
+    .map(Number)
+    .sort((a, b) => a - b);
   for (let i = milestones.length - 1; i >= 0; i--) {
     if (days >= milestones[i]) return streakCelebrations[milestones[i]];
   }
