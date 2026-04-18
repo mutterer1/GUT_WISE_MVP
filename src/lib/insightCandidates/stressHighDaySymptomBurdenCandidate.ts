@@ -1,14 +1,17 @@
 import type { UserDailyFeatures } from '../../types/dailyFeatures';
 import type { UserBaselineSet } from '../../types/baselines';
-import type { InsightCandidate, CandidateEvidence } from '../../types/insightCandidates';
+import type {
+  InsightCandidate,
+  CandidateEvidence,
+} from '../../types/insightCandidates';
 import {
   safeRate,
   computeDataSufficiency,
   computeStatus,
   computeConfidence,
   computeLift,
-  computeContradictionRate,
   computeRecencyWeight,
+  computeContradictionRate,
   computeEvidenceQuality,
   buildEvidenceGaps,
   buildUncertaintyStatement,
@@ -16,17 +19,11 @@ import {
 import { isHighStressDay } from './stressUrgencyCandidate';
 
 const INSIGHT_KEY = 'stress_high_day_symptom_burden';
+const MIN_ELIGIBLE_DAYS = 7;
+const MIN_EXPOSURE_DAYS = 3;
 
 function hasStressData(day: UserDailyFeatures): boolean {
   return day.stress_avg !== null || day.stress_peak !== null;
-}
-
-function hasSymptomContext(day: UserDailyFeatures): boolean {
-  return (
-    day.symptom_event_count > 0 ||
-    day.max_symptom_severity !== null ||
-    day.symptom_types.length > 0
-  );
 }
 
 function isElevatedSymptomBurden(
@@ -45,6 +42,38 @@ function isElevatedSymptomBurden(
   return burdenAboveThreshold || severityAboveMedian;
 }
 
+function getSupportingLogTypes(eligibleDays: UserDailyFeatures[]): string[] {
+  const logTypes = new Set<string>();
+
+  for (const day of eligibleDays) {
+    if (day.stress_avg !== null || day.stress_peak !== null) {
+      logTypes.add('stress');
+    }
+
+    if (
+      day.symptom_event_count > 0 ||
+      day.symptom_burden_score > 0 ||
+      day.max_symptom_severity !== null
+    ) {
+      logTypes.add('symptom');
+    }
+
+    if (day.sleep_entry_count > 0) {
+      logTypes.add('sleep');
+    }
+
+    if (day.hydration_event_count > 0) {
+      logTypes.add('hydration');
+    }
+
+    if (day.meal_count > 0) {
+      logTypes.add('food');
+    }
+  }
+
+  return Array.from(logTypes);
+}
+
 export function analyzeStressHighDaySymptomBurdenCandidate(
   features: UserDailyFeatures[],
   baselines: UserBaselineSet
@@ -58,11 +87,8 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     return null;
   }
 
-  const eligibleDays = features
-    .filter((day) => hasStressData(day) && hasSymptomContext(day))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  if (eligibleDays.length < 7) return null;
+  const eligibleDays = features.filter(hasStressData);
+  if (eligibleDays.length < MIN_ELIGIBLE_DAYS) return null;
 
   let exposureCount = 0;
   let supportCount = 0;
@@ -71,7 +97,7 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
   let nonExposedElevatedCount = 0;
 
   const supportDates: string[] = [];
-  const exposedDates: string[] = [];
+  const exposureDates: string[] = [];
   const baselineDates: string[] = [];
 
   for (const day of eligibleDays) {
@@ -80,7 +106,7 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
 
     if (highStress) {
       exposureCount++;
-      exposedDates.push(day.date);
+      exposureDates.push(day.date);
 
       if (elevatedBurden) {
         supportCount++;
@@ -98,52 +124,55 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     }
   }
 
+  if (exposureCount < MIN_EXPOSURE_DAYS) return null;
+
+  const contrastCount = nonExposedCount;
   const exposedRate = safeRate(supportCount, exposureCount);
-  const baselineRate = safeRate(nonExposedElevatedCount, nonExposedCount);
+  const baselineRate = safeRate(nonExposedElevatedCount, contrastCount);
   const lift = computeLift(exposedRate, baselineRate);
 
-  const supportingLogTypes = ['stress', 'symptom'];
-  const missingLogTypes: string[] = [];
+  const sorted = [...eligibleDays].sort((a, b) => a.date.localeCompare(b.date));
+  const analysisEndDate = sorted[sorted.length - 1].date;
 
-  if (features.some((day) => !hasStressData(day))) {
-    missingLogTypes.push('stress');
-  }
-
-  if (features.some((day) => !hasSymptomContext(day))) {
-    missingLogTypes.push('symptom');
-  }
+  const supportingLogTypes = getSupportingLogTypes(eligibleDays);
+  const missingLogTypes = ['sleep', 'hydration', 'food'].filter(
+    (logType) => !supportingLogTypes.includes(logType)
+  );
 
   const sufficiency = computeDataSufficiency(
     eligibleDays.length,
     exposureCount,
-    nonExposedCount
+    contrastCount
   );
 
-  const recencyWeight = computeRecencyWeight(
-    supportDates,
-    eligibleDays[eligibleDays.length - 1].date
-  );
-
-  const evidenceGaps = buildEvidenceGaps({
-    eligibleDayCount: eligibleDays.length,
-    exposureCount,
-    contrastCount: nonExposedCount,
-    supportCount,
+  const recencyWeight = computeRecencyWeight(supportDates, analysisEndDate);
+  const contradictionRate = computeContradictionRate(
     contradictionCount,
-    supportingLogTypes,
-    endDate: eligibleDays[eligibleDays.length - 1].date,
-    sampleDates: supportDates,
-  });
+    exposureCount
+  );
 
   const evidenceQuality = computeEvidenceQuality(
     sufficiency,
     supportCount,
     contradictionCount,
     exposureCount,
-    nonExposedCount,
+    contrastCount,
     recencyWeight,
     supportingLogTypes
   );
+
+  const evidenceGaps = buildEvidenceGaps({
+    eligibleDayCount: eligibleDays.length,
+    exposureCount,
+    contrastCount,
+    supportCount,
+    contradictionCount,
+    supportingLogTypes,
+    endDate: analysisEndDate,
+    sampleDates: supportDates,
+  });
+
+  const uncertaintyStatement = buildUncertaintyStatement(evidenceGaps);
 
   const status = computeStatus(
     sufficiency,
@@ -152,7 +181,7 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     baselineRate,
     contradictionCount,
     exposureCount,
-    nonExposedCount,
+    contrastCount,
     evidenceQuality
   );
 
@@ -162,7 +191,7 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     contradictionCount,
     lift,
     exposureCount,
-    nonExposedCount,
+    contrastCount,
     recencyWeight,
     supportingLogTypes
   );
@@ -175,20 +204,19 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     exposed_rate: exposedRate,
     lift,
     sample_dates: supportDates.slice(0, 10),
-    contrast_count: nonExposedCount,
+    contrast_count: contrastCount,
     eligible_day_count: eligibleDays.length,
     exposed_day_count: exposureCount,
-    baseline_day_count: nonExposedCount,
-    contradiction_rate: computeContradictionRate(contradictionCount, exposureCount),
+    baseline_day_count: contrastCount,
+    contradiction_rate: contradictionRate,
     recency_weight: recencyWeight,
     evidence_quality: evidenceQuality,
     supporting_log_types: supportingLogTypes,
     missing_log_types: missingLogTypes,
-    exposed_dates: exposedDates.slice(0, 10),
+    exposed_dates: exposureDates.slice(0, 10),
     baseline_dates: baselineDates.slice(0, 10),
-    uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
+    uncertainty_statement: uncertaintyStatement,
     evidence_gaps: evidenceGaps,
-    notes: ['Same-day comparison of higher-stress days against lower-stress days.'],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
@@ -200,14 +228,14 @@ export function analyzeStressHighDaySymptomBurdenCandidate(
     user_id: baselines.user_id,
     insight_key: INSIGHT_KEY,
     category: 'stress',
-    subtype: 'stress_high_day_symptom_burden',
+    subtype: 'high_stress_day_symptom_burden',
     trigger_factors: ['stress_avg', 'stress_peak'],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
     data_sufficiency: sufficiency,
     evidence,
-    created_from_start_date: eligibleDays[0].date,
-    created_from_end_date: eligibleDays[eligibleDays.length - 1].date,
+    created_from_start_date: sorted[0].date,
+    created_from_end_date: analysisEndDate,
   };
 }
