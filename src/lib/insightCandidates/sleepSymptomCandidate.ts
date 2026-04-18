@@ -1,15 +1,17 @@
 import type { UserDailyFeatures } from '../../types/dailyFeatures';
 import type { UserBaselineSet } from '../../types/baselines';
-import type {
-  InsightCandidate,
-  CandidateEvidence,
-} from '../../types/insightCandidates';
+import type { InsightCandidate, CandidateEvidence } from '../../types/insightCandidates';
 import {
   safeRate,
   computeDataSufficiency,
   computeStatus,
   computeConfidence,
   computeLift,
+  computeContradictionRate,
+  computeRecencyWeight,
+  computeEvidenceQuality,
+  buildEvidenceGaps,
+  buildUncertaintyStatement,
 } from './sharedCandidateUtils';
 
 const INSIGHT_KEY = 'sleep_poor_next_day_symptom_burden';
@@ -56,9 +58,7 @@ export function isElevatedNextDaySymptoms(
   return burdenAboveThreshold || severityAboveMedian;
 }
 
-export function getNextDayPairings(
-  features: UserDailyFeatures[]
-): DayPair[] {
+export function getNextDayPairings(features: UserDailyFeatures[]): DayPair[] {
   if (features.length < 2) return [];
 
   const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
@@ -88,6 +88,14 @@ function hasSleepData(day: UserDailyFeatures): boolean {
   );
 }
 
+function hasSymptomContext(day: UserDailyFeatures): boolean {
+  return (
+    day.symptom_event_count > 0 ||
+    day.max_symptom_severity !== null ||
+    day.symptom_types.length > 0
+  );
+}
+
 export function analyzeSleepSymptomCandidate(
   features: UserDailyFeatures[],
   baselines: UserBaselineSet
@@ -108,19 +116,24 @@ export function analyzeSleepSymptomCandidate(
     return null;
   }
 
-  const pairs = getNextDayPairings(features);
+  const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
+  const pairs = getNextDayPairings(sorted);
   if (pairs.length === 0) return null;
 
-  const eligiblePairs = pairs.filter((p) => hasSleepData(p.sleepDay));
+  const eligiblePairs = pairs.filter(
+    (pair) => hasSleepData(pair.sleepDay) && hasSymptomContext(pair.nextDay)
+  );
   if (eligiblePairs.length === 0) return null;
 
   let exposureCount = 0;
   let supportCount = 0;
   let contradictionCount = 0;
-  const supportDates: string[] = [];
-
   let nonExposedCount = 0;
   let nonExposedElevatedCount = 0;
+
+  const supportDates: string[] = [];
+  const exposedDates: string[] = [];
+  const baselineDates: string[] = [];
 
   for (const pair of eligiblePairs) {
     const poorSleep = isPoorSleepDay(pair.sleepDay, baselines);
@@ -128,6 +141,8 @@ export function analyzeSleepSymptomCandidate(
 
     if (poorSleep) {
       exposureCount++;
+      exposedDates.push(pair.sleepDay.date);
+
       if (elevatedSymptoms) {
         supportCount++;
         supportDates.push(pair.sleepDay.date);
@@ -136,6 +151,8 @@ export function analyzeSleepSymptomCandidate(
       }
     } else {
       nonExposedCount++;
+      baselineDates.push(pair.sleepDay.date);
+
       if (elevatedSymptoms) {
         nonExposedElevatedCount++;
       }
@@ -146,11 +163,70 @@ export function analyzeSleepSymptomCandidate(
   const baselineRate = safeRate(nonExposedElevatedCount, nonExposedCount);
   const lift = computeLift(exposedRate, baselineRate);
 
-  const sufficiency = computeDataSufficiency(eligiblePairs.length, exposureCount);
-  const status = computeStatus(sufficiency, supportCount, exposedRate, baselineRate);
-  const confidence = computeConfidence(sufficiency, supportCount, contradictionCount, lift);
+  const supportingLogTypes = ['sleep', 'symptom'];
+  const missingLogTypes: string[] = [];
 
-  const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
+  if (pairs.some((pair) => !hasSleepData(pair.sleepDay))) {
+    missingLogTypes.push('sleep');
+  }
+
+  if (pairs.some((pair) => !hasSymptomContext(pair.nextDay))) {
+    missingLogTypes.push('symptom');
+  }
+
+  const sufficiency = computeDataSufficiency(
+    eligiblePairs.length,
+    exposureCount,
+    nonExposedCount
+  );
+
+  const recencyWeight = computeRecencyWeight(
+    supportDates,
+    sorted[sorted.length - 1].date
+  );
+
+  const evidenceGaps = buildEvidenceGaps({
+    eligibleDayCount: eligiblePairs.length,
+    exposureCount,
+    contrastCount: nonExposedCount,
+    supportCount,
+    contradictionCount,
+    supportingLogTypes,
+    endDate: sorted[sorted.length - 1].date,
+    sampleDates: supportDates,
+  });
+
+  const evidenceQuality = computeEvidenceQuality(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
+
+  const status = computeStatus(
+    sufficiency,
+    supportCount,
+    exposedRate,
+    baselineRate,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    evidenceQuality
+  );
+
+  const confidence = computeConfidence(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    lift,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -160,10 +236,25 @@ export function analyzeSleepSymptomCandidate(
     exposed_rate: exposedRate,
     lift,
     sample_dates: supportDates.slice(0, 10),
+    contrast_count: nonExposedCount,
+    eligible_day_count: eligiblePairs.length,
+    exposed_day_count: exposureCount,
+    baseline_day_count: nonExposedCount,
+    contradiction_rate: computeContradictionRate(contradictionCount, exposureCount),
+    recency_weight: recencyWeight,
+    evidence_quality: evidenceQuality,
+    supporting_log_types: supportingLogTypes,
+    missing_log_types: missingLogTypes,
+    exposed_dates: exposedDates.slice(0, 10),
+    baseline_dates: baselineDates.slice(0, 10),
+    uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
+    evidence_gaps: evidenceGaps,
+    notes: ['Paired-day analysis comparing poor-sleep days against the following day.'],
     statistics: {
       eligible_pair_count: eligiblePairs.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
+      total_pair_count: pairs.length,
     },
   };
 
@@ -171,7 +262,7 @@ export function analyzeSleepSymptomCandidate(
     user_id: baselines.user_id,
     insight_key: INSIGHT_KEY,
     category: 'sleep',
-    subtype: 'poor_sleep_next_day_symptom_burden',
+    subtype: 'sleep_symptom',
     trigger_factors: ['sleep_duration', 'sleep_quality'],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
