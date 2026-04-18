@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import {
   Lightbulb,
   TrendingUp,
   AlertCircle,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Insight } from '../utils/insightEngine';
 
@@ -80,19 +83,49 @@ function formatObservedDate(date: string): string {
   }
 }
 
+function getEvidenceSummary(insight: Insight): string {
+  const parts: string[] = [];
+
+  if (insight.evidence.frequency) {
+    parts.push(insight.evidence.frequency);
+  }
+
+  if (insight.evidence.correlation) {
+    parts.push(insight.evidence.correlation);
+  }
+
+  if (parts.length === 0) {
+    return 'This observation is based on repeated signals in your logs, but the supporting detail is limited.';
+  }
+
+  return parts.join(' ');
+}
+
+function getUncertaintyStatement(insight: Insight): string {
+  if (insight.confidence_level === 'high') {
+    return 'This pattern showed up repeatedly in your logs, but it still reflects correlation rather than diagnosis.';
+  }
+
+  if (insight.confidence_level === 'medium') {
+    return 'This pattern is worth watching, but more overlap across future logs would make it more reliable.';
+  }
+
+  return 'This is an early signal with limited support and may change as more data comes in.';
+}
+
 export default function InsightCard({ insight }: InsightCardProps) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const config = confidenceConfig[insight.confidence_level];
   const ConfidenceIcon = config.icon;
 
   const observedDates = insight.evidence.dates ?? [];
   const lastObserved =
-    observedDates.length > 0
-      ? observedDates[observedDates.length - 1]
-      : insight.last_detected_at;
+    observedDates.length > 0 ? observedDates[observedDates.length - 1] : insight.last_detected_at;
 
   return (
     <div
-      className={`rounded-2xl border border-neutral-border dark:border-dark-border border-l-4 bg-neutral-surface dark:bg-dark-surface p-6 shadow-soft transition-all hover:shadow-sm ${config.accent}`}
+      className={`rounded-2xl border border-neutral-border border-l-4 bg-neutral-surface p-6 shadow-soft transition-all hover:shadow-sm dark:border-dark-border dark:bg-dark-surface ${config.accent}`}
     >
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -103,14 +136,12 @@ export default function InsightCard({ insight }: InsightCardProps) {
             </span>
           </div>
 
-          <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text leading-snug">
+          <h3 className="text-h5 font-sora font-semibold leading-snug text-neutral-text dark:text-dark-text">
             {insight.summary}
           </h3>
         </div>
 
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${config.pill}`}
-        >
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${config.pill}`}>
           {config.label}
         </span>
       </div>
@@ -131,49 +162,75 @@ export default function InsightCard({ insight }: InsightCardProps) {
           />
         </div>
 
-        <div>
-          <h4 className="mb-2 text-body-sm font-semibold text-neutral-text dark:text-dark-text">Evidence</h4>
-
-          <div className="space-y-2 text-body-sm text-neutral-text dark:text-dark-text">
-            {insight.evidence.frequency && (
-              <p>
-                <span className="font-medium">Frequency:</span>{' '}
-                {insight.evidence.frequency}
+        <div className="rounded-xl border border-neutral-border/80 dark:border-dark-border/80">
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((open) => !open)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <div>
+              <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">
+                Why this appeared
               </p>
-            )}
-
-            {insight.evidence.correlation && (
-              <p>
-                <span className="font-medium">Correlation:</span>{' '}
-                {insight.evidence.correlation}
+              <p className="mt-0.5 text-body-xs text-neutral-muted dark:text-dark-muted">
+                Evidence summary, observed dates, and uncertainty
               </p>
+            </div>
+            {detailsOpen ? (
+              <ChevronUp className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
             )}
-          </div>
+          </button>
 
-          {observedDates.length > 0 && (
-            <div className="mt-3">
-              <p className="mb-2 text-body-sm font-medium text-neutral-text dark:text-dark-text">Observed on</p>
-              <div className="flex flex-wrap gap-2">
-                {observedDates.slice(0, 5).map((date, index) => (
-                  <span
-                    key={`${date}-${index}`}
-                    className="rounded-full bg-neutral-bg dark:bg-dark-elevated px-2.5 py-1 text-xs text-neutral-text dark:text-dark-text"
-                  >
-                    {formatObservedDate(date)}
-                  </span>
-                ))}
-
-                {observedDates.length > 5 && (
-                  <span className="rounded-full bg-neutral-bg dark:bg-dark-surface px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted">
-                    +{observedDates.length - 5} more
-                  </span>
-                )}
+          {detailsOpen && (
+            <div className="space-y-4 border-t border-neutral-border/80 px-4 py-4 dark:border-dark-border/80">
+              <div>
+                <p className="mb-1 text-body-xs font-medium uppercase tracking-wide text-neutral-muted dark:text-dark-muted">
+                  Evidence summary
+                </p>
+                <p className="text-body-sm leading-relaxed text-neutral-text dark:text-dark-text">
+                  {getEvidenceSummary(insight)}
+                </p>
               </div>
+
+              <div>
+                <p className="mb-1 text-body-xs font-medium uppercase tracking-wide text-neutral-muted dark:text-dark-muted">
+                  Uncertainty
+                </p>
+                <p className="text-body-sm leading-relaxed text-neutral-text dark:text-dark-text">
+                  {getUncertaintyStatement(insight)}
+                </p>
+              </div>
+
+              {observedDates.length > 0 && (
+                <div>
+                  <p className="mb-2 text-body-xs font-medium uppercase tracking-wide text-neutral-muted dark:text-dark-muted">
+                    Observed on
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {observedDates.slice(0, 6).map((date, index) => (
+                      <span
+                        key={`${date}-${index}`}
+                        className="rounded-full bg-neutral-bg px-2.5 py-1 text-xs text-neutral-text dark:bg-dark-elevated dark:text-dark-text"
+                      >
+                        {formatObservedDate(date)}
+                      </span>
+                    ))}
+
+                    {observedDates.length > 6 && (
+                      <span className="rounded-full bg-neutral-bg px-2.5 py-1 text-xs text-neutral-muted dark:bg-dark-surface dark:text-dark-muted">
+                        +{observedDates.length - 6} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="rounded-xl bg-brand-500/06 dark:bg-brand-500/10 border border-brand-500/15 dark:border-brand-500/20 p-4">
+        <div className="rounded-xl border border-brand-500/15 bg-brand-500/06 p-4 dark:border-brand-500/20 dark:bg-brand-500/10">
           <div className="mb-2 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-brand-500" />
             <h4 className="text-body-sm font-semibold text-brand-700 dark:text-brand-300">
@@ -185,9 +242,10 @@ export default function InsightCard({ insight }: InsightCardProps) {
           </p>
         </div>
 
-        <div className="border-t border-neutral-border dark:border-dark-border pt-3">
+        <div className="border-t border-neutral-border pt-3 dark:border-dark-border">
           <p className="text-body-xs text-neutral-muted dark:text-dark-muted">
-            Confidence reflects how often this pattern appears in your logged data.
+            Confidence reflects how often this pattern appears in your logged data and how much
+            supporting detail is available.
           </p>
         </div>
       </div>
@@ -205,7 +263,7 @@ function InfoTile({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-neutral-bg dark:bg-dark-elevated p-3">
+    <div className="rounded-xl bg-neutral-bg p-3 dark:bg-dark-elevated">
       <div className="mb-1 flex items-center gap-2 text-neutral-muted dark:text-dark-muted">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
