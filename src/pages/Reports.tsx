@@ -13,6 +13,7 @@ import HealthMarkersSection from '../components/reports/HealthMarkersSection';
 import TriggerPatternsSection from '../components/reports/TriggerPatternsSection';
 import MedicationCorrelationSection from '../components/reports/MedicationCorrelationSection';
 import ClinicalAlertsSection from '../components/reports/ClinicalAlertsSection';
+import PatientNotesSection, { PatientNoteValues } from '../components/reports/PatientNotesSection';
 import {
   fetchBMAnalytics,
   fetchBristolDistribution,
@@ -52,6 +53,11 @@ export default function Reports() {
   const [triggerPatterns, setTriggerPatterns] = useState<TriggerPattern[]>([]);
   const [medicationCorrelations, setMedicationCorrelations] = useState<MedicationCorrelation[]>([]);
   const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>([]);
+  const [patientNotes, setPatientNotes] = useState<PatientNoteValues>({
+    whatChangedRecently: '',
+    whatWorriesMeMost: '',
+    whatIWantToAskMyDoctor: '',
+  });
 
   useEffect(() => {
     if (user) {
@@ -340,6 +346,10 @@ export default function Reports() {
             <TriggerPatternsSection triggers={triggerPatterns} />
 
             <MedicationCorrelationSection correlations={medicationCorrelations} />
+
+            <SectionGroupLabel label="Patient Perspective" />
+
+            <PatientNotesSection value={patientNotes} onChange={setPatientNotes} />
 
             <div className="mt-6 rounded-2xl border border-neutral-border bg-neutral-surface p-6 dark:border-dark-border dark:bg-dark-surface print:mt-10">
               <div className="mb-md flex items-center gap-2 border-b border-neutral-border pb-3 dark:border-dark-border">
