@@ -12,6 +12,7 @@ import {
   Heart,
   Dumbbell,
   Plus,
+  ClipboardCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -232,7 +233,7 @@ export default function Dashboard() {
                   Quick Log
                 </h2>
                 <p className="text-body-xs text-neutral-muted dark:text-dark-muted mt-0.5">
-                  Tap to start a new entry
+                  Individual entries still work if you only want to log one thing
                 </p>
               </div>
               <Plus className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
@@ -293,6 +294,24 @@ export default function Dashboard() {
                 );
               })}
             </div>
+          </Card>
+
+          <Card variant="discovery" padding="md" glowIntensity="subtle" className="flex items-center gap-4">
+            <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/12 dark:bg-brand-500/18">
+              <ClipboardCheck className="h-5 w-5 text-brand-500 dark:text-brand-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-body-sm font-semibold text-neutral-text dark:text-dark-text">Log everything at once</p>
+              <p className="text-body-xs text-neutral-muted dark:text-dark-muted mt-0.5">
+                The daily check-in lets you record stool, symptoms, meals, hydration, sleep, and more in a single session.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/daily-check-in')}
+              className="flex-shrink-0 rounded-xl bg-brand-500 hover:bg-brand-700 text-white text-xs font-medium px-3 py-2 transition-colors"
+            >
+              Open
+            </button>
           </Card>
 
           <div>

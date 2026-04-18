@@ -33,6 +33,7 @@ import DataManagementSettings from './pages/settings/DataManagementSettings';
 import PreferencesSettings from './pages/settings/PreferencesSettings';
 import MedicalContextSettings from './pages/settings/MedicalContextSettings';
 import MedicalDocumentIntake from './pages/settings/MedicalDocumentIntake';
+import DailyCheckIn from './pages/DailyCheckIn';
 
 function AppContent() {
   useSaveEventHandler();
@@ -48,6 +49,7 @@ function AppContent() {
         <Route path="/disclaimer" element={<Disclaimer />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/daily-check-in" element={<DailyCheckIn />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/meals" element={<Meals />} />
           <Route path="/bm-log" element={<BMLog />} />

@@ -4,6 +4,7 @@ import Button from '../components/Button';
 import InsightCard from '../components/InsightCard';
 import RankedCandidateCard from '../components/insights/RankedCandidateCard';
 import { Brain, RefreshCw, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import TrustExplainer from '../components/TrustExplainer';
 import { useAuth } from '../contexts/AuthContext';
 import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../utils/insightEngine';
 import { useRankedInsights } from '../hooks/useRankedInsights';
@@ -154,6 +155,8 @@ export default function Insights() {
             )}
           </div>
 
+          <TrustExplainer variant="insights" className="mb-lg" />
+
           {error && (
             <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
@@ -265,19 +268,19 @@ export default function Insights() {
 
               <div className="mx-auto max-w-sm">
                 <h3 className="mb-3 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                  No reliable patterns detected yet
+                  Patterns are still forming
                 </h3>
 
                 <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
-                  GutWise didn't find a strong enough repeated pattern in your recent logs yet.
+                  GutWise does not yet have enough repeated overlap across your logs to show a reliable pattern.
                 </p>
 
                 <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
-                  Patterns sharpen when you log consistently across multiple categories — meals, symptoms, hydration, sleep, and stress. The more categories overlap, the more GutWise can detect.
+                  The best starting combination is stool, symptoms, meals, hydration, sleep, and stress logged on the same days. The more categories share dates, the more GutWise can detect.
                 </p>
 
                 <p className="text-body-xs text-neutral-muted/65 dark:text-dark-muted/65">
-                  Continue logging for a few more days and check back. Insights will surface automatically as evidence builds.
+                  Continue logging for a few more days and check back. Patterns will surface automatically as evidence builds.
                 </p>
               </div>
             </div>
@@ -332,7 +335,7 @@ export default function Insights() {
                 <>
                   <div className="mb-md flex items-center gap-3 text-body-sm text-neutral-muted dark:text-dark-muted">
                     <span>{insights.length} {insights.length === 1 ? 'observation' : 'observations'} found</span>
-                    <span className="text-neutral-border dark:text-dark-border">·</span>
+                    <span className="text-neutral-border dark:text-dark-border">|</span>
                     <span>Based on repeated signals in your logs</span>
                   </div>
 

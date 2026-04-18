@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Printer, Download, FileText, ClipboardList, MessageSquare, Loader2 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
+import TrustExplainer from '../components/TrustExplainer';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import DateRangeSelector from '../components/reports/DateRangeSelector';
@@ -138,16 +139,16 @@ export default function Reports() {
 
     if (bmAnalytics) {
       if (bmAnalytics.averagePerDay > 6) {
-        concerns.push(`Elevated bowel movement frequency (${bmAnalytics.averagePerDay.toFixed(1)}/day) exceeding normal physiological range`);
+        concerns.push(`Bowel movement frequency was recorded at ${bmAnalytics.averagePerDay.toFixed(1)}/day on average - worth discussing with your clinician`);
       } else if (bmAnalytics.averagePerDay < 1) {
-        concerns.push(`Reduced bowel movement frequency (${bmAnalytics.averagePerDay.toFixed(1)}/day) suggesting constipation`);
+        concerns.push(`Bowel movement frequency appeared around ${bmAnalytics.averagePerDay.toFixed(1)}/day on average during this period`);
       }
     }
 
     const normalBristol = bristolDistribution.filter(d => d.type === 3 || d.type === 4);
     const normalPercentage = normalBristol.reduce((sum, d) => sum + d.percentage, 0);
     if (bristolDistribution.length > 0 && normalPercentage < 40) {
-      concerns.push(`Stool consistency abnormalities with only ${normalPercentage.toFixed(0)}% within normal Bristol Scale parameters`);
+      concerns.push(`${normalPercentage.toFixed(0)}% of logged stools were recorded as Bristol types 3 or 4 during this period`);
     }
 
     const worseningSymptoms = symptomTrends.filter(t => {
@@ -160,13 +161,13 @@ export default function Reports() {
 
     if (worseningSymptoms.length > 0) {
       const uniqueSymptoms = Array.from(new Set(worseningSymptoms.map(s => s.symptomType)));
-      concerns.push(`Progressive symptom worsening noted in: ${uniqueSymptoms.join(', ')}`);
+      concerns.push(`Severity trended upward for: ${uniqueSymptoms.join(', ')}`);
     }
 
     if (triggerPatterns.length > 0) {
       const highRiskTriggers = triggerPatterns.filter(t => t.correlationStrength > 0.6);
       if (highRiskTriggers.length > 0) {
-        concerns.push(`Strong dietary trigger correlations identified for: ${highRiskTriggers.map(t => t.trigger).slice(0, 3).join(', ')}`);
+        concerns.push(`Repeated overlap between symptoms and these dietary entries was recorded: ${highRiskTriggers.map(t => t.trigger).slice(0, 3).join(', ')}`);
       }
     }
 
@@ -225,6 +226,8 @@ export default function Reports() {
             onDateRangeChange={handleDateRangeChange}
           />
         </div>
+
+        <TrustExplainer variant="reports" className="mb-lg print:hidden" />
 
         <div className="hidden print:block mb-8">
           <div className="border-b-2 border-gray-900 pb-5 mb-6">

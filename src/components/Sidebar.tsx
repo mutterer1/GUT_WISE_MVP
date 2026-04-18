@@ -20,6 +20,7 @@ import {
   BookOpen,
   Sun,
   Dumbbell,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,6 +28,7 @@ import { DEV_CYCLE_LOG_ACCESS } from '../lib/devFlags';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Daily Check-In', href: '/daily-check-in', icon: ClipboardCheck },
   { name: 'Logging Hub', href: null, icon: BookOpen, submenu: true },
   { name: 'Health Insights', href: '/insights', icon: Brain },
   { name: 'Trends & Analytics', href: '/trends', icon: TrendingUp },

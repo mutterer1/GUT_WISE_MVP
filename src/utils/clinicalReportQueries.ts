@@ -285,8 +285,8 @@ export async function generateClinicalAlerts(userId: string, dateRange: DateRang
     alerts.push({
       type: 'high_frequency',
       severity: 'high',
-      message: 'Elevated bowel movement frequency detected',
-      details: `Average of ${bmAnalytics.averagePerDay.toFixed(1)} bowel movements per day exceeds normal range (1-3 per day). May indicate acute gastroenteritis, inflammatory bowel disease, or malabsorption.`,
+      message: 'Frequent bowel movements recorded',
+      details: `An average of ${bmAnalytics.averagePerDay.toFixed(1)} bowel movements per day was recorded during this period. This pattern may be worth discussing with your clinician.`,
       affectedDates: [dateRange.startDate, dateRange.endDate],
     });
   }
@@ -303,8 +303,8 @@ export async function generateClinicalAlerts(userId: string, dateRange: DateRang
     alerts.push({
       type: 'blood_present',
       severity: 'critical',
-      message: 'Hematochezia documented',
-      details: `Blood presence noted in ${bloodData.length} instance(s). Requires immediate clinical evaluation to rule out lower GI bleeding, hemorrhoids, inflammatory bowel disease, or colorectal pathology.`,
+      message: 'Blood was marked in one or more stool logs',
+      details: `Blood was logged in ${bloodData.length} stool entry(s) during this period. Please discuss this with your clinician at your earliest opportunity.`,
       affectedDates: bloodData.map(log => log.logged_at.split('T')[0]),
     });
   }
@@ -323,8 +323,8 @@ export async function generateClinicalAlerts(userId: string, dateRange: DateRang
       alerts.push({
         type: 'severe_pain',
         severity: 'high',
-        message: 'Severe abdominal pain episodes recorded',
-        details: `${painEpisodes.length} episode(s) of severe abdominal pain (severity ≥8/10). Differential diagnosis includes acute abdomen, bowel obstruction, perforation, or severe inflammatory process.`,
+        message: 'Severe abdominal pain was logged',
+        details: `${painEpisodes.length} episode(s) of abdominal pain rated 8/10 or above were logged during this period. Consider discussing these episodes with your clinician.`,
         affectedDates: painEpisodes.map(log => log.logged_at.split('T')[0]),
       });
     }
@@ -338,8 +338,8 @@ export async function generateClinicalAlerts(userId: string, dateRange: DateRang
     alerts.push({
       type: 'concerning_pattern',
       severity: 'medium',
-      message: 'Persistent stool consistency abnormalities',
-      details: `${extremePercentage.toFixed(1)}% of bowel movements classified as Bristol Type 1 (severe constipation) or Type 7 (severe diarrhea). Indicates significant GI motility dysfunction requiring therapeutic intervention.`,
+      message: 'A large share of stool logs were at the extreme ends of the Bristol scale',
+      details: `${extremePercentage.toFixed(1)}% of logged stools were recorded as Bristol Type 1 or Type 7 during this period. This pattern may be useful to share with your clinician.`,
       affectedDates: [dateRange.startDate, dateRange.endDate],
     });
   }

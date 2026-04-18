@@ -123,8 +123,8 @@ const emptyStateMessages: Record<string, { title: string; subtitle: string; hint
   },
   insights: {
     title: 'Patterns are still forming',
-    subtitle: 'GutWise needs a few days of consistent logs to find reliable patterns. The more categories you track, the sharper your insights become.',
-    hint: 'Try logging across meals, symptoms, sleep, and hydration for the richest analysis.',
+    subtitle: 'GutWise needs repeated overlap across your logs before it can show a reliable pattern. More shared context leads to better insights.',
+    hint: 'Try the daily check-in and include stool, symptoms, meals, hydration, sleep, and stress whenever you can.',
   },
 };
 

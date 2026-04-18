@@ -3,6 +3,7 @@ import { Upload, FileText, Plus, AlertTriangle, Clock, CheckCircle, XCircle } fr
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import TrustExplainer from '../../components/TrustExplainer';
 import CandidateReviewList from './CandidateReviewList';
 import { CATEGORY_CONFIGS, buildDefaultDetail } from './medicalContextFields';
 import { useAuth } from '../../contexts/AuthContext';
@@ -174,7 +175,7 @@ export default function MedicalDocumentIntake() {
     return (
       <SettingsPageLayout
         title="Add a Detail from Your Document"
-        description="Enter the detail below. You'll confirm it before it influences any of your insights."
+        description="Add one detail from your document. It will stay in review until you confirm it."
       >
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
         <Card>
@@ -273,9 +274,11 @@ export default function MedicalDocumentIntake() {
   return (
     <SettingsPageLayout
       title="Medical Documents"
-      description="Share documents from your care team. You choose which details to apply — nothing reaches your insights until you personally review and approve it."
+      description="Upload documents from your care team. Uploaded docs are records only - details affect your insights only after you review and approve each one."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
+
+      <TrustExplainer variant="documents" className="mb-6" />
 
       {loading ? (
         <Card>
@@ -311,7 +314,7 @@ export default function MedicalDocumentIntake() {
                 <div className="flex items-center gap-3 py-2">
                   <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No documents yet. You can upload lab results, discharge summaries, or other documents from your care team.
+                    No documents yet. Upload lab results, discharge summaries, or other documents from your care team. Any reviewed and approved details will be visible in your medical context.
                   </p>
                 </div>
               </Card>
@@ -424,7 +427,7 @@ export default function MedicalDocumentIntake() {
                 Nothing from an uploaded document is applied to your insights until you personally review and approve it.
               </p>
               <p>
-                To extract a detail, tap "Add Detail" next to the document above, then confirm it before it becomes active.
+                To use something from a document, tap "Add Detail" next to it, then confirm before it becomes active.
               </p>
             </div>
           </Card>
