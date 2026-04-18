@@ -1,15 +1,17 @@
 import type { UserDailyFeatures } from '../../types/dailyFeatures';
 import type { UserBaselineSet } from '../../types/baselines';
-import type {
-  InsightCandidate,
-  CandidateEvidence,
-} from '../../types/insightCandidates';
+import type { InsightCandidate, CandidateEvidence } from '../../types/insightCandidates';
 import {
   safeRate,
   computeDataSufficiency,
   computeStatus,
   computeConfidence,
   computeLift,
+  computeContradictionRate,
+  computeRecencyWeight,
+  computeEvidenceQuality,
+  buildEvidenceGaps,
+  buildUncertaintyStatement,
 } from './sharedCandidateUtils';
 
 const INSIGHT_KEY = 'stress_high_same_day_urgency';
@@ -50,22 +52,31 @@ function hasStressData(day: UserDailyFeatures): boolean {
   return day.stress_avg !== null || day.stress_peak !== null;
 }
 
+function hasUrgencyContext(day: UserDailyFeatures): boolean {
+  return day.bm_count > 0 || day.urgency_event_count > 0;
+}
+
 export function analyzeStressUrgencyCandidate(
   features: UserDailyFeatures[],
   baselines: UserBaselineSet
 ): InsightCandidate | null {
   if (features.length === 0) return null;
 
-  const eligibleDays = features.filter(hasStressData);
+  const eligibleDays = features
+    .filter((day) => hasStressData(day) && hasUrgencyContext(day))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   if (eligibleDays.length === 0) return null;
 
   let exposureCount = 0;
   let supportCount = 0;
   let contradictionCount = 0;
-  const supportDates: string[] = [];
-
   let nonExposedCount = 0;
   let nonExposedElevatedCount = 0;
+
+  const supportDates: string[] = [];
+  const exposedDates: string[] = [];
+  const baselineDates: string[] = [];
 
   for (const day of eligibleDays) {
     const highStress = isHighStressDay(day, baselines);
@@ -73,6 +84,8 @@ export function analyzeStressUrgencyCandidate(
 
     if (highStress) {
       exposureCount++;
+      exposedDates.push(day.date);
+
       if (elevatedUrgency) {
         supportCount++;
         supportDates.push(day.date);
@@ -81,6 +94,8 @@ export function analyzeStressUrgencyCandidate(
       }
     } else {
       nonExposedCount++;
+      baselineDates.push(day.date);
+
       if (elevatedUrgency) {
         nonExposedElevatedCount++;
       }
@@ -91,11 +106,70 @@ export function analyzeStressUrgencyCandidate(
   const baselineRate = safeRate(nonExposedElevatedCount, nonExposedCount);
   const lift = computeLift(exposedRate, baselineRate);
 
-  const sufficiency = computeDataSufficiency(eligibleDays.length, exposureCount);
-  const status = computeStatus(sufficiency, supportCount, exposedRate, baselineRate);
-  const confidence = computeConfidence(sufficiency, supportCount, contradictionCount, lift);
+  const supportingLogTypes = ['stress', 'gut'];
+  const missingLogTypes: string[] = [];
 
-  const sorted = [...eligibleDays].sort((a, b) => a.date.localeCompare(b.date));
+  if (features.some((day) => !hasStressData(day))) {
+    missingLogTypes.push('stress');
+  }
+
+  if (features.some((day) => !hasUrgencyContext(day))) {
+    missingLogTypes.push('bm');
+  }
+
+  const sufficiency = computeDataSufficiency(
+    eligibleDays.length,
+    exposureCount,
+    nonExposedCount
+  );
+
+  const recencyWeight = computeRecencyWeight(
+    supportDates,
+    eligibleDays[eligibleDays.length - 1].date
+  );
+
+  const evidenceGaps = buildEvidenceGaps({
+    eligibleDayCount: eligibleDays.length,
+    exposureCount,
+    contrastCount: nonExposedCount,
+    supportCount,
+    contradictionCount,
+    supportingLogTypes,
+    endDate: eligibleDays[eligibleDays.length - 1].date,
+    sampleDates: supportDates,
+  });
+
+  const evidenceQuality = computeEvidenceQuality(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
+
+  const status = computeStatus(
+    sufficiency,
+    supportCount,
+    exposedRate,
+    baselineRate,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    evidenceQuality
+  );
+
+  const confidence = computeConfidence(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    lift,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -105,6 +179,20 @@ export function analyzeStressUrgencyCandidate(
     exposed_rate: exposedRate,
     lift,
     sample_dates: supportDates.slice(0, 10),
+    contrast_count: nonExposedCount,
+    eligible_day_count: eligibleDays.length,
+    exposed_day_count: exposureCount,
+    baseline_day_count: nonExposedCount,
+    contradiction_rate: computeContradictionRate(contradictionCount, exposureCount),
+    recency_weight: recencyWeight,
+    evidence_quality: evidenceQuality,
+    supporting_log_types: supportingLogTypes,
+    missing_log_types: missingLogTypes,
+    exposed_dates: exposedDates.slice(0, 10),
+    baseline_dates: baselineDates.slice(0, 10),
+    uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
+    evidence_gaps: evidenceGaps,
+    notes: ['Same-day comparison of high-stress days against lower-stress days.'],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
@@ -116,14 +204,14 @@ export function analyzeStressUrgencyCandidate(
     user_id: baselines.user_id,
     insight_key: INSIGHT_KEY,
     category: 'stress',
-    subtype: 'high_stress_same_day_urgency',
+    subtype: 'stress_urgency',
     trigger_factors: ['stress_avg', 'stress_peak'],
     target_outcomes: ['urgency_event_count'],
     status,
     confidence_score: confidence,
     data_sufficiency: sufficiency,
     evidence,
-    created_from_start_date: sorted[0].date,
-    created_from_end_date: sorted[sorted.length - 1].date,
+    created_from_start_date: eligibleDays[0].date,
+    created_from_end_date: eligibleDays[eligibleDays.length - 1].date,
   };
 }
