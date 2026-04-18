@@ -87,10 +87,7 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobileMenuOpen]);
 
-  const displayName =
-    profile?.full_name ||
-    user?.email?.split('@')[0] ||
-    'User';
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
 
   const userEmail = profile?.email || user?.email || '';
 
@@ -98,13 +95,9 @@ export default function Sidebar() {
     return displayName.charAt(0).toUpperCase() || 'U';
   };
 
-  const isActive = (path: string) =>
-    location.pathname === path ||
-    location.pathname.startsWith(`${path}/`);
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-  const isLoggingHubActive = loggingSubmenu.some((item) =>
-    isActive(item.href)
-  );
+  const isLoggingHubActive = loggingSubmenu.some((item) => isActive(item.href));
 
   useEffect(() => {
     if (isLoggingHubActive) {
@@ -202,7 +195,14 @@ export default function Sidebar() {
                         {loggingGroups.map((group, groupIdx) => {
                           const groupItems = loggingSubmenu.filter((s) => s.group === group.key);
                           return (
-                            <div key={group.key} className={groupIdx > 0 ? 'mt-1 pt-1 border-t border-neutral-border/50 dark:border-dark-border/50' : ''}>
+                            <div
+                              key={group.key}
+                              className={
+                                groupIdx > 0
+                                  ? 'mt-1 border-t border-neutral-border/50 pt-1 dark:border-dark-border/50'
+                                  : ''
+                              }
+                            >
                               <span className="block px-4 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/40">
                                 {group.label}
                               </span>
@@ -218,11 +218,12 @@ export default function Sidebar() {
                                     className={`
                                       flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium
                                       transition-colors duration-150
-                                      ${dimmed
-                                        ? 'opacity-40 cursor-default pointer-events-none'
-                                        : subActive
-                                          ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                                          : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
+                                      ${
+                                        dimmed
+                                          ? 'pointer-events-none cursor-default opacity-40'
+                                          : subActive
+                                            ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                                            : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-dark-text'
                                       }
                                     `}
                                     onClick={dimmed ? undefined : () => setIsMobileMenuOpen(false)}
