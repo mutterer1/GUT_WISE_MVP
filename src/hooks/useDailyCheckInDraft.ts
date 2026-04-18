@@ -1,115 +1,137 @@
-import { useState, useCallback } from 'react';
-import type { DailyCheckInDraft } from '../types/dailyCheckIn';
+import { useEffect, useMemo, useState } from 'react';
 import { getLocalDateTimeString, getLocalDateTimeStringWithOffset } from '../utils/dateFormatters';
+import type { DailyCheckInDraft } from '../types/dailyCheckIn';
 
 function buildDefaultDraft(): DailyCheckInDraft {
-  const now = getLocalDateTimeString();
-  const sleepStart = getLocalDateTimeStringWithOffset(-8);
-
   return {
+    logged_at: getLocalDateTimeString(),
     bowelMovement: {
       enabled: true,
-      bristol_type: null,
+      bristol_type: 4,
+      urgency: 1,
+      pain_level: 1,
       blood_present: false,
-      pain_level: null,
+      mucus_present: false,
       notes: '',
-      logged_at: now,
     },
     symptoms: {
       enabled: true,
-      symptom_type: 'Abdominal Pain',
-      severity: 3,
+      symptom_type: '',
+      severity: 5,
+      duration_minutes: 30,
       notes: '',
-      logged_at: now,
     },
     food: {
       enabled: true,
-      meal_type: 'meal',
-      food_items: '',
+      meal_type: 'lunch',
+      foods: '',
+      tags: '',
       notes: '',
-      logged_at: now,
     },
     hydration: {
       enabled: true,
       amount_ml: 250,
-      drink_type: 'water',
-      logged_at: now,
+      beverage_type: 'Water',
+      caffeine_content: false,
     },
     sleep: {
       enabled: false,
-      duration_minutes: null,
-      quality: null,
-      notes: '',
-      logged_at: sleepStart,
+      sleep_start: getLocalDateTimeStringWithOffset(-8),
+      sleep_end: getLocalDateTimeString(),
+      quality: 6,
+      felt_rested: false,
     },
     stress: {
       enabled: false,
-      stress_level: 3,
+      stress_level: 5,
       notes: '',
-      logged_at: now,
     },
     exercise: {
       enabled: false,
-      exercise_type: 'walking',
-      duration_minutes: null,
-      intensity: 'light',
-      notes: '',
-      logged_at: now,
+      exercise_type: '',
+      duration_minutes: 30,
+      intensity_level: 3,
     },
     medication: {
       enabled: false,
       medication_name: '',
       dosage: '',
-      notes: '',
-      logged_at: now,
+      medication_type: 'prescription',
     },
     menstrualCycle: {
       enabled: false,
-      cycle_phase: 'menstrual',
-      flow_intensity: 'medium',
-      notes: '',
-      logged_at: now,
+      cycle_start_date: new Date().toISOString().split('T')[0],
+      cycle_day: 1,
+      flow_intensity: 'none',
+      pain_level: 1,
     },
   };
 }
 
 export function useDailyCheckInDraft(userId?: string) {
-  const storageKey = userId ? `gutwise_daily_checkin_${userId}` : null;
+  const storageKey = useMemo(
+    () => (userId ? `gutwise_daily_checkin_${userId}` : ''),
+    [userId]
+  );
 
-  const [draft, setDraft] = useState<DailyCheckInDraft>(() => {
-    if (storageKey) {
-      try {
-        const saved = sessionStorage.getItem(storageKey);
-        if (saved) return JSON.parse(saved) as DailyCheckInDraft;
-      } catch {
-      }
+  const [draft, setDraft] = useState<DailyCheckInDraft>(buildDefaultDraft);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setDraft(buildDefaultDraft());
+      return;
     }
-    return buildDefaultDraft();
-  });
 
-  const updateDraft = useCallback((updates: Partial<DailyCheckInDraft>) => {
-    setDraft((prev) => {
-      const next = { ...prev, ...updates };
-      if (storageKey) {
-        try {
-          sessionStorage.setItem(storageKey, JSON.stringify(next));
-        } catch {
-        }
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) {
+        setDraft(buildDefaultDraft());
+        return;
       }
-      return next;
-    });
+
+      const base = buildDefaultDraft();
+      const parsed = JSON.parse(raw) as Partial<DailyCheckInDraft>;
+      setDraft({
+        ...base,
+        ...parsed,
+        bowelMovement: { ...base.bowelMovement, ...parsed.bowelMovement },
+        symptoms: { ...base.symptoms, ...parsed.symptoms },
+        food: { ...base.food, ...parsed.food },
+        hydration: { ...base.hydration, ...parsed.hydration },
+        sleep: { ...base.sleep, ...parsed.sleep },
+        stress: { ...base.stress, ...parsed.stress },
+        exercise: { ...base.exercise, ...parsed.exercise },
+        medication: { ...base.medication, ...parsed.medication },
+        menstrualCycle: { ...base.menstrualCycle, ...parsed.menstrualCycle },
+      });
+    } catch {
+      setDraft(buildDefaultDraft());
+    }
   }, [storageKey]);
 
-  const resetDraft = useCallback(() => {
-    const fresh = buildDefaultDraft();
-    setDraft(fresh);
-    if (storageKey) {
-      try {
-        sessionStorage.removeItem(storageKey);
-      } catch {
-      }
-    }
-  }, [storageKey]);
+  useEffect(() => {
+    if (!storageKey) return;
+    sessionStorage.setItem(storageKey, JSON.stringify(draft));
+  }, [draft, storageKey]);
 
-  return { draft, updateDraft, resetDraft };
+  const updateDraft = <K extends keyof DailyCheckInDraft>(
+    key: K,
+    value: DailyCheckInDraft[K]
+  ) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const resetDraft = () => {
+    const next = buildDefaultDraft();
+    setDraft(next);
+    if (storageKey) {
+      sessionStorage.setItem(storageKey, JSON.stringify(next));
+    }
+  };
+
+  return {
+    draft,
+    updateDraft,
+    resetDraft,
+  };
 }
