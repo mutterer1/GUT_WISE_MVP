@@ -14,6 +14,13 @@ function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function formatLogTypeLabel(raw: string): string {
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/\b(bm|gi)\b/gi, (match) => match.toUpperCase())
+    .replace(/^\w/, (char) => char.toUpperCase());
+}
+
 type InsightSource = 'ranked_loading' | 'ranked_primary' | 'ranked_empty' | 'legacy_error_fallback';
 
 export default function Insights() {
@@ -83,6 +90,8 @@ export default function Insights() {
   };
 
   const rankedCandidates = rankedInsights?.candidates ?? [];
+  const evidenceGapSummaries = rankedInsights?.evidence_gap_summaries ?? [];
+  const missingLogTypes = rankedInsights?.missing_log_types ?? [];
   const rankedSettled = rankedFirstRunCompleted && !rankedLoading;
   const hasRankedCandidates = rankedCandidates.length > 0;
 
@@ -255,6 +264,13 @@ export default function Insights() {
                 <TrustExplainer variant="insights" />
               </div>
 
+              {(evidenceGapSummaries.length > 0 || missingLogTypes.length > 0) && (
+                <EvidenceGapPanel
+                  missingLogTypes={missingLogTypes}
+                  evidenceGapSummaries={evidenceGapSummaries}
+                />
+              )}
+
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 {rankedCandidates.map((candidate, i) => (
                   <RankedCandidateCard
@@ -296,12 +312,37 @@ export default function Insights() {
                     strong pattern.
                   </p>
 
-                  <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
-                    The strongest starting combination is stool, symptoms, meals, hydration, sleep,
-                    and stress logged on the same days.
-                  </p>
+                  {missingLogTypes.length > 0 ? (
+                    <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                      The most useful missing context right now is:{' '}
+                      {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}.
+                    </p>
+                  ) : (
+                    <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                      The strongest starting combination is stool, symptoms, meals, hydration,
+                      sleep, and stress logged on the same days.
+                    </p>
+                  )}
 
-                  <p className="text-body-xs text-neutral-muted/65 dark:text-dark-muted/65">
+                  {evidenceGapSummaries.length > 0 && (
+                    <div className="mt-5 rounded-xl border border-amber-200/70 bg-amber-50/70 px-4 py-4 text-left dark:border-amber-300/10 dark:bg-amber-400/5">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                        What is missing
+                      </p>
+                      <div className="space-y-2">
+                        {evidenceGapSummaries.slice(0, 3).map((summary) => (
+                          <p
+                            key={summary.insight_key}
+                            className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/80"
+                          >
+                            {summary.reasons[0]}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="mt-4 text-body-xs text-neutral-muted/65 dark:text-dark-muted/65">
                     A few more days of shared context will usually do more than logging one
                     category in isolation.
                   </p>
@@ -391,6 +432,72 @@ export default function Insights() {
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+function EvidenceGapPanel({
+  missingLogTypes,
+  evidenceGapSummaries,
+}: {
+  missingLogTypes: string[];
+  evidenceGapSummaries: Array<{
+    insight_key: string;
+    category: string;
+    subtype: string;
+    reasons: string[];
+    supporting_log_types: string[];
+    missing_log_types: string[];
+  }>;
+}) {
+  return (
+    <div className="mb-md rounded-2xl border border-amber-200/70 bg-amber-50/70 p-5 dark:border-amber-300/10 dark:bg-amber-400/5">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700 dark:text-amber-300" />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-body-md font-semibold text-amber-900 dark:text-amber-200">
+            Patterns are improving, but some evidence is still thin
+          </h3>
+          <p className="mt-1 text-body-sm leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+            GutWise filtered out weaker candidates and only kept the stronger ones below.
+            The notes here show what would most improve future insight quality.
+          </p>
+
+          {missingLogTypes.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                Most useful missing log types
+              </p>
+              <p className="text-sm leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+                {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}
+              </p>
+            </div>
+          )}
+
+          {evidenceGapSummaries.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                Common evidence gaps
+              </p>
+              {evidenceGapSummaries.slice(0, 3).map((summary) => (
+                <div
+                  key={summary.insight_key}
+                  className="rounded-xl border border-amber-300/30 bg-white/55 px-3.5 py-3 dark:border-amber-300/10 dark:bg-white/[0.03]"
+                >
+                  <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
+                    {summary.reasons[0] ?? 'This candidate needs more repeated overlap.'}
+                  </p>
+                  {summary.missing_log_types.length > 0 && (
+                    <p className="mt-1 text-xs leading-relaxed text-amber-900/75 dark:text-amber-200/75">
+                      Helpful next logs: {summary.missing_log_types.map(formatLogTypeLabel).join(', ')}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
