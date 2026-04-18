@@ -1,83 +1,58 @@
-export interface BowelMovementSection {
+export interface DailyCheckInSectionState {
   enabled: boolean;
-  bristol_type: number | null;
-  blood_present: boolean;
-  pain_level: number | null;
-  notes: string;
-  logged_at: string;
-}
-
-export interface SymptomsSection {
-  enabled: boolean;
-  symptom_type: string;
-  severity: number;
-  notes: string;
-  logged_at: string;
-}
-
-export interface FoodSection {
-  enabled: boolean;
-  meal_type: string;
-  food_items: string;
-  notes: string;
-  logged_at: string;
-}
-
-export interface HydrationSection {
-  enabled: boolean;
-  amount_ml: number;
-  drink_type: string;
-  logged_at: string;
-}
-
-export interface SleepSection {
-  enabled: boolean;
-  duration_minutes: number | null;
-  quality: number | null;
-  notes: string;
-  logged_at: string;
-}
-
-export interface StressSection {
-  enabled: boolean;
-  stress_level: number;
-  notes: string;
-  logged_at: string;
-}
-
-export interface ExerciseSection {
-  enabled: boolean;
-  exercise_type: string;
-  duration_minutes: number | null;
-  intensity: string;
-  notes: string;
-  logged_at: string;
-}
-
-export interface MedicationSection {
-  enabled: boolean;
-  medication_name: string;
-  dosage: string;
-  notes: string;
-  logged_at: string;
-}
-
-export interface MenstrualCycleSection {
-  enabled: boolean;
-  cycle_phase: string;
-  flow_intensity: string;
-  notes: string;
-  logged_at: string;
 }
 
 export interface DailyCheckInDraft {
-  bowelMovement: BowelMovementSection;
-  symptoms: SymptomsSection;
-  food: FoodSection;
-  hydration: HydrationSection;
-  sleep: SleepSection;
-  stress: StressSection;
-  exercise: ExerciseSection;
-  medication: MedicationSection;
-  menstrualCycle: MenstrualCycleSection;
+  logged_at: string;
+  bowelMovement: DailyCheckInSectionState & {
+    bristol_type: number;
+    urgency: number;
+    pain_level: number;
+    blood_present: boolean;
+    mucus_present: boolean;
+    notes: string;
+  };
+  symptoms: DailyCheckInSectionState & {
+    symptom_type: string;
+    severity: number;
+    duration_minutes: number;
+    notes: string;
+  };
+  food: DailyCheckInSectionState & {
+    meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    foods: string;
+    tags: string;
+    notes: string;
+  };
+  hydration: DailyCheckInSectionState & {
+    amount_ml: number;
+    beverage_type: string;
+    caffeine_content: boolean;
+  };
+  sleep: DailyCheckInSectionState & {
+    sleep_start: string;
+    sleep_end: string;
+    quality: number;
+    felt_rested: boolean;
+  };
+  stress: DailyCheckInSectionState & {
+    stress_level: number;
+    notes: string;
+  };
+  exercise: DailyCheckInSectionState & {
+    exercise_type: string;
+    duration_minutes: number;
+    intensity_level: number;
+  };
+  medication: DailyCheckInSectionState & {
+    medication_name: string;
+    dosage: string;
+    medication_type: 'prescription' | 'otc' | 'supplement';
+  };
+  menstrualCycle: DailyCheckInSectionState & {
+    cycle_start_date: string;
+    cycle_day: number;
+    flow_intensity: 'none' | 'spotting' | 'light' | 'medium' | 'heavy';
+    pain_level: number;
+  };
 }
