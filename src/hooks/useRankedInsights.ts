@@ -1,13 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { assembleRankedInsightInputs } from '../services/rankedInsightsAssembler';
-import { runRankedInsightPipeline } from '../lib/insightCandidates/runRankedInsightPipeline';
+import {
+  runRankedInsightPipeline,
+  type CandidateEvidenceGapSummary,
+} from '../lib/insightCandidates/runRankedInsightPipeline';
 import { applyMedicalContextModifiers } from '../lib/insightCandidates/applyMedicalContextModifiers';
 import { buildRankedExplanationBundle } from '../lib/insightCandidates/buildRankedExplanationBundle';
 import { buildLLMExplanationInput } from '../lib/insightCandidates/buildLLMExplanationInput';
 import { fetchMedicalContextSummary } from '../services/medicalContextService';
 import { invokeExplanationGeneration } from '../services/explanationInvocationService';
-import { loadPersistedExplanation, persistExplanation } from '../services/explanationPersistenceService';
+import {
+  loadPersistedExplanation,
+  persistExplanation,
+} from '../services/explanationPersistenceService';
 import type { MedicalContextAnnotatedCandidate } from '../types/insightCandidates';
 import type { RankedExplanationBundle } from '../types/explanationBundle';
 import type { LLMExplanationInput } from '../types/llmExplanationContract';
@@ -21,6 +27,9 @@ export interface AnnotatedInsightResult {
   analyzed_from: string | null;
   analyzed_to: string | null;
   medical_context_applied: boolean;
+  evidence_gap_count: number;
+  evidence_gap_summaries: CandidateEvidenceGapSummary[];
+  missing_log_types: string[];
 }
 
 export type ExplanationOrigin = 'none' | 'cache' | 'live_generation';
@@ -54,7 +63,8 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
   const runId = useRef(0);
   const lastFingerprintRef = useRef<string>('');
 
-  const [explanationResult, setExplanationResult] = useState<ExplanationInvocationResponse | null>(null);
+  const [explanationResult, setExplanationResult] =
+    useState<ExplanationInvocationResponse | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
   const [explanationError, setExplanationError] = useState<string | null>(null);
   const [explanationOrigin, setExplanationOrigin] = useState<ExplanationOrigin>('none');
@@ -82,12 +92,14 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           input_day_count: 0,
           has_medical_context: false,
         });
+
         if (lastFingerprintRef.current !== '') {
           lastFingerprintRef.current = '';
           setExplanationResult(null);
           setExplanationError(null);
           setExplanationOrigin('none');
         }
+
         setInsights({
           candidates: [],
           explanationBundle: emptyBundle,
@@ -96,6 +108,9 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
           analyzed_from: null,
           analyzed_to: null,
           medical_context_applied: false,
+          evidence_gap_count: 0,
+          evidence_gap_summaries: [],
+          missing_log_types: [],
         });
         return;
       }
@@ -159,6 +174,9 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         analyzed_from: pipelineResult.analyzed_from,
         analyzed_to: pipelineResult.analyzed_to,
         medical_context_applied: hasMedicalContext,
+        evidence_gap_count: pipelineResult.evidence_gap_count,
+        evidence_gap_summaries: pipelineResult.evidence_gap_summaries,
+        missing_log_types: pipelineResult.missing_log_types,
       });
     } catch (err) {
       if (currentRun !== runId.current) return;
@@ -178,7 +196,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
       return;
     }
 
-    const session = await import('../lib/supabase').then(m => m.supabase.auth.getSession());
+    const session = await import('../lib/supabase').then((m) => m.supabase.auth.getSession());
     const accessToken = session.data.session?.access_token;
     if (!accessToken) {
       setExplanationError('Your session has expired. Please sign in again.');
@@ -191,9 +209,12 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
     try {
       const result = await invokeExplanationGeneration(llmInput, accessToken);
       if (!result.success) {
-        setExplanationError('Insight generation is temporarily unavailable. Your logs have been saved.');
+        setExplanationError(
+          'Insight generation is temporarily unavailable. Your logs have been saved.'
+        );
         return;
       }
+
       setExplanationResult(result);
       setExplanationOrigin('live_generation');
 
@@ -213,7 +234,9 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         msg.includes('unavailable');
 
       if (isTransient) {
-        setExplanationError('Insight generation is temporarily unavailable. Your logs have been saved — try again shortly.');
+        setExplanationError(
+          'Insight generation is temporarily unavailable. Your logs have been saved - try again shortly.'
+        );
       } else {
         setExplanationError('Unable to generate insights right now. Your logs have been saved.');
       }
