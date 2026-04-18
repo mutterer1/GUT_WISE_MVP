@@ -32,7 +32,7 @@ function NoteField({
         {label}
       </label>
       {readOnly ? (
-        <div className="min-h-[88px] rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200">
+        <div className="min-h-[88px] rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-gray-200">
           {value.trim().length > 0 ? value : 'No note added.'}
         </div>
       ) : (
@@ -65,7 +65,7 @@ export default function PatientNotesSection({
   return (
     <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-6 print:border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.04]">
       <div className="mb-4 border-b border-gray-100 pb-3 dark:border-white/[0.06]">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#4A8FA8]">
           Patient Perspective
         </p>
         <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
