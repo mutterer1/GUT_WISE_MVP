@@ -1,15 +1,17 @@
 import type { UserDailyFeatures } from '../../types/dailyFeatures';
 import type { UserBaselineSet } from '../../types/baselines';
-import type {
-  InsightCandidate,
-  CandidateEvidence,
-} from '../../types/insightCandidates';
+import type { InsightCandidate, CandidateEvidence } from '../../types/insightCandidates';
 import {
   safeRate,
   computeDataSufficiency,
   computeStatus,
   computeConfidence,
   computeLift,
+  computeContradictionRate,
+  computeRecencyWeight,
+  computeEvidenceQuality,
+  buildEvidenceGaps,
+  buildUncertaintyStatement,
 } from './sharedCandidateUtils';
 
 const INSIGHT_KEY = 'hydration_low_next_day_hard_stool';
@@ -44,9 +46,7 @@ export function isHarderStoolNextDay(
   return bristolBelowMedian || hasHardStool;
 }
 
-export function getNextDayPairings(
-  features: UserDailyFeatures[]
-): DayPair[] {
+export function getNextDayPairings(features: UserDailyFeatures[]): DayPair[] {
   if (features.length < 2) return [];
 
   const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
@@ -73,29 +73,36 @@ function hasHydrationData(day: UserDailyFeatures): boolean {
   return day.hydration_event_count > 0;
 }
 
+function hasStoolContext(day: UserDailyFeatures): boolean {
+  return day.bm_count > 0 && (day.avg_bristol !== null || day.hard_stool_count > 0);
+}
+
 export function analyzeHydrationStoolConsistencyCandidate(
   features: UserDailyFeatures[],
   baselines: UserBaselineSet
 ): InsightCandidate | null {
   if (features.length < 2) return null;
-
   if (baselines.hydration.low_hydration_threshold === null) return null;
-
   if (baselines.bowel_movement.median_bristol === null) return null;
 
-  const pairs = getNextDayPairings(features);
+  const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
+  const pairs = getNextDayPairings(sorted);
   if (pairs.length === 0) return null;
 
-  const eligiblePairs = pairs.filter((p) => hasHydrationData(p.hydrationDay));
+  const eligiblePairs = pairs.filter(
+    (pair) => hasHydrationData(pair.hydrationDay) && hasStoolContext(pair.nextDay)
+  );
   if (eligiblePairs.length === 0) return null;
 
   let exposureCount = 0;
   let supportCount = 0;
   let contradictionCount = 0;
-  const supportDates: string[] = [];
-
   let nonExposedCount = 0;
   let nonExposedHarderCount = 0;
+
+  const supportDates: string[] = [];
+  const exposedDates: string[] = [];
+  const baselineDates: string[] = [];
 
   for (const pair of eligiblePairs) {
     const lowHydration = isLowHydrationDay(pair.hydrationDay, baselines);
@@ -103,6 +110,8 @@ export function analyzeHydrationStoolConsistencyCandidate(
 
     if (lowHydration) {
       exposureCount++;
+      exposedDates.push(pair.hydrationDay.date);
+
       if (harderStool) {
         supportCount++;
         supportDates.push(pair.hydrationDay.date);
@@ -111,6 +120,8 @@ export function analyzeHydrationStoolConsistencyCandidate(
       }
     } else {
       nonExposedCount++;
+      baselineDates.push(pair.hydrationDay.date);
+
       if (harderStool) {
         nonExposedHarderCount++;
       }
@@ -121,11 +132,70 @@ export function analyzeHydrationStoolConsistencyCandidate(
   const baselineRate = safeRate(nonExposedHarderCount, nonExposedCount);
   const lift = computeLift(exposedRate, baselineRate);
 
-  const sufficiency = computeDataSufficiency(eligiblePairs.length, exposureCount);
-  const status = computeStatus(sufficiency, supportCount, exposedRate, baselineRate);
-  const confidence = computeConfidence(sufficiency, supportCount, contradictionCount, lift);
+  const supportingLogTypes = ['hydration', 'bm'];
+  const missingLogTypes: string[] = [];
 
-  const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
+  if (pairs.some((pair) => !hasHydrationData(pair.hydrationDay))) {
+    missingLogTypes.push('hydration');
+  }
+
+  if (pairs.some((pair) => !hasStoolContext(pair.nextDay))) {
+    missingLogTypes.push('bm');
+  }
+
+  const sufficiency = computeDataSufficiency(
+    eligiblePairs.length,
+    exposureCount,
+    nonExposedCount
+  );
+
+  const recencyWeight = computeRecencyWeight(
+    supportDates,
+    sorted[sorted.length - 1].date
+  );
+
+  const evidenceGaps = buildEvidenceGaps({
+    eligibleDayCount: eligiblePairs.length,
+    exposureCount,
+    contrastCount: nonExposedCount,
+    supportCount,
+    contradictionCount,
+    supportingLogTypes,
+    endDate: sorted[sorted.length - 1].date,
+    sampleDates: supportDates,
+  });
+
+  const evidenceQuality = computeEvidenceQuality(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
+
+  const status = computeStatus(
+    sufficiency,
+    supportCount,
+    exposedRate,
+    baselineRate,
+    contradictionCount,
+    exposureCount,
+    nonExposedCount,
+    evidenceQuality
+  );
+
+  const confidence = computeConfidence(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    lift,
+    exposureCount,
+    nonExposedCount,
+    recencyWeight,
+    supportingLogTypes
+  );
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -135,10 +205,25 @@ export function analyzeHydrationStoolConsistencyCandidate(
     exposed_rate: exposedRate,
     lift,
     sample_dates: supportDates.slice(0, 10),
+    contrast_count: nonExposedCount,
+    eligible_day_count: eligiblePairs.length,
+    exposed_day_count: exposureCount,
+    baseline_day_count: nonExposedCount,
+    contradiction_rate: computeContradictionRate(contradictionCount, exposureCount),
+    recency_weight: recencyWeight,
+    evidence_quality: evidenceQuality,
+    supporting_log_types: supportingLogTypes,
+    missing_log_types: missingLogTypes,
+    exposed_dates: exposedDates.slice(0, 10),
+    baseline_dates: baselineDates.slice(0, 10),
+    uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
+    evidence_gaps: evidenceGaps,
+    notes: ['Paired-day analysis comparing lower-hydration days against the following day.'],
     statistics: {
       eligible_pair_count: eligiblePairs.length,
       non_exposed_count: nonExposedCount,
       non_exposed_harder_count: nonExposedHarderCount,
+      total_pair_count: pairs.length,
     },
   };
 
@@ -146,7 +231,7 @@ export function analyzeHydrationStoolConsistencyCandidate(
     user_id: baselines.user_id,
     insight_key: INSIGHT_KEY,
     category: 'hydration',
-    subtype: 'low_hydration_next_day_hard_stool',
+    subtype: 'hydration_stool_consistency',
     trigger_factors: ['hydration_total_ml'],
     target_outcomes: ['avg_bristol', 'hard_stool_count'],
     status,
