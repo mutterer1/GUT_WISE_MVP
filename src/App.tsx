@@ -7,6 +7,7 @@ import { useSaveEventHandler } from './hooks/useSaveEventHandler';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import DailyCheckIn from './pages/DailyCheckIn';
 import Dashboard from './pages/Dashboard';
 import Insights from './pages/Insights';
 import Meals from './pages/Meals';
@@ -33,7 +34,6 @@ import DataManagementSettings from './pages/settings/DataManagementSettings';
 import PreferencesSettings from './pages/settings/PreferencesSettings';
 import MedicalContextSettings from './pages/settings/MedicalContextSettings';
 import MedicalDocumentIntake from './pages/settings/MedicalDocumentIntake';
-import DailyCheckIn from './pages/DailyCheckIn';
 
 function AppContent() {
   useSaveEventHandler();
@@ -48,8 +48,8 @@ function AppContent() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/disclaimer" element={<Disclaimer />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/daily-check-in" element={<DailyCheckIn />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/meals" element={<Meals />} />
           <Route path="/bm-log" element={<BMLog />} />
