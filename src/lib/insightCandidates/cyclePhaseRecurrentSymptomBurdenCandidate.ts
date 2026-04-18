@@ -10,6 +10,11 @@ import {
   computeStatus,
   computeConfidence,
   computeLift,
+  computeRecencyWeight,
+  computeContradictionRate,
+  computeEvidenceQuality,
+  buildEvidenceGaps,
+  buildUncertaintyStatement,
 } from './sharedCandidateUtils';
 
 const INSIGHT_KEY = 'cycle_phase_recurrent_symptom_burden';
@@ -45,9 +50,41 @@ function groupIntoEpisodes(days: UserDailyFeatures[]): UserDailyFeatures[][] {
       current = [curr];
     }
   }
-  episodes.push(current);
 
+  episodes.push(current);
   return episodes;
+}
+
+function hasSymptomAndCycleContext(day: UserDailyFeatures): boolean {
+  return day.cycle_phase !== null && day.symptom_event_count >= 0;
+}
+
+function getSupportingLogTypes(phaseDays: UserDailyFeatures[]): string[] {
+  const logTypes = new Set<string>();
+
+  for (const day of phaseDays) {
+    if (day.cycle_entry_count > 0 || day.cycle_phase !== null || day.cycle_day !== null) {
+      logTypes.add('cycle');
+    }
+
+    if (
+      day.symptom_event_count > 0 ||
+      day.symptom_burden_score > 0 ||
+      day.max_symptom_severity !== null
+    ) {
+      logTypes.add('symptom');
+    }
+
+    if (
+      day.bm_count > 0 ||
+      day.avg_bristol !== null ||
+      day.urgency_event_count > 0
+    ) {
+      logTypes.add('gut');
+    }
+  }
+
+  return Array.from(logTypes);
 }
 
 function analyzeOnePhase(
@@ -58,7 +95,7 @@ function analyzeOnePhase(
   baselines: UserBaselineSet,
   sorted: UserDailyFeatures[]
 ): PhaseResult | null {
-  if (phaseDays.length < MIN_PHASE_DAYS) return null;
+  if (phaseDays.length < MIN_PHASE_DAYS || nonPhaseDays.length === 0) return null;
 
   const elevationLine = phaseMedian + ELEVATION_THRESHOLD;
   const episodes = groupIntoEpisodes(phaseDays);
@@ -67,11 +104,18 @@ function analyzeOnePhase(
 
   let supportCount = 0;
   let contradictionCount = 0;
+  let nonPhaseElevatedCount = 0;
+
   const supportDates: string[] = [];
+  const exposureDates: string[] = [];
+  const baselineDates: string[] = [];
 
   for (const episode of episodes) {
+    exposureDates.push(episode[0].date);
+
     const avgBurden =
-      episode.reduce((sum, d) => sum + d.symptom_burden_score, 0) / episode.length;
+      episode.reduce((sum, day) => sum + day.symptom_burden_score, 0) / episode.length;
+
     if (avgBurden > elevationLine) {
       supportCount++;
       supportDates.push(episode[0].date);
@@ -80,17 +124,81 @@ function analyzeOnePhase(
     }
   }
 
-  const nonPhaseElevatedCount = nonPhaseDays.filter(
-    (d) => d.symptom_burden_score > elevationLine
-  ).length;
+  for (const day of nonPhaseDays) {
+    baselineDates.push(day.date);
 
+    if (day.symptom_burden_score > elevationLine) {
+      nonPhaseElevatedCount++;
+    }
+  }
+
+  const contrastCount = nonPhaseDays.length;
   const exposedRate = safeRate(supportCount, episodes.length);
-  const baselineRate = safeRate(nonPhaseElevatedCount, nonPhaseDays.length);
+  const baselineRate = safeRate(nonPhaseElevatedCount, contrastCount);
   const lift = computeLift(exposedRate, baselineRate);
 
-  const sufficiency = computeDataSufficiency(episodes.length, supportCount);
-  const status = computeStatus(sufficiency, supportCount, exposedRate, baselineRate);
-  const confidence = computeConfidence(sufficiency, supportCount, contradictionCount, lift);
+  const supportingLogTypes = getSupportingLogTypes(phaseDays);
+  const missingLogTypes = ['gut'].filter(
+    (logType) => !supportingLogTypes.includes(logType)
+  );
+
+  const sufficiency = computeDataSufficiency(
+    sorted.length,
+    episodes.length,
+    contrastCount
+  );
+
+  const analysisEndDate = sorted[sorted.length - 1].date;
+  const recencyWeight = computeRecencyWeight(supportDates, analysisEndDate);
+  const contradictionRate = computeContradictionRate(
+    contradictionCount,
+    episodes.length
+  );
+
+  const evidenceQuality = computeEvidenceQuality(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    episodes.length,
+    contrastCount,
+    recencyWeight,
+    supportingLogTypes
+  );
+
+  const evidenceGaps = buildEvidenceGaps({
+    eligibleDayCount: sorted.length,
+    exposureCount: episodes.length,
+    contrastCount,
+    supportCount,
+    contradictionCount,
+    supportingLogTypes,
+    endDate: analysisEndDate,
+    sampleDates: supportDates,
+  });
+
+  const uncertaintyStatement = buildUncertaintyStatement(evidenceGaps);
+
+  const status = computeStatus(
+    sufficiency,
+    supportCount,
+    exposedRate,
+    baselineRate,
+    contradictionCount,
+    episodes.length,
+    contrastCount,
+    evidenceQuality
+  );
+
+  const confidence = computeConfidence(
+    sufficiency,
+    supportCount,
+    contradictionCount,
+    lift,
+    episodes.length,
+    contrastCount,
+    recencyWeight,
+    supportingLogTypes
+  );
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -100,6 +208,19 @@ function analyzeOnePhase(
     exposed_rate: exposedRate,
     lift,
     sample_dates: supportDates.slice(0, 10),
+    contrast_count: contrastCount,
+    eligible_day_count: sorted.length,
+    exposed_day_count: episodes.length,
+    baseline_day_count: contrastCount,
+    contradiction_rate: contradictionRate,
+    recency_weight: recencyWeight,
+    evidence_quality: evidenceQuality,
+    supporting_log_types: supportingLogTypes,
+    missing_log_types: missingLogTypes,
+    exposed_dates: exposureDates.slice(0, 10),
+    baseline_dates: baselineDates.slice(0, 10),
+    uncertainty_statement: uncertaintyStatement,
+    evidence_gaps: evidenceGaps,
     statistics: {
       phase,
       phase_day_count: phaseDays.length,
@@ -107,7 +228,7 @@ function analyzeOnePhase(
       phase_median_burden: phaseMedian,
       elevation_threshold: ELEVATION_THRESHOLD,
       elevation_line: elevationLine,
-      non_phase_day_count: nonPhaseDays.length,
+      non_phase_day_count: contrastCount,
       non_phase_elevated_count: nonPhaseElevatedCount,
     },
   };
@@ -124,7 +245,7 @@ function analyzeOnePhase(
     data_sufficiency: sufficiency,
     evidence,
     created_from_start_date: sorted[0].date,
-    created_from_end_date: sorted[sorted.length - 1].date,
+    created_from_end_date: analysisEndDate,
   };
 
   return { candidate, confidence: confidence ?? 0 };
@@ -137,19 +258,21 @@ export function analyzeCyclePhaseRecurrentSymptomBurdenCandidate(
   if (features.length === 0) return null;
 
   const { cycle } = baselines;
-
   const hasMenstrualBaseline = cycle.menstrual_phase_symptom_burden_median !== null;
   const hasLutealBaseline = cycle.luteal_phase_symptom_burden_median !== null;
 
   if (!hasMenstrualBaseline && !hasLutealBaseline) return null;
 
-  const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...features]
+    .filter(hasSymptomAndCycleContext)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
-  const menstrualDays = sorted.filter((d) => d.cycle_phase === 'menstrual');
-  const lutealDays = sorted.filter((d) => d.cycle_phase === 'luteal');
-  const nonPhaseDays = sorted.filter(
-    (d) => d.cycle_phase !== 'menstrual' && d.cycle_phase !== 'luteal'
-  );
+  if (sorted.length === 0) return null;
+
+  const menstrualDays = sorted.filter((day) => day.cycle_phase === 'menstrual');
+  const lutealDays = sorted.filter((day) => day.cycle_phase === 'luteal');
+  const nonMenstrualDays = sorted.filter((day) => day.cycle_phase !== 'menstrual');
+  const nonLutealDays = sorted.filter((day) => day.cycle_phase !== 'luteal');
 
   const results: PhaseResult[] = [];
 
@@ -158,7 +281,7 @@ export function analyzeCyclePhaseRecurrentSymptomBurdenCandidate(
       'menstrual',
       menstrualDays,
       cycle.menstrual_phase_symptom_burden_median!,
-      nonPhaseDays,
+      nonMenstrualDays,
       baselines,
       sorted
     );
@@ -170,7 +293,7 @@ export function analyzeCyclePhaseRecurrentSymptomBurdenCandidate(
       'luteal',
       lutealDays,
       cycle.luteal_phase_symptom_burden_median!,
-      nonPhaseDays,
+      nonLutealDays,
       baselines,
       sorted
     );
