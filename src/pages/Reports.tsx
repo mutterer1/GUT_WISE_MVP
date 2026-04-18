@@ -13,6 +13,7 @@ import HealthMarkersSection from '../components/reports/HealthMarkersSection';
 import TriggerPatternsSection from '../components/reports/TriggerPatternsSection';
 import MedicationCorrelationSection from '../components/reports/MedicationCorrelationSection';
 import ClinicalAlertsSection from '../components/reports/ClinicalAlertsSection';
+import ObservedDataTable from '../components/reports/ObservedDataTable';
 import PatientNotesSection, { PatientNoteValues } from '../components/reports/PatientNotesSection';
 import {
   fetchBMAnalytics,
@@ -42,9 +43,7 @@ export default function Reports() {
     return date.toISOString().split('T')[0];
   });
 
-  const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
-  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const [bmAnalytics, setBmAnalytics] = useState<BMAnalytics | null>(null);
   const [bristolDistribution, setBristolDistribution] = useState<BristolDistribution[]>([]);
@@ -192,6 +191,41 @@ export default function Reports() {
     return concerns;
   };
 
+  const observedDataRows = bmAnalytics
+    ? [
+        {
+          label: 'Tracked period',
+          value: `${getDayCount()} days`,
+          note: formatDateRange(),
+        },
+        {
+          label: 'Total stool logs',
+          value: String(bmAnalytics.totalCount),
+          note: 'Patient-reported',
+        },
+        {
+          label: 'Average bowel movements per day',
+          value: bmAnalytics.averagePerDay.toFixed(1),
+          note: 'Observed average',
+        },
+        {
+          label: 'Average bowel movements per week',
+          value: bmAnalytics.averagePerWeek.toFixed(1),
+          note: 'Observed average',
+        },
+        {
+          label: 'Review flags',
+          value: String(clinicalAlerts.length),
+          note: clinicalAlerts.length > 0 ? 'See flags below' : 'None in this range',
+        },
+        {
+          label: 'Repeated patterns highlighted',
+          value: String(getPrimaryConcerns().length),
+          note: getPrimaryConcerns().length > 0 ? 'Summarized below' : 'None highlighted',
+        },
+      ]
+    : [];
+
   const SectionGroupLabel = ({
     label,
     accent = false,
@@ -261,9 +295,7 @@ export default function Reports() {
           <div className="mb-6 border-b-2 border-gray-900 pb-5">
             <div className="mb-1 flex items-center gap-3">
               <FileText className="h-7 w-7 text-gray-900" />
-              <h1 className="text-3xl font-bold text-gray-900">
-                Digestive Health Summary Report
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900">Digestive Health Summary Report</h1>
             </div>
             <p className="mt-1 text-sm text-gray-600">
               Patient-reported data - for clinical review purposes only
@@ -330,6 +362,8 @@ export default function Reports() {
               )}
               primaryConcerns={getPrimaryConcerns()}
             />
+
+            <ObservedDataTable rows={observedDataRows} />
 
             <ClinicalAlertsSection alerts={clinicalAlerts} />
 
