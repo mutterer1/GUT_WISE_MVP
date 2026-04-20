@@ -5,7 +5,11 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { type HydrationUnit, getStoredHydrationUnit, setStoredHydrationUnit } from '../../utils/hydrationUnits';
+import {
+  type HydrationUnit,
+  getStoredHydrationUnit,
+  setStoredHydrationUnit,
+} from '../../utils/hydrationUnits';
 
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
@@ -18,9 +22,18 @@ interface UserPreferences {
 }
 
 const timezones = [
-  'UTC', 'America/New_York', 'America/Los_Angeles', 'America/Denver',
-  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Tokyo',
-  'Asia/Shanghai', 'Asia/Singapore', 'Australia/Sydney', 'America/Toronto'
+  'UTC',
+  'America/New_York',
+  'America/Los_Angeles',
+  'America/Denver',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Singapore',
+  'Australia/Sydney',
+  'America/Toronto',
 ];
 
 const languages = [
@@ -92,13 +105,16 @@ export default function PreferencesSettings() {
       if (updateError) throw updateError;
 
       setStoredHydrationUnit(preferences.hydrationUnit);
-      localStorage.setItem('app-preferences', JSON.stringify({
-        theme: preferences.theme,
-        language: preferences.language,
-        dateFormat: preferences.dateFormat,
-        compactView: preferences.compactView,
-        animations: preferences.animations,
-      }));
+      localStorage.setItem(
+        'app-preferences',
+        JSON.stringify({
+          theme: preferences.theme,
+          language: preferences.language,
+          dateFormat: preferences.dateFormat,
+          compactView: preferences.compactView,
+          animations: preferences.animations,
+        })
+      );
 
       setMessage('Preferences saved successfully');
       setTimeout(() => setMessage(''), 3000);
@@ -112,18 +128,16 @@ export default function PreferencesSettings() {
   return (
     <SettingsPageLayout
       title="Preferences"
-      description="Customize your experience and app preferences"
+      description="Customize appearance, formatting, and unit behavior so the product matches how you review data day to day."
     >
-      <div className="space-y-6">
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Appearance</h3>
+      <div className="space-y-5">
+        <Card variant="elevated" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Appearance</h3>
 
-          <div className="space-y-4">
+          <div className="mt-5 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Theme
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <label className="field-label mb-3 block">Theme</label>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {[
                   { value: 'light', label: 'Light', icon: Sun },
                   { value: 'dark', label: 'Dark', icon: Moon },
@@ -131,59 +145,76 @@ export default function PreferencesSettings() {
                 ].map(({ value, label, icon: Icon }) => (
                   <button
                     key={value}
-                    onClick={() => setPreferences({ ...preferences, theme: value as typeof preferences.theme })}
-                    className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                    type="button"
+                    onClick={() =>
+                      setPreferences({
+                        ...preferences,
+                        theme: value as typeof preferences.theme,
+                      })
+                    }
+                    className={[
+                      'flex items-center gap-3 rounded-[22px] border p-4 transition-smooth',
                       preferences.theme === value
-                        ? 'border-teal-500 bg-teal-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)]'
+                        : 'border-white/8 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
-                    <Icon className="h-5 w-5 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-900">{label}</span>
+                    <Icon className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                      {label}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="surface-panel-quiet rounded-[24px] p-4">
+              <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   checked={preferences.compactView}
-                  onChange={(e) => setPreferences({ ...preferences, compactView: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  onChange={(e) =>
+                    setPreferences({ ...preferences, compactView: e.target.checked })
+                  }
+                  className="h-4 w-4 rounded border-white/20 bg-transparent text-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]"
                 />
-                <span className="text-sm font-medium text-gray-700">Use compact view</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Use compact view
+                </span>
               </label>
             </div>
 
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="surface-panel-quiet rounded-[24px] p-4">
+              <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   checked={preferences.animations}
-                  onChange={(e) => setPreferences({ ...preferences, animations: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  onChange={(e) =>
+                    setPreferences({ ...preferences, animations: e.target.checked })
+                  }
+                  className="h-4 w-4 rounded border-white/20 bg-transparent text-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]"
                 />
-                <span className="text-sm font-medium text-gray-700">Enable animations</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Enable animations
+                </span>
               </label>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Localization</h3>
+        <Card variant="flat" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Localization</h3>
 
-          <div className="space-y-4">
+          <div className="mt-5 space-y-4">
             <div>
-              <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="language" className="field-label mb-2 block">
                 Language
               </label>
               <select
                 id="language"
                 value={preferences.language}
                 onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="input-base w-full"
               >
                 {languages.map((lang) => (
                   <option key={lang.code} value={lang.code}>
@@ -194,14 +225,14 @@ export default function PreferencesSettings() {
             </div>
 
             <div>
-              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="timezone" className="field-label mb-2 block">
                 Timezone
               </label>
               <select
                 id="timezone"
                 value={preferences.timezone}
                 onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="input-base w-full"
               >
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>
@@ -212,14 +243,14 @@ export default function PreferencesSettings() {
             </div>
 
             <div>
-              <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="dateFormat" className="field-label mb-2 block">
                 Date Format
               </label>
               <select
                 id="dateFormat"
                 value={preferences.dateFormat}
                 onChange={(e) => setPreferences({ ...preferences, dateFormat: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="input-base w-full"
               >
                 <option value="MMM DD, YYYY">Mar 15, 2024</option>
                 <option value="DD/MM/YYYY">15/03/2024</option>
@@ -230,13 +261,12 @@ export default function PreferencesSettings() {
           </div>
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Units</h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Hydration Unit
-            </label>
-            <div className="flex gap-3">
+        <Card variant="flat" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Units</h3>
+
+          <div className="mt-5">
+            <label className="field-label mb-3 block">Hydration Unit</label>
+            <div className="flex flex-col gap-3 md:flex-row">
               {([
                 { value: 'metric', label: 'Metric (mL / L)' },
                 { value: 'imperial', label: 'Imperial (fl oz / gal)' },
@@ -245,11 +275,12 @@ export default function PreferencesSettings() {
                   key={value}
                   type="button"
                   onClick={() => setPreferences({ ...preferences, hydrationUnit: value })}
-                  className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all ${
+                  className={[
+                    'flex-1 rounded-[22px] border px-4 py-3 text-sm font-medium transition-smooth',
                     preferences.hydrationUnit === value
-                      ? 'border-teal-500 bg-teal-50 text-teal-700'
-                      : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                  }`}
+                      ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                      : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                  ].join(' ')}
                 >
                   {label}
                 </button>
@@ -258,44 +289,49 @@ export default function PreferencesSettings() {
           </div>
         </Card>
 
-        <Card className="bg-blue-50 border border-blue-200">
+        <Card
+          variant="flat"
+          className="rounded-[24px] border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.06)]"
+        >
           <div className="flex items-start gap-3">
-            <Globe className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <Globe className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
             <div>
-              <p className="text-sm font-medium text-blue-900">
-                Your preferences are saved locally and synced to your account
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                Preferences are saved locally and synced to your account
               </p>
-              <p className="text-sm text-blue-800 mt-1">
-                These settings will be applied across all your devices when you log in
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                These settings will be applied across your devices when you log in.
               </p>
             </div>
           </div>
         </Card>
 
         {error && (
-          <Card className="bg-red-50 border border-red-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(255,120,120,0.2)] bg-[rgba(255,120,120,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <X className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-900">{error}</p>
-              </div>
+              <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-danger)]" />
+              <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
             </div>
           </Card>
         )}
 
         {message && (
-          <Card className="bg-green-50 border border-green-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-green-900">{message}</p>
-              </div>
+              <Save className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
+              <p className="text-sm font-medium text-[var(--color-accent-primary)]">{message}</p>
             </div>
           </Card>
         )}
 
         <Button disabled={saving} onClick={handleSave}>
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="mr-2 h-4 w-4" />
           {saving ? 'Saving...' : 'Save Preferences'}
         </Button>
       </div>
