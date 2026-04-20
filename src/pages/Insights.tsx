@@ -126,7 +126,7 @@ export default function Insights() {
 
   const distinctWarningFlags =
     validationStatus === 'valid_with_warnings'
-      ? [...new Set((validation?.flags ?? []).map((f) => f.type))]
+      ? [...new Set((validation?.flags ?? []).map((flag) => flag.type))]
       : [];
 
   const exMap = isSafeToUse ? explanationMap() : new Map();
@@ -140,8 +140,8 @@ export default function Insights() {
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-80 bg-[radial-gradient(ellipse_75%_55%_at_50%_0%,rgba(133,93,255,0.12)_0%,transparent_75%)]" />
 
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <section className="page-enter surface-panel mb-6 rounded-[32px] p-5 sm:p-6 lg:p-8">
+        <div className="relative z-10 mx-auto max-w-7xl space-y-6">
+          <section className="page-enter surface-panel rounded-[32px] p-5 sm:p-6 lg:p-8">
             <div className="page-header items-start justify-between gap-5">
               <div className="max-w-3xl">
                 <span className="badge-secondary mb-3 inline-flex">Intelligence Review</span>
@@ -153,11 +153,7 @@ export default function Insights() {
               </div>
 
               {isLegacyErrorFallback && (
-                <Button
-                  onClick={handleGenerateInsights}
-                  disabled={generating}
-                  className="shrink-0"
-                >
+                <Button onClick={handleGenerateInsights} disabled={generating} className="shrink-0">
                   {generating ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -175,7 +171,7 @@ export default function Insights() {
           </section>
 
           {error && (
-            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
+            <div className="flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
               <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-danger)]" />
               <p className="text-sm text-[var(--color-danger)]">{error}</p>
             </div>
@@ -191,8 +187,8 @@ export default function Insights() {
           )}
 
           {isRankedPrimary && (
-            <section className="mb-6">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <section className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="mb-1 flex items-center gap-2.5">
                     <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
@@ -244,7 +240,7 @@ export default function Insights() {
               </div>
 
               {validationStatus === 'invalid' && (
-                <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
+                <div className="flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
                   <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-danger)]" />
                   <p className="text-sm text-[var(--color-danger)]">
                     AI explanations couldn&apos;t be verified and won&apos;t be shown. Your patterns are
@@ -254,7 +250,7 @@ export default function Insights() {
               )}
 
               {validationStatus === 'valid_with_warnings' && distinctWarningFlags.length > 0 && (
-                <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.08)] p-4">
+                <div className="flex items-start gap-3 rounded-2xl border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.08)] p-4">
                   <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-warning)]" />
                   <p className="text-sm text-[var(--color-warning)]">
                     Some explanations may be incomplete. Patterns are still shown below.
@@ -262,9 +258,7 @@ export default function Insights() {
                 </div>
               )}
 
-              <div className="mb-4">
-                <TrustExplainer variant="insights" />
-              </div>
+              <TrustExplainer variant="insights" />
 
               {(evidenceGapSummaries.length > 0 || missingLogTypes.length > 0) && (
                 <EvidenceGapPanel
@@ -274,12 +268,12 @@ export default function Insights() {
               )}
 
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {rankedCandidates.map((candidate, i) => (
+                {rankedCandidates.map((candidate, index) => (
                   <RankedCandidateCard
                     key={candidate.insight_key}
                     candidate={candidate}
                     explanation={exMap.get(candidate.insight_key)}
-                    rank={i + 1}
+                    rank={index + 1}
                   />
                 ))}
               </div>
@@ -287,7 +281,7 @@ export default function Insights() {
           )}
 
           {isRankedEmpty && (
-            <div className="space-y-4">
+            <section className="space-y-4">
               <TrustExplainer variant="insights" />
 
               <div className="surface-panel rounded-[32px] px-6 py-10 text-center sm:px-10 sm:py-14">
@@ -302,38 +296,38 @@ export default function Insights() {
                   <Brain className="h-7 w-7 text-[var(--color-accent-secondary)]" />
                 </div>
 
-                <div className="mx-auto max-w-md">
-                  <h3 className="mb-3 text-xl font-semibold text-[var(--color-text-primary)]">
+                <div className="mx-auto max-w-[700px]">
+                  <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">
                     No reliable patterns detected yet
                   </h3>
 
-                  <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                    GutWise does not have enough repeated overlap in your recent logs yet to show a
-                    strong pattern.
+                  <p className="mx-auto mt-4 max-w-[34ch] text-sm leading-7 text-[var(--color-text-secondary)]">
+                    GutWise does not have enough repeated overlap in your recent logs to show a
+                    strong pattern yet.
                   </p>
 
                   {missingLogTypes.length > 0 ? (
-                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="mx-auto mt-4 max-w-[38ch] text-sm leading-7 text-[var(--color-text-secondary)]">
                       The most useful missing context right now is:{' '}
                       {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}.
                     </p>
                   ) : (
-                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="mx-auto mt-4 max-w-[40ch] text-sm leading-7 text-[var(--color-text-secondary)]">
                       The strongest starting combination is stool, symptoms, meals, hydration,
                       sleep, and stress logged on the same days.
                     </p>
                   )}
 
                   {evidenceGapSummaries.length > 0 && (
-                    <div className="mt-5 rounded-2xl border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] px-4 py-4 text-left">
+                    <div className="mx-auto mt-6 max-w-[760px] rounded-2xl border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] px-4 py-4 text-left">
                       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-warning)]">
                         What is missing
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {evidenceGapSummaries.slice(0, 3).map((summary) => (
                           <p
                             key={summary.insight_key}
-                            className="text-xs leading-relaxed text-[var(--color-text-secondary)]"
+                            className="text-sm leading-7 text-[var(--color-text-secondary)]"
                           >
                             {summary.reasons[0]}
                           </p>
@@ -342,18 +336,18 @@ export default function Insights() {
                     </div>
                   )}
 
-                  <p className="mt-4 text-xs text-[var(--color-text-tertiary)]">
-                    A few more days of shared context will usually do more than logging one
-                    category in isolation.
+                  <p className="mx-auto mt-6 max-w-[42ch] text-sm leading-7 text-[var(--color-text-tertiary)]">
+                    A few more days of shared context will usually do more than logging one category
+                    in isolation.
                   </p>
                 </div>
               </div>
-            </div>
+            </section>
           )}
 
           {isLegacyErrorFallback && (
             <>
-              <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+              <div className="flex items-start gap-3 rounded-2xl border border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
                 <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                 <div>
                   <p className="text-sm font-medium text-[var(--color-accent-primary)]">
@@ -384,7 +378,7 @@ export default function Insights() {
                       No saved observations available
                     </h3>
 
-                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="mb-3 text-sm leading-7 text-[var(--color-text-secondary)]">
                       Pattern analysis ran into a problem and there are no previously saved
                       observations to fall back on.
                     </p>
@@ -401,7 +395,7 @@ export default function Insights() {
                 </div>
               ) : (
                 <>
-                  <div className="mb-4 flex items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
+                  <div className="flex items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
                     <span>
                       {insights.length} {insights.length === 1 ? 'observation' : 'observations'} found
                     </span>
@@ -409,8 +403,8 @@ export default function Insights() {
                     <span>Based on repeated signals in your logs</span>
                   </div>
 
-                  <div className="mb-6 rounded-2xl border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.05)] px-4 py-4">
-                    <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                  <div className="rounded-2xl border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.05)] px-4 py-4">
+                    <p className="text-sm leading-7 text-[var(--color-text-secondary)]">
                       <span className="font-medium text-[var(--color-text-primary)]">
                         About these observations:{' '}
                       </span>
@@ -450,16 +444,16 @@ function EvidenceGapPanel({
   }>;
 }) {
   return (
-    <div className="mb-4 rounded-[28px] border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] p-5">
+    <div className="rounded-[28px] border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] p-5">
       <div className="flex items-start gap-3">
         <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-warning)]" />
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
             Patterns are improving, but some evidence is still thin
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-            GutWise filtered out weaker candidates and only kept the stronger ones below.
-            The notes here show what would most improve future insight quality.
+          <p className="mt-1 text-sm leading-7 text-[var(--color-text-secondary)]">
+            GutWise filtered out weaker candidates and kept the stronger ones below. The notes here
+            show what would most improve future insight quality.
           </p>
 
           {missingLogTypes.length > 0 && (
@@ -467,7 +461,7 @@ function EvidenceGapPanel({
               <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--color-warning)]">
                 Most useful missing log types
               </p>
-              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="text-sm leading-7 text-[var(--color-text-secondary)]">
                 {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}
               </p>
             </div>
@@ -483,11 +477,11 @@ function EvidenceGapPanel({
                   key={summary.insight_key}
                   className="rounded-2xl border border-white/8 bg-white/[0.03] px-3.5 py-3"
                 >
-                  <p className="text-xs font-medium text-[var(--color-text-primary)]">
+                  <p className="text-sm font-medium leading-7 text-[var(--color-text-primary)]">
                     {summary.reasons[0] ?? 'This candidate needs more repeated overlap.'}
                   </p>
                   {summary.missing_log_types.length > 0 && (
-                    <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                    <p className="mt-1 text-sm leading-7 text-[var(--color-text-secondary)]">
                       Helpful next logs: {summary.missing_log_types.map(formatLogTypeLabel).join(', ')}
                     </p>
                   )}
