@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Save, Clock, Activity, AlertCircle, Pencil } from 'lucide-react';
+import {
+  Activity,
+  AlertCircle,
+  Clock,
+  MapPin,
+  Pencil,
+  Save,
+  Sparkles,
+} from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -70,24 +78,24 @@ export default function SymptomsLog() {
       triggers: [],
       notes: '',
     },
-    buildInsertPayload: (formData, userId) => ({
+    buildInsertPayload: (data, userId) => ({
       user_id: userId,
-      logged_at: formData.logged_at,
-      symptom_type: formData.symptom_type,
-      severity: formData.severity,
-      duration_minutes: formData.duration_minutes,
-      location: formData.location,
-      triggers: formData.triggers,
-      notes: formData.notes,
+      logged_at: data.logged_at,
+      symptom_type: data.symptom_type,
+      severity: data.severity,
+      duration_minutes: data.duration_minutes,
+      location: data.location,
+      triggers: data.triggers,
+      notes: data.notes,
     }),
-    buildUpdatePayload: (formData) => ({
-      logged_at: formData.logged_at,
-      symptom_type: formData.symptom_type,
-      severity: formData.severity,
-      duration_minutes: formData.duration_minutes,
-      location: formData.location,
-      triggers: formData.triggers,
-      notes: formData.notes,
+    buildUpdatePayload: (data) => ({
+      logged_at: data.logged_at,
+      symptom_type: data.symptom_type,
+      severity: data.severity,
+      duration_minutes: data.duration_minutes,
+      location: data.location,
+      triggers: data.triggers,
+      notes: data.notes,
     }),
   });
 
@@ -100,7 +108,7 @@ export default function SymptomsLog() {
     setFormData({
       ...formData,
       triggers: formData.triggers.includes(trigger)
-        ? formData.triggers.filter((t) => t !== trigger)
+        ? formData.triggers.filter((item) => item !== trigger)
         : [...formData.triggers, trigger],
     });
   };
@@ -108,7 +116,7 @@ export default function SymptomsLog() {
   return (
     <LogPageShell
       title="Symptoms Log"
-      subtitle="Track symptoms, severity, and potential triggers"
+      subtitle="Capture the symptom, grade the intensity, and add likely context only when it helps interpret the event."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -124,17 +132,18 @@ export default function SymptomsLog() {
       />
 
       {!showHistory ? (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {editingId && (
-            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="font-medium">Editing entry</span>
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
               </div>
+
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -142,66 +151,81 @@ export default function SymptomsLog() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Clock className="mr-1 inline h-4 w-4" />
-                Time
-              </label>
-              <input
-                type="datetime-local"
-                id="logged_at"
-                value={formData.logged_at}
-                onChange={(e) =>
-                  setFormData({ ...formData, logged_at: e.target.value })
-                }
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                required
-              />
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="logged_at" className="field-label mb-2 block">
+                  <Clock className="mr-1 inline h-4 w-4" />
+                  Time
+                </label>
+
+                <input
+                  type="datetime-local"
+                  id="logged_at"
+                  value={formData.logged_at}
+                  onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
+                  className="input-base w-full"
+                  required
+                />
+
+                <p className="field-help mt-2">
+                  Start with when the symptom happened. The rest refines the read.
+                </p>
+              </div>
+
+              <div className="surface-intelligence rounded-[24px] p-4 sm:p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                  Symptom posture
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                  {formData.symptom_type || 'Select a symptom'}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  Capture the primary signal first, then add severity, duration, and possible
+                  triggers to sharpen the pattern.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Symptom Type
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Symptom Type</label>
+                <p className="field-help mt-1">Choose the closest match or set a custom symptom.</p>
+              </div>
 
-              <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonSymptoms.map((symptom) => (
                   <button
                     key={symptom}
                     type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, symptom_type: symptom })
-                    }
-                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
+                    onClick={() => setFormData({ ...formData, symptom_type: symptom })}
+                    className={[
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
                       formData.symptom_type === symptom
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
                     {symptom}
                   </button>
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   value={customSymptom}
                   onChange={(e) => setCustomSymptom(e.target.value)}
-                  placeholder="Or enter custom symptom..."
-                  className="flex-1 rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
+                  placeholder="Or enter a custom symptom..."
+                  className="input-base flex-1"
                 />
 
                 <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => {
-                    if (customSymptom.trim()) {
-                      setFormData({
-                        ...formData,
-                        symptom_type: customSymptom.trim(),
-                      });
-                      setCustomSymptom('');
-                    }
+                    if (!customSymptom.trim()) return;
+                    setFormData({ ...formData, symptom_type: customSymptom.trim() });
+                    setCustomSymptom('');
                   }}
                 >
                   Set
@@ -209,80 +233,89 @@ export default function SymptomsLog() {
               </div>
 
               {formData.symptom_type && (
-                <div className="mt-2 text-body-sm text-brand-500 dark:text-brand-300">
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-3 py-1.5 text-xs font-medium text-[var(--color-accent-primary)]">
+                  <Sparkles className="h-3.5 w-3.5" />
                   Selected: {formData.symptom_type}
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Severity: <span className="text-neutral-text dark:text-dark-text">{formData.severity}/10</span>
-              </label>
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <label className="field-label mb-2 block">
+                  Severity:{' '}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {formData.severity}/10
+                  </span>
+                </label>
 
-              <input
-                type="range"
-                min="1"
-                max="10"
-                step="1"
-                value={formData.severity}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    severity: parseInt(e.target.value, 10),
-                  })
-                }
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-signal-500"
-              />
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={formData.severity}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      severity: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-danger)]"
+                />
 
-              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
-                <span>Mild</span>
-                <span>Severe</span>
+                <div className="mt-2 flex justify-between text-xs text-[var(--color-text-tertiary)]">
+                  <span>Mild</span>
+                  <span>Severe</span>
+                </div>
+              </div>
+
+              <div className="surface-panel-quiet rounded-[28px] p-4 sm:p-5">
+                <label htmlFor="duration" className="field-label mb-2 block">
+                  Duration (minutes)
+                </label>
+
+                <input
+                  type="number"
+                  id="duration"
+                  value={formData.duration_minutes}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      duration_minutes: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="input-base w-full"
+                  min="1"
+                  required
+                />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="duration" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Duration (minutes)
-              </label>
-
-              <input
-                type="number"
-                id="duration"
-                value={formData.duration_minutes}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    duration_minutes: parseInt(e.target.value, 10),
-                  })
-                }
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                min="1"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="location" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Location (Optional)
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="location" className="field-label mb-2 block">
+                <MapPin className="mr-1 inline h-4 w-4" />
+                Location
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
               </label>
 
               <input
                 type="text"
                 id="location"
                 value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-                placeholder="e.g., Lower abdomen, Head..."
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g. Lower abdomen, head, left side..."
+                className="input-base w-full"
               />
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Potential Triggers
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Potential Triggers</label>
+                <p className="field-help mt-1">
+                  Tag likely context without overfitting. Use only what seems relevant.
+                </p>
+              </div>
 
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {commonTriggers.map((trigger) => (
@@ -290,11 +323,12 @@ export default function SymptomsLog() {
                     key={trigger}
                     type="button"
                     onClick={() => toggleTrigger(trigger)}
-                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
+                    className={[
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
                       formData.triggers.includes(trigger)
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
                     {trigger}
                   </button>
@@ -302,35 +336,29 @@ export default function SymptomsLog() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
                 Notes
               </label>
 
               <textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                rows={3}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={4}
                 placeholder="Additional observations..."
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
+                className="input-base min-h-[112px] w-full resize-none"
               />
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <Button type="submit" disabled={saving || !formData.symptom_type} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
-                {saving
-                  ? 'Saving...'
-                  : editingId
-                  ? 'Update Entry'
-                  : 'Save Entry'}
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
 
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
                   Cancel
                 </Button>
               )}
@@ -338,79 +366,72 @@ export default function SymptomsLog() {
           </form>
         </Card>
       ) : (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {history.length === 0 ? (
             <EmptyState
               category="symptoms"
-              icon={<AlertCircle className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />}
+              icon={<AlertCircle className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
+                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
                 >
-                  <div className="mb-3 flex items-start justify-between">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                      <div className="text-sm font-medium text-[var(--color-text-primary)]">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                      <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         {log.symptom_type}
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 text-sm">
                       <button
-                        onClick={() =>
-                          handleEdit(log as SymptomsFormData & { id: string })
-                        }
-                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                        type="button"
+                        onClick={() => handleEdit(log as SymptomsFormData & { id: string })}
+                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                       >
                         Edit
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => handleDelete(log.id!)}
-                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
+                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
 
-                  <div className="mb-3 grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-neutral-muted dark:text-dark-muted">Severity:</span>
-                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.severity}/10</span>
-                    </div>
-
-                    <div>
-                      <span className="text-neutral-muted dark:text-dark-muted">Duration:</span>
-                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
-                        {log.duration_minutes} min
-                      </span>
-                    </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MetricChip label="Severity" value={`${log.severity}/10`} />
+                    <MetricChip label="Duration" value={`${log.duration_minutes} min`} />
                   </div>
 
                   {log.location && (
-                    <div className="mb-2 text-body-sm text-neutral-muted dark:text-dark-muted">
-                      <span className="font-medium">Location:</span>{' '}
+                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+                      <span className="font-medium text-[var(--color-text-primary)]">Location:</span>{' '}
                       {log.location}
                     </div>
                   )}
 
                   {log.triggers?.length > 0 && (
-                    <div className="mb-2">
-                      <div className="mb-1 text-xs text-neutral-muted dark:text-dark-muted">Triggers:</div>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                        Triggers
+                      </div>
+                      <div className="flex flex-wrap gap-2">
                         {log.triggers.map((trigger, idx) => (
                           <span
-                            key={idx}
-                            className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted"
+                            key={`${trigger}-${idx}`}
+                            className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
                           >
-                            <AlertCircle className="mr-1 h-3 w-3" />
+                            <AlertCircle className="mr-1 h-3 w-3 text-[var(--color-accent-primary)]" />
                             {trigger}
                           </span>
                         ))}
@@ -419,7 +440,7 @@ export default function SymptomsLog() {
                   )}
 
                   {log.notes && (
-                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       {log.notes}
                     </div>
                   )}
@@ -430,5 +451,16 @@ export default function SymptomsLog() {
         </Card>
       )}
     </LogPageShell>
+  );
+}
+
+function MetricChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3">
+      <span className="text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <div className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">{value}</div>
+    </div>
   );
 }
