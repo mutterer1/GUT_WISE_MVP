@@ -16,13 +16,13 @@ export default function EmptyState({ category, icon }: EmptyStateProps) {
       </div>
 
       <div className="max-w-[38rem]">
-        <p className="eyebrow mb-3">Nothing to show yet</p>
+        <p className="eyebrow mb-3">Nothing here yet</p>
 
-        <h3 className="text-[clamp(1.55rem,2vw,2rem)] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+        <h3 className="text-[clamp(1.5rem,2vw,1.9rem)] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
           {copy.title}
         </h3>
 
-        <p className="mx-auto mt-4 max-w-[31rem] text-sm leading-7 text-[var(--text-secondary)]">
+        <p className="mx-auto mt-4 max-w-[32rem] text-sm leading-7 text-[var(--text-secondary)]">
           {copy.subtitle}
         </p>
 
@@ -30,7 +30,7 @@ export default function EmptyState({ category, icon }: EmptyStateProps) {
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Next step
           </p>
-          <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">{copy.hint}</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{copy.hint}</p>
         </div>
       </div>
     </div>
