@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Button } from './Button';
+import Button from './Button';
 import { LogoFull } from './Logo';
 
 export default function Header() {
