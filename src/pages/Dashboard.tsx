@@ -304,19 +304,21 @@ export default function Dashboard() {
                     key={action.path}
                     type="button"
                     onClick={() => navigate(action.path)}
-                    className="group rounded-[24px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)] p-4 text-left transition-smooth hover:border-[rgba(84,160,255,0.32)] hover:bg-[rgba(84,160,255,0.1)]"
+                    className="group rounded-[24px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)] p-5 text-center transition-smooth hover:border-[rgba(84,160,255,0.32)] hover:bg-[rgba(84,160,255,0.1)]"
                   >
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)] transition-smooth group-hover:scale-[1.04]">
-                      <Icon className="h-5 w-5" />
+                    <div className="flex h-full min-h-[204px] flex-col items-center justify-center">
+                      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)] transition-smooth group-hover:scale-[1.04]">
+                        <Icon className="h-5 w-5" />
+                      </div>
+
+                      <p className="text-[clamp(1.2rem,1.55vw,1.55rem)] font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                        {action.label}
+                      </p>
+
+                      <p className="mt-2 min-h-[24px] text-sm text-[var(--color-text-tertiary)]">
+                        {!loading && sublabel ? sublabel : ' '}
+                      </p>
                     </div>
-
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                      {action.label}
-                    </p>
-
-                    {sublabel && !loading && (
-                      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">{sublabel}</p>
-                    )}
                   </button>
                 );
               })}
@@ -333,14 +335,16 @@ export default function Dashboard() {
                     key={action.path}
                     type="button"
                     onClick={() => navigate(action.path)}
-                    className="group rounded-[20px] border border-white/8 bg-white/[0.03] px-3 py-3 text-center transition-smooth hover:border-white/14 hover:bg-white/[0.05]"
+                    className="group rounded-[20px] border border-white/8 bg-white/[0.03] px-3 py-5 text-center transition-smooth hover:border-white/14 hover:bg-white/[0.05]"
                   >
-                    <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/[0.05] text-[var(--color-text-tertiary)] transition-smooth group-hover:text-[var(--color-text-secondary)]">
-                      <Icon className="h-4 w-4" />
+                    <div className="flex h-full min-h-[128px] flex-col items-center justify-center">
+                      <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/[0.05] text-[var(--color-text-tertiary)] transition-smooth group-hover:text-[var(--color-text-secondary)]">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                        {action.shortLabel}
+                      </span>
                     </div>
-                    <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-                      {action.shortLabel}
-                    </span>
                   </button>
                 );
               })}
