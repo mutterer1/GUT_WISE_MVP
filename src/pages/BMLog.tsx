@@ -119,7 +119,7 @@ export default function BMLog() {
   return (
     <LogPageShell
       title="Bowel Movement Log"
-      subtitle="Capture the essential signal fast, then expand only if the event needs more context."
+      subtitle="Capture the core event quickly, then expand only if the entry needs more context."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -170,55 +170,55 @@ export default function BMLog() {
                   required
                 />
 
-                <p className="field-help mt-2">
+                <p className="field-help mt-3">
                   Anchor the event first. Everything else can stay lightweight.
                 </p>
               </div>
 
               <div className="surface-intelligence rounded-[24px] p-4 sm:p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
-                  Stool framing
+                  Stool Framing
                 </p>
-                <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                <p className="mt-3 text-[clamp(1.6rem,2vw,2rem)] font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   Bristol Type {formData.bristol_type}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  Type 4 is usually the target reference point. Log what actually happened, not what
-                  you hoped to see.
+                <p className="mt-3 max-w-[36ch] text-sm leading-7 text-[var(--color-text-secondary)]">
+                  Type 4 is the usual reference point. Log what actually happened, not what you
+                  hoped to see.
                 </p>
               </div>
             </div>
 
             <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <label className="field-label">Bristol Stool Scale</label>
                   <p className="field-help mt-1">Choose the closest match to the event.</p>
                 </div>
                 <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-                  Type 4 ideal
+                  Type 4 Ideal
                 </span>
               </div>
 
               <div className="-mx-1 overflow-x-auto px-1 pb-1">
-                <div className="grid min-w-[448px] grid-cols-7 gap-2">
+                <div className="grid min-w-[560px] grid-cols-7 gap-2">
                   {BRISTOL_SCALE.map((item) => (
                     <button
                       key={item.value}
                       type="button"
                       onClick={() => setFormData({ ...formData, bristol_type: item.value })}
                       className={[
-                        'rounded-[20px] border px-2 py-4 text-left transition-smooth',
+                        'flex min-h-[156px] flex-col items-center justify-start rounded-[20px] border px-3 py-4 text-center transition-smooth',
                         formData.bristol_type === item.value
                           ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] shadow-[0_0_0_1px_rgba(84,160,255,0.12)]'
                           : 'border-white/8 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]',
                       ].join(' ')}
                     >
-                      <div className="text-xl font-semibold leading-none text-[var(--color-text-primary)]">
+                      <div className="flex h-10 items-center justify-center text-[2.35rem] font-semibold leading-none tracking-[-0.03em] text-[var(--color-text-primary)]">
                         {item.value}
                       </div>
-                      <div className="mt-2 text-[11px] leading-4 text-[var(--color-text-tertiary)]">
-                        {item.desc}
+                      <div className="mt-3 flex min-h-[64px] items-start justify-center text-center text-[11px] leading-5 text-[var(--color-text-secondary)]">
+                        <span className="max-w-[11ch]">{item.desc}</span>
                       </div>
                     </button>
                   ))}
@@ -236,7 +236,7 @@ export default function BMLog() {
                     type="button"
                     onClick={() => setFormData({ ...formData, amount: size })}
                     className={[
-                      'rounded-[20px] border px-4 py-4 text-sm font-medium capitalize transition-smooth',
+                      'flex min-h-[76px] items-center justify-center rounded-[20px] border px-4 py-4 text-center text-sm font-medium capitalize transition-smooth',
                       formData.amount === size
                         ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
                         : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
