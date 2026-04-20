@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import Sidebar from '../components/Sidebar';
+import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
 import InsightCard from '../components/InsightCard';
 import RankedCandidateCard from '../components/insights/RankedCandidateCard';
@@ -21,7 +21,11 @@ function formatLogTypeLabel(raw: string): string {
     .replace(/^\w/, (char) => char.toUpperCase());
 }
 
-type InsightSource = 'ranked_loading' | 'ranked_primary' | 'ranked_empty' | 'legacy_error_fallback';
+type InsightSource =
+  | 'ranked_loading'
+  | 'ranked_primary'
+  | 'ranked_empty'
+  | 'legacy_error_fallback';
 
 export default function Insights() {
   const { user } = useAuth();
@@ -54,6 +58,7 @@ export default function Insights() {
 
   const loadInsights = useCallback(async () => {
     if (!user) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -69,10 +74,12 @@ export default function Insights() {
 
   const handleGenerateInsights = async () => {
     if (!user) return;
+
     try {
       setGenerating(true);
       setError(null);
       const newInsights = await generateAllInsights(user.id);
+
       if (newInsights.length > 0) {
         await saveInsights(newInsights);
         await loadInsights();
@@ -125,84 +132,79 @@ export default function Insights() {
   const exMap = isSafeToUse ? explanationMap() : new Map();
 
   return (
-    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
-      <Sidebar />
-
+    <MainLayout>
       <main
-        className="relative flex-1 p-md pt-16 sm:p-lg sm:pt-16 lg:ml-64 lg:p-lg lg:pt-lg"
+        className="relative"
         data-insight-source={insightSource}
         data-explanation-origin={explanationOrigin}
       >
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-80"
-          style={{
-            background:
-              'radial-gradient(ellipse 75% 55% at 50% 0%, rgba(124, 92, 255, 0.10) 0%, transparent 75%)',
-          }}
-        />
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="mb-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="mb-5 text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                Health Insights
-              </h1>
-              <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-                Pattern-based analysis of your digestive health data.
-              </p>
-            </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-80 bg-[radial-gradient(ellipse_75%_55%_at_50%_0%,rgba(133,93,255,0.12)_0%,transparent_75%)]" />
 
-            {isLegacyErrorFallback && (
-              <Button
-                onClick={handleGenerateInsights}
-                disabled={generating}
-                className="flex items-center gap-2"
-              >
-                {generating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Refresh Insights
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <section className="page-enter surface-panel mb-6 rounded-[32px] p-5 sm:p-6 lg:p-8">
+            <div className="page-header items-start justify-between gap-5">
+              <div className="max-w-3xl">
+                <span className="badge-secondary mb-3 inline-flex">Intelligence Review</span>
+                <h1 className="page-title">Health Insights</h1>
+                <p className="page-subtitle mt-2">
+                  Pattern-based analysis of your digestive health data with stronger evidence
+                  weighting and clearer trust framing.
+                </p>
+              </div>
+
+              {isLegacyErrorFallback && (
+                <Button
+                  onClick={handleGenerateInsights}
+                  disabled={generating}
+                  className="shrink-0"
+                >
+                  {generating ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Refresh Insights
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </section>
 
           {error && (
-            <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
-              <p className="text-body-sm text-signal-700 dark:text-signal-300">{error}</p>
+            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-danger)]" />
+              <p className="text-sm text-[var(--color-danger)]">{error}</p>
             </div>
           )}
 
           {rankedLoading && (
             <div className="flex h-72 flex-col items-center justify-center gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
-              <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+              <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent-primary)]" />
+              <p className="text-sm text-[var(--color-text-tertiary)]">
                 Looking for patterns in your data...
               </p>
             </div>
           )}
 
           {isRankedPrimary && (
-            <section className="mb-lg">
-              <div className="mb-md flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <section className="mb-6">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="mb-1 flex items-center gap-2.5">
-                    <h2 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
                       Pattern Insights
                     </h2>
                     {explanationOrigin !== 'none' && !explanationError && (
-                      <span className="rounded-full border border-discovery-500/18 bg-discovery-500/07 px-2.5 py-0.5 text-xs font-medium text-discovery-500 dark:bg-discovery-500/12 dark:text-discovery-300">
+                      <span className="rounded-full border border-[rgba(133,93,255,0.2)] bg-[rgba(133,93,255,0.08)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-accent-secondary)]">
                         AI explained
                       </span>
                     )}
                   </div>
-                  <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <p className="text-sm text-[var(--color-text-tertiary)]">
                     {rankedInsights?.input_day_count ?? 0} days analyzed
                     {rankedInsights?.analyzed_from && rankedInsights?.analyzed_to
                       ? ` | ${formatShortDate(rankedInsights.analyzed_from)} - ${formatShortDate(
@@ -213,9 +215,9 @@ export default function Insights() {
                   </p>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   {explanationError && (
-                    <div className="flex items-center gap-1.5 text-body-sm text-signal-700 dark:text-signal-300">
+                    <div className="flex items-center gap-1.5 text-sm text-[var(--color-danger)]">
                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
                       <span>Couldn&apos;t generate explanations</span>
                     </div>
@@ -224,7 +226,7 @@ export default function Insights() {
                   <button
                     onClick={generateExplanations}
                     disabled={explanationLoading}
-                    className="flex items-center gap-2 rounded-2xl border border-[#7C5CFF]/25 bg-[#7C5CFF]/05 px-4 py-2 text-sm font-medium text-[#7C5CFF] transition-colors hover:bg-[#7C5CFF]/10 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#7C5CFF]/08 dark:text-[#B8A8FF] dark:hover:bg-[#7C5CFF]/16"
+                    className="flex items-center gap-2 rounded-2xl border border-[rgba(133,93,255,0.24)] bg-[rgba(133,93,255,0.08)] px-4 py-2 text-sm font-medium text-[var(--color-accent-secondary)] transition-smooth hover:bg-[rgba(133,93,255,0.14)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {explanationLoading ? (
                       <>
@@ -242,9 +244,9 @@ export default function Insights() {
               </div>
 
               {validationStatus === 'invalid' && (
-                <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/25 bg-signal-500/06 p-sm dark:bg-signal-500/08">
-                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
-                  <p className="text-body-sm text-signal-700 dark:text-signal-300">
+                <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-danger)]" />
+                  <p className="text-sm text-[var(--color-danger)]">
                     AI explanations couldn&apos;t be verified and won&apos;t be shown. Your patterns are
                     still displayed below.
                   </p>
@@ -252,15 +254,15 @@ export default function Insights() {
               )}
 
               {validationStatus === 'valid_with_warnings' && distinctWarningFlags.length > 0 && (
-                <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/25 bg-signal-500/06 p-sm dark:bg-signal-500/06">
-                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-signal-700 dark:text-signal-300" />
-                  <p className="text-body-sm text-signal-700 dark:text-signal-300">
+                <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.08)] p-4">
+                  <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-warning)]" />
+                  <p className="text-sm text-[var(--color-warning)]">
                     Some explanations may be incomplete. Patterns are still shown below.
                   </p>
                 </div>
               )}
 
-              <div className="mb-md">
+              <div className="mb-4">
                 <TrustExplainer variant="insights" />
               </div>
 
@@ -285,55 +287,53 @@ export default function Insights() {
           )}
 
           {isRankedEmpty && (
-            <div className="space-y-md">
+            <div className="space-y-4">
               <TrustExplainer variant="insights" />
-              <div
-                className="rounded-2xl border border-neutral-border bg-neutral-surface px-6 py-10 text-center shadow-soft dark:border-dark-border dark:bg-dark-surface sm:px-10 sm:py-14"
-                style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
-              >
+
+              <div className="surface-panel rounded-[32px] px-6 py-10 text-center sm:px-10 sm:py-14">
                 <div
-                  className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C5CFF]/08 dark:bg-[#7C5CFF]/14"
+                  className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.14)]"
                   style={{
                     animation: 'emptyStateIconFloat 3s ease-in-out infinite',
                     boxShadow:
-                      '0 0 0 1px rgba(124,92,255,0.14), 0 0 18px 2px rgba(124,92,255,0.10)',
+                      '0 0 0 1px rgba(133,93,255,0.16), 0 0 18px 2px rgba(133,93,255,0.10)',
                   }}
                 >
-                  <Brain className="h-7 w-7 text-[#7C5CFF] dark:text-[#B8A8FF]" />
+                  <Brain className="h-7 w-7 text-[var(--color-accent-secondary)]" />
                 </div>
 
                 <div className="mx-auto max-w-md">
-                  <h3 className="mb-3 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                  <h3 className="mb-3 text-xl font-semibold text-[var(--color-text-primary)]">
                     No reliable patterns detected yet
                   </h3>
 
-                  <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                  <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                     GutWise does not have enough repeated overlap in your recent logs yet to show a
                     strong pattern.
                   </p>
 
                   {missingLogTypes.length > 0 ? (
-                    <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                       The most useful missing context right now is:{' '}
                       {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}.
                     </p>
                   ) : (
-                    <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                       The strongest starting combination is stool, symptoms, meals, hydration,
                       sleep, and stress logged on the same days.
                     </p>
                   )}
 
                   {evidenceGapSummaries.length > 0 && (
-                    <div className="mt-5 rounded-xl border border-amber-200/70 bg-amber-50/70 px-4 py-4 text-left dark:border-amber-300/10 dark:bg-amber-400/5">
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                    <div className="mt-5 rounded-2xl border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] px-4 py-4 text-left">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-warning)]">
                         What is missing
                       </p>
                       <div className="space-y-2">
                         {evidenceGapSummaries.slice(0, 3).map((summary) => (
                           <p
                             key={summary.insight_key}
-                            className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/80"
+                            className="text-xs leading-relaxed text-[var(--color-text-secondary)]"
                           >
                             {summary.reasons[0]}
                           </p>
@@ -342,7 +342,7 @@ export default function Insights() {
                     </div>
                   )}
 
-                  <p className="mt-4 text-body-xs text-neutral-muted/65 dark:text-dark-muted/65">
+                  <p className="mt-4 text-xs text-[var(--color-text-tertiary)]">
                     A few more days of shared context will usually do more than logging one
                     category in isolation.
                   </p>
@@ -353,13 +353,13 @@ export default function Insights() {
 
           {isLegacyErrorFallback && (
             <>
-              <div className="mb-md flex items-start gap-3 rounded-xl border border-brand-700/25 bg-brand-500/06 px-md py-sm dark:bg-brand-500/08">
-                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500 dark:text-brand-300" />
+              <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                 <div>
-                  <p className="text-body-sm font-medium text-brand-700 dark:text-brand-300">
+                  <p className="text-sm font-medium text-[var(--color-accent-primary)]">
                     Pattern analysis encountered a problem
                   </p>
-                  <p className="mt-0.5 text-body-sm text-brand-700/75 dark:text-brand-300/75">
+                  <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
                     Pattern analysis couldn&apos;t complete right now. Showing available observations
                     from your logs instead.
                   </p>
@@ -368,31 +368,28 @@ export default function Insights() {
 
               {loading ? (
                 <div className="flex h-72 flex-col items-center justify-center gap-3">
-                  <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
-                  <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent-primary)]" />
+                  <p className="text-sm text-[var(--color-text-tertiary)]">
                     Loading your insights...
                   </p>
                 </div>
               ) : insights.length === 0 ? (
-                <div
-                  className="rounded-2xl border border-neutral-border bg-neutral-surface px-6 py-10 text-center shadow-soft dark:border-dark-border dark:bg-dark-surface sm:px-10 sm:py-12"
-                  style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
-                >
-                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/08 dark:bg-brand-500/14">
-                    <Brain className="h-7 w-7 text-brand-500 dark:text-brand-300" />
+                <div className="surface-panel rounded-[32px] px-6 py-10 text-center sm:px-10 sm:py-12">
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)]">
+                    <Brain className="h-7 w-7 text-[var(--color-accent-primary)]" />
                   </div>
 
-                  <div className="mx-auto max-w-xs sm:max-w-sm">
-                    <h3 className="mb-3 text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
+                  <div className="mx-auto max-w-sm">
+                    <h3 className="mb-3 text-xl font-semibold text-[var(--color-text-primary)]">
                       No saved observations available
                     </h3>
 
-                    <p className="mb-3 text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+                    <p className="mb-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                       Pattern analysis ran into a problem and there are no previously saved
                       observations to fall back on.
                     </p>
 
-                    <p className="mb-8 text-body-xs text-neutral-muted/70 dark:text-dark-muted/70">
+                    <p className="mb-8 text-xs text-[var(--color-text-tertiary)]">
                       Continue logging and try refreshing insights. If the problem persists, check
                       back later.
                     </p>
@@ -404,17 +401,19 @@ export default function Insights() {
                 </div>
               ) : (
                 <>
-                  <div className="mb-md flex items-center gap-3 text-body-sm text-neutral-muted dark:text-dark-muted">
+                  <div className="mb-4 flex items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
                     <span>
                       {insights.length} {insights.length === 1 ? 'observation' : 'observations'} found
                     </span>
-                    <span className="text-neutral-border dark:text-dark-border">|</span>
+                    <span className="text-white/10">|</span>
                     <span>Based on repeated signals in your logs</span>
                   </div>
 
-                  <div className="mb-lg rounded-xl border border-brand-700/18 bg-brand-500/04 px-md py-sm dark:bg-brand-500/05">
-                    <p className="text-body-sm leading-relaxed text-brand-700/85 dark:text-brand-300/85">
-                      <span className="font-medium">About these observations: </span>
+                  <div className="mb-6 rounded-2xl border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.05)] px-4 py-4">
+                    <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                      <span className="font-medium text-[var(--color-text-primary)]">
+                        About these observations:{' '}
+                      </span>
                       GutWise surfaces patterns by comparing days when a factor was present against
                       days it wasn&apos;t. Confidence grows as the same signal appears consistently
                       over time.
@@ -432,7 +431,7 @@ export default function Insights() {
           )}
         </div>
       </main>
-    </div>
+    </MainLayout>
   );
 }
 
@@ -451,24 +450,24 @@ function EvidenceGapPanel({
   }>;
 }) {
   return (
-    <div className="mb-md rounded-2xl border border-amber-200/70 bg-amber-50/70 p-5 dark:border-amber-300/10 dark:bg-amber-400/5">
+    <div className="mb-4 rounded-[28px] border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.06)] p-5">
       <div className="flex items-start gap-3">
-        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700 dark:text-amber-300" />
+        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-warning)]" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-body-md font-semibold text-amber-900 dark:text-amber-200">
+          <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
             Patterns are improving, but some evidence is still thin
           </h3>
-          <p className="mt-1 text-body-sm leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+          <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">
             GutWise filtered out weaker candidates and only kept the stronger ones below.
             The notes here show what would most improve future insight quality.
           </p>
 
           {missingLogTypes.length > 0 && (
             <div className="mt-4">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--color-warning)]">
                 Most useful missing log types
               </p>
-              <p className="text-sm leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+              <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
                 {missingLogTypes.slice(0, 6).map(formatLogTypeLabel).join(', ')}
               </p>
             </div>
@@ -476,19 +475,19 @@ function EvidenceGapPanel({
 
           {evidenceGapSummaries.length > 0 && (
             <div className="mt-4 space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-800 dark:text-amber-300">
+              <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-warning)]">
                 Common evidence gaps
               </p>
               {evidenceGapSummaries.slice(0, 3).map((summary) => (
                 <div
                   key={summary.insight_key}
-                  className="rounded-xl border border-amber-300/30 bg-white/55 px-3.5 py-3 dark:border-amber-300/10 dark:bg-white/[0.03]"
+                  className="rounded-2xl border border-white/8 bg-white/[0.03] px-3.5 py-3"
                 >
-                  <p className="text-xs font-medium text-amber-900 dark:text-amber-200">
+                  <p className="text-xs font-medium text-[var(--color-text-primary)]">
                     {summary.reasons[0] ?? 'This candidate needs more repeated overlap.'}
                   </p>
                   {summary.missing_log_types.length > 0 && (
-                    <p className="mt-1 text-xs leading-relaxed text-amber-900/75 dark:text-amber-200/75">
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
                       Helpful next logs: {summary.missing_log_types.map(formatLogTypeLabel).join(', ')}
                     </p>
                   )}
