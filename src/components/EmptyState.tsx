@@ -10,22 +10,28 @@ export default function EmptyState({ category, icon }: EmptyStateProps) {
   const copy = getEmptyStateMessage(category);
 
   return (
-    <div className="animate-empty-state flex flex-col items-center justify-center px-6 py-14 text-center sm:px-8 sm:py-16">
-      <div className="surface-panel-soft empty-state-icon-float mb-5 flex h-18 w-18 items-center justify-center rounded-[var(--gw-radius-xl)] border border-[rgba(143,128,246,0.12)] bg-[rgba(115,83,230,0.08)] text-[var(--gw-brand-300)] shadow-[var(--gw-glow-intelligence-soft)]">
+    <div className="animate-empty-state flex flex-col items-center justify-center px-6 py-12 text-center sm:px-8 sm:py-14">
+      <div className="surface-panel-soft empty-state-icon-float mb-6 flex h-[76px] w-[76px] items-center justify-center rounded-[24px] border border-[rgba(143,128,246,0.12)] bg-[rgba(115,83,230,0.08)] text-[var(--gw-brand-300)] shadow-[var(--gw-glow-intelligence-soft)]">
         {icon}
       </div>
 
-      <div className="max-w-[34rem]">
+      <div className="max-w-[38rem]">
         <p className="eyebrow mb-3">Nothing to show yet</p>
-        <h3 className="mb-3 text-[clamp(1.5rem,2vw,2rem)] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+
+        <h3 className="text-[clamp(1.55rem,2vw,2rem)] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
           {copy.title}
         </h3>
-        <p className="mx-auto mb-4 max-w-[30rem] text-[var(--text-secondary)]">
+
+        <p className="mx-auto mt-4 max-w-[31rem] text-sm leading-7 text-[var(--text-secondary)]">
           {copy.subtitle}
         </p>
-        <p className="mx-auto max-w-[28rem] text-sm leading-relaxed text-[var(--text-muted)]">
-          {copy.hint}
-        </p>
+
+        <div className="mx-auto mt-6 max-w-[30rem] rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            Next step
+          </p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-secondary)]">{copy.hint}</p>
+        </div>
       </div>
     </div>
   );
