@@ -1,15 +1,18 @@
+import type { ReactNode } from 'react';
 import Sidebar from './Sidebar';
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
+    <div className="page-shell min-h-screen text-[var(--text-primary)]">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0">
-        {children}
+      <main className="min-h-screen flex-1 lg:ml-72">
+        <div className="animate-page-in min-h-screen px-4 pb-8 pt-20 sm:px-5 sm:pb-10 lg:px-8 lg:pb-12 lg:pt-8">
+          {children}
+        </div>
       </main>
     </div>
   );
