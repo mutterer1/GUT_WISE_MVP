@@ -1,174 +1,236 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  Brain,
+  ChevronRight,
+  HeartPulse,
+  LineChart,
+  Lock,
+  Shield,
+  Sparkles,
+  Waves,
+} from 'lucide-react';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import GutIntelligenceModal from '../components/GutIntelligenceModal';
 import BadgeOnboardingHint from '../components/BadgeOnboardingHint';
-import {
-  Brain,
-  Shield,
-  Lock,
-  Award,
-  ChevronRight,
-  Sparkles,
-  LineChart,
-  Heart
-} from 'lucide-react';
+import { LogoFull } from '../components/Logo';
 
 const HINT_DISMISSED_KEY = 'gutwise_badge_hint_dismissed';
 
+const features = [
+  {
+    icon: Brain,
+    title: 'Pattern recognition built for real life',
+    description:
+      'GutWise connects symptoms, meals, hydration, sleep, and stress into a tighter signal model so you can see what actually changes your baseline.',
+    accent: 'intelligence',
+  },
+  {
+    icon: LineChart,
+    title: 'Trend framing instead of raw charts',
+    description:
+      'Move from isolated logs to directional understanding with cleaner weekly and monthly views that emphasize change, stability, and emerging drift.',
+    accent: 'primary',
+  },
+  {
+    icon: Shield,
+    title: 'Private by default',
+    description:
+      'Sensitive health data stays inside a low-glare, clinical-feeling workspace designed to protect trust as much as it improves clarity.',
+    accent: 'quiet',
+  },
+  {
+    icon: HeartPulse,
+    title: 'Signals you can act on',
+    description:
+      'Capture what happened in minutes and get a stronger foundation for conversations, self-observation, and better daily decisions.',
+    accent: 'primary',
+  },
+];
+
+const trustSignals = [
+  { icon: Lock, text: 'Encrypted health records' },
+  { icon: Shield, text: 'Privacy-first architecture' },
+  { icon: Waves, text: 'Clinically informed tracking model' },
+];
+
+const operatingPoints = [
+  'Log symptoms, meals, hydration, stress, sleep, and context in one system.',
+  'Spot recurring triggers and recovery patterns without manual guesswork.',
+  'Build a calmer, more structured view of digestive health over time.',
+];
+
 export default function Landing() {
   const [intelligenceModalOpen, setIntelligenceModalOpen] = useState(false);
-  const [hintVisible, setHintVisible] = useState(
-    () => !localStorage.getItem(HINT_DISMISSED_KEY)
-  );
+  const [hintVisible, setHintVisible] = useState(() => !localStorage.getItem(HINT_DISMISSED_KEY));
 
   const handleDismissHint = () => {
     localStorage.setItem(HINT_DISMISSED_KEY, 'true');
     setHintVisible(false);
   };
-  const features = [
-    {
-      icon: Brain,
-      title: 'Pattern Recognition',
-      description: 'Our AI analyzes your daily logs to surface connections between your diet, stress, sleep, and digestive symptoms that would be impossible to spot on your own.',
-      isAI: true,
-    },
-    {
-      icon: LineChart,
-      title: 'Meaningful Trends',
-      description: 'Move beyond raw data. See how your body responds over time with clear visualizations that tell the story of your gut health journey.',
-      isAI: false,
-    },
-    {
-      icon: Shield,
-      title: 'Clinical-Grade Privacy',
-      description: 'Your health data is encrypted end-to-end and never shared. Built to exceed HIPAA requirements because trust is non-negotiable.',
-      isAI: false,
-    },
-    {
-      icon: Heart,
-      title: 'Body Signals Decoded',
-      description: 'Log symptoms, meals, and lifestyle factors in seconds. GutWise translates these signals into actionable understanding.',
-      isAI: false,
-    },
-  ];
-
-  const trustSignals = [
-    { icon: Lock, text: 'HIPAA Compliant' },
-    { icon: Shield, text: 'End-to-End Encrypted' },
-    { icon: Award, text: 'Clinically Informed' },
-  ];
 
   return (
-    <div className="min-h-screen bg-neutral-bg dark:bg-dark-bg">
+    <div className="min-h-screen bg-app text-[var(--color-text-primary)]">
       <Header />
 
-      <main className="pt-24">
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 gradient-dark-radial dark:opacity-100 opacity-0" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl" />
+      <main className="overflow-hidden pt-20">
+        <section className="relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(84,160,255,0.14),transparent_34%),radial-gradient(circle_at_70%_20%,rgba(133,93,255,0.1),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_40%)]" />
+          <div className="absolute left-1/2 top-0 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[rgba(84,160,255,0.08)] blur-3xl" />
 
-          <div className="relative max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg pt-4xl lg:pt-3xl sm:pt-3xl pb-xl sm:pb-2xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="relative inline-block mb-lg">
+          <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 pb-14 pt-10 sm:px-6 lg:flex-row lg:items-end lg:gap-10 lg:px-8 lg:pb-20 lg:pt-16">
+            <div className="w-full max-w-3xl">
+              <div className="relative mb-6 inline-block">
                 <button
+                  type="button"
                   onClick={() => setIntelligenceModalOpen(true)}
                   aria-haspopup="dialog"
-                  aria-label="Learn how GutWise AI intelligence works"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-dark-elevated dark:bg-dark-elevated bg-brand-100 border border-dark-border dark:border-dark-border border-brand-200 rounded-full text-body-sm font-medium cursor-pointer select-none transition-all duration-200 hover:border-discovery-500/50 hover:bg-discovery-500/5 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-discovery-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent group"
+                  aria-label="Learn how GutWise intelligence works"
+                  className="surface-intelligence interactive-lift inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-[var(--color-text-primary)]"
                 >
-                  <Sparkles className="h-4 w-4 text-discovery-500 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="text-neutral-text dark:text-dark-text">AI-Powered Gut Intelligence</span>
+                  <Sparkles className="h-4 w-4 text-[var(--color-accent-secondary)]" />
+                  AI-powered gut intelligence
                 </button>
                 <BadgeOnboardingHint visible={hintVisible} />
               </div>
 
-              <div className="w-full max-w-2xl mx-auto mb-lg">
-                <h1 className="text-display-md sm:text-display-lg lg:text-5xl font-sora font-semibold text-neutral-text dark:text-dark-text mb-md leading-tight">
-                  Understand What Your <br />
-                  <span className="text-signal-500">Body</span> Is Telling{' '}
-                  <span className="text-discovery-500">You</span>
-                </h1>
-                <p className="text-body-lg text-neutral-muted dark:text-dark-muted leading-relaxed text-center">
-                  GutWise transforms scattered health logs into clear insights.
-                  See the patterns. Understand the connections. Make informed decisions
-                  about your digestive wellness.
-                </p>
-              </div>
+              <h1 className="max-w-3xl text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-[var(--color-text-primary)] sm:text-6xl lg:text-[4.6rem]">
+                Private digestive health intelligence for the signals you live with every day.
+              </h1>
 
-              <div className="flex flex-col sm:flex-row gap-md justify-center items-center mb-md">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--color-text-secondary)] sm:text-lg">
+                GutWise turns scattered logs into a more coherent clinical picture. Track what happened,
+                surface meaningful patterns, and build a calmer understanding of what your body is
+                communicating.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link to="/signup">
                   <Button size="lg" className="w-full sm:w-auto">
-                    Start Understanding
-                    <ChevronRight className="inline ml-2 h-5 w-5" />
+                    Start with GutWise
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
+
                 <Link to="/login">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto dark:border-dark-border dark:text-dark-text dark:hover:bg-dark-surface">
-                    Log In
+                  <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                    Log in
                   </Button>
                 </Link>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-lg mt-lg text-body-sm text-neutral-muted dark:text-dark-muted">
+              <div className="mt-8 flex flex-wrap gap-3">
                 {trustSignals.map((signal) => {
                   const Icon = signal.icon;
+
                   return (
-                    <div key={signal.text} className="flex items-center gap-2">
-                      <Icon className="h-5 w-5 text-brand-500" />
+                    <div
+                      key={signal.text}
+                      className="surface-panel-soft inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-[var(--color-text-secondary)]"
+                    >
+                      <Icon className="h-4 w-4 text-[var(--color-accent-primary)]" />
                       <span>{signal.text}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
+
+            <div className="w-full max-w-xl lg:ml-auto">
+              <div className="surface-panel relative overflow-hidden rounded-[32px] p-5 sm:p-6">
+                <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+                      Daily operating view
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                      A tighter read on symptoms and triggers
+                    </p>
+                  </div>
+                  <div className="surface-intelligence flex h-12 w-12 items-center justify-center rounded-2xl">
+                    <Brain className="h-5 w-5 text-[var(--color-accent-secondary)]" />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="surface-panel-quiet rounded-3xl p-4">
+                    <p className="metric-label">Symptom load</p>
+                    <p className="metric-value mt-2">Lower this week</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-tertiary)]">
+                      Stability improved after more consistent hydration and earlier evening meals.
+                    </p>
+                  </div>
+
+                  <div className="surface-intelligence rounded-3xl p-4">
+                    <p className="metric-label">Pattern shift</p>
+                    <p className="metric-value mt-2">Stress-linked flare window</p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      Symptoms cluster more often on low-sleep, high-stress days.
+                    </p>
+                  </div>
+
+                  <div className="surface-panel-quiet rounded-3xl p-4 sm:col-span-2">
+                    <p className="metric-label">What GutWise helps frame</p>
+                    <div className="mt-3 space-y-3">
+                      {operatingPoints.map((point) => (
+                        <div key={point} className="flex items-start gap-3">
+                          <div className="mt-1 h-2 w-2 rounded-full bg-[var(--color-accent-primary)]" />
+                          <p className="text-sm leading-6 text-[var(--color-text-secondary)]">{point}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
-          <div className="flex flex-col items-center text-center mb-2xl">
-            <div className="max-w-2xl w-full mx-auto">
-              <h2 className="text-h2 font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">
-                Intelligence, Not Just Tracking
-              </h2>
-              <p className="text-body-lg text-neutral-muted dark:text-dark-muted text-center">
-                Most health apps give you charts. GutWise gives you understanding.
-              </p>
-            </div>
+        <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+          <div className="mb-8 max-w-2xl">
+            <span className="badge-secondary mb-3 inline-flex">Why it feels different</span>
+            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)] sm:text-4xl">
+              Less generic wellness. More focused clinical signal.
+            </h2>
+            <p className="mt-3 text-base leading-7 text-[var(--color-text-secondary)]">
+              The product is designed to help you observe patterns with more confidence, not bury you
+              in visual noise.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md lg:gap-lg">
+          <div className="grid gap-4 md:grid-cols-2">
             {features.map((feature) => {
               const Icon = feature.icon;
+              const variant = feature.accent === 'intelligence' ? 'discovery' : 'elevated';
+
               return (
                 <Card
                   key={feature.title}
-                  variant={feature.isAI ? 'discovery' : 'elevated'}
-                  glowIntensity={feature.isAI ? 'medium' : 'subtle'}
-                  className="transition-all duration-300 hover:scale-[1.02]"
+                  variant={variant}
+                  glowIntensity={feature.accent === 'intelligence' ? 'medium' : 'subtle'}
+                  className="card-enter rounded-[28px]"
                 >
-                  <div className="flex items-start gap-md">
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                      feature.isAI
-                        ? 'bg-discovery-500/10 dark:bg-discovery-500/20'
-                        : 'bg-brand-500/10 dark:bg-brand-500/20'
-                    }`}>
-                      <Icon className={`h-6 w-6 ${
-                        feature.isAI ? 'text-discovery-500' : 'text-brand-500'
-                      }`} />
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={[
+                        'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
+                        feature.accent === 'intelligence'
+                          ? 'bg-[rgba(133,93,255,0.14)] text-[var(--color-accent-secondary)]'
+                          : 'bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]',
+                      ].join(' ')}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
+
                     <div>
-                      <h3 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text mb-2">
+                      <h3 className="text-xl font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
                         {feature.title}
-                        {feature.isAI && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-discovery-500/10 text-discovery-500 rounded-full">
-                            AI
-                          </span>
-                        )}
                       </h3>
-                      <p className="text-body-md text-neutral-muted dark:text-dark-muted leading-relaxed">
+                      <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
                         {feature.description}
                       </p>
                     </div>
@@ -179,87 +241,103 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-700 to-brand-900 dark:from-brand-900 dark:to-dark-bg" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(124,92,255,0.15)_0%,_transparent_70%)]" />
+        <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+          <div className="surface-panel relative overflow-hidden rounded-[36px] px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(133,93,255,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(84,160,255,0.12),transparent_26%)]" />
 
-          <div className="relative max-w-4xl mx-auto px-lg sm:px-lg lg:px-lg py-xl sm:py-2xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="inline-flex items-center gap-2 mb-md">
-                <Brain className="h-5 w-5 text-discovery-300" />
-                <span className="text-body-sm text-brand-200">Powered by AI</span>
-              </div>
-
-              <div className="max-w-xl w-full mx-auto mb-lg">
-                <h2 className="text-h2 sm:text-display-md font-sora font-semibold text-white mb-md">
-                  Your Gut Health Story, Understood
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <span className="badge-secondary mb-3 inline-flex">Guided by intelligence</span>
+                <h2 className="text-3xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)] sm:text-4xl">
+                  Build a clearer health narrative without doing the interpretation alone.
                 </h2>
-                <p className="text-body-lg text-brand-100 text-center">
-                  Every body is different. GutWise learns your patterns and surfaces insights
-                  that matter specifically to you.
+                <p className="mt-4 text-base leading-8 text-[var(--color-text-secondary)]">
+                  Start tracking with a more deliberate structure and let GutWise help surface the
+                  relationships worth paying attention to.
                 </p>
               </div>
 
-              <div className="flex flex-col items-center gap-sm">
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center lg:flex-col lg:items-end">
                 <Link to="/signup">
-                  <Button size="lg" className="!bg-white !text-brand-700 hover:!bg-brand-50">
-                    Begin Your Journey
+                  <Button size="lg">
+                    Begin your account
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <p className="text-body-sm text-brand-200">
-                  Free 14-day trial. No credit card required.
+                <p className="text-sm text-[var(--color-text-tertiary)]">
+                  A quieter, sharper way to monitor digestive health.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <footer className="bg-neutral-surface dark:bg-dark-bg border-t border-neutral-border dark:border-dark-border">
-          <div className="max-w-7xl mx-auto px-lg sm:px-lg lg:px-lg py-xl">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-lg">
-              <div>
-                <div className="mb-md">
-                  <img
-                    src="/logos/gutwise-horizontal-dark.svg"
-                    alt="GutWise"
-                    style={{ height: '48px', width: 'auto', marginLeft: '-13px' }}
-                  />
-                </div>
-                <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
-                  Turning body signals into understanding
-                </p>
+        <footer className="border-t border-white/10">
+          <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.4fr_repeat(3,1fr)] lg:px-8">
+            <div>
+              <div className="text-[var(--color-text-primary)]">
+                <LogoFull />
               </div>
+              <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--color-text-tertiary)]">
+                Turning daily body signals into a more usable understanding of digestive health.
+              </p>
+            </div>
 
-              <div>
-                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Product</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Features</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Pricing</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">FAQ</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Company</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">About</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Blog</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Careers</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-sora font-semibold text-neutral-text dark:text-dark-text mb-md">Legal</h4>
-                <ul className="space-y-2 text-body-sm text-neutral-muted dark:text-dark-muted">
-                  <li><Link to="/privacy" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Privacy Policy</Link></li>
-                  <li><Link to="/disclaimer" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Medical Disclaimer</Link></li>
-                  <li><Link to="/" className="hover:text-neutral-text dark:hover:text-dark-text transition-colors">Terms of Service</Link></li>
-                </ul>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]">
+                Product
+              </h3>
+              <div className="mt-4 space-y-3 text-sm text-[var(--color-text-tertiary)]">
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  Features
+                </Link>
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  Intelligence
+                </Link>
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  Tracking
+                </Link>
               </div>
             </div>
 
-            <div className="border-t border-neutral-border dark:border-dark-border mt-xl pt-xl text-center text-body-sm text-neutral-muted dark:text-dark-muted">
-              <p>&copy; 2026 GutWise. All rights reserved.</p>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]">
+                Company
+              </h3>
+              <div className="mt-4 space-y-3 text-sm text-[var(--color-text-tertiary)]">
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  About
+                </Link>
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  Contact
+                </Link>
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  FAQ
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]">
+                Legal
+              </h3>
+              <div className="mt-4 space-y-3 text-sm text-[var(--color-text-tertiary)]">
+                <Link
+                  to="/privacy"
+                  className="block transition-smooth hover:text-[var(--color-text-primary)]"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/disclaimer"
+                  className="block transition-smooth hover:text-[var(--color-text-primary)]"
+                >
+                  Medical Disclaimer
+                </Link>
+                <Link to="/" className="block transition-smooth hover:text-[var(--color-text-primary)]">
+                  Terms of Service
+                </Link>
+              </div>
             </div>
           </div>
         </footer>
