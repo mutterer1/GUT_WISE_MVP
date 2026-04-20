@@ -1,6 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Save, Clock, Activity, Utensils, Tag, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import {
+  Activity,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Pencil,
+  Save,
+  Tag,
+  Utensils,
+} from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -104,22 +113,22 @@ export default function FoodLog() {
       tags: [],
       notes: '',
     },
-    buildInsertPayload: (formData, userId) => ({
+    buildInsertPayload: (data, userId) => ({
       user_id: userId,
-      logged_at: formData.logged_at,
-      meal_type: formData.meal_type,
-      food_items: formData.food_items,
-      portion_size: formData.portion_size,
-      tags: formData.tags,
-      notes: formData.notes || null,
+      logged_at: data.logged_at,
+      meal_type: data.meal_type,
+      food_items: data.food_items,
+      portion_size: data.portion_size,
+      tags: data.tags,
+      notes: data.notes || null,
     }),
-    buildUpdatePayload: (formData) => ({
-      logged_at: formData.logged_at,
-      meal_type: formData.meal_type,
-      food_items: formData.food_items,
-      portion_size: formData.portion_size,
-      tags: formData.tags,
-      notes: formData.notes || null,
+    buildUpdatePayload: (data) => ({
+      logged_at: data.logged_at,
+      meal_type: data.meal_type,
+      food_items: data.food_items,
+      portion_size: data.portion_size,
+      tags: data.tags,
+      notes: data.notes || null,
     }),
   });
 
@@ -127,7 +136,7 @@ export default function FoodLog() {
     if (editingId && hasNonDefaultDetails(formData)) {
       setShowDetails(true);
     }
-  }, [editingId]);
+  }, [editingId, formData]);
 
   const resetForm = () => {
     baseResetForm();
@@ -146,10 +155,7 @@ export default function FoodLog() {
 
     setFormData({
       ...formData,
-      food_items: [
-        ...formData.food_items,
-        { name: foodItemInput.trim() },
-      ],
+      food_items: [...formData.food_items, { name: foodItemInput.trim() }],
     });
 
     setFoodItemInput('');
@@ -169,7 +175,7 @@ export default function FoodLog() {
   const removeFoodItem = (index: number) => {
     setFormData({
       ...formData,
-      food_items: formData.food_items.filter((_, i) => i !== index),
+      food_items: formData.food_items.filter((_, itemIndex) => itemIndex !== index),
     });
   };
 
@@ -177,7 +183,7 @@ export default function FoodLog() {
     setFormData({
       ...formData,
       tags: formData.tags.includes(tag)
-        ? formData.tags.filter((t) => t !== tag)
+        ? formData.tags.filter((item) => item !== tag)
         : [...formData.tags, tag],
     });
   };
@@ -190,7 +196,7 @@ export default function FoodLog() {
   return (
     <LogPageShell
       title="Food Intake Log"
-      subtitle="Log quickly. Details are optional."
+      subtitle="Log the meal first, then add digestive context only when it improves the signal."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -206,17 +212,18 @@ export default function FoodLog() {
       />
 
       {!showHistory ? (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {editingId && (
-            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="font-medium">Editing entry</span>
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
               </div>
+
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -224,46 +231,68 @@ export default function FoodLog() {
           )}
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Clock className="mr-1 inline h-4 w-4" />
-                Time
-              </label>
-              <input
-                type="datetime-local"
-                id="logged_at"
-                value={formData.logged_at}
-                onChange={(e) =>
-                  setFormData({ ...formData, logged_at: e.target.value })
-                }
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                required
-              />
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="logged_at" className="field-label mb-2 block">
+                  <Clock className="mr-1 inline h-4 w-4" />
+                  Time
+                </label>
+
+                <input
+                  type="datetime-local"
+                  id="logged_at"
+                  value={formData.logged_at}
+                  onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
+                  className="input-base w-full"
+                  required
+                />
+
+                <p className="field-help mt-2">
+                  Anchor the meal to the right point in the day before adding detail.
+                </p>
+              </div>
+
+              <div className="surface-intelligence rounded-[24px] p-4 sm:p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                  Meal snapshot
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)] capitalize">
+                  {formData.meal_type}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  Capture what you ate first. Portion, tags, and notes can help explain digestive
+                  response later.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Meal Type
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Meal Type</label>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {mealTypes.map((type) => (
                   <button
                     key={type.value}
                     type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        meal_type: type.value,
-                      })
-                    }
-                    className={`rounded-xl border-2 p-4 transition-all ${
+                    onClick={() => setFormData({ ...formData, meal_type: type.value })}
+                    className={[
+                      'rounded-[22px] border p-4 transition-smooth',
                       formData.meal_type === type.value
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)]'
+                        : 'border-white/8 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
-                    <Utensils className={`mx-auto mb-2 h-5 w-5 ${formData.meal_type === type.value ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted'}`} />
-                    <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                    <Utensils
+                      className={[
+                        'mx-auto mb-2 h-5 w-5',
+                        formData.meal_type === type.value
+                          ? 'text-[var(--color-accent-primary)]'
+                          : 'text-[var(--color-text-tertiary)]',
+                      ].join(' ')}
+                    />
+                    <div className="text-sm font-medium text-[var(--color-text-primary)]">
                       {type.label}
                     </div>
                   </button>
@@ -271,19 +300,22 @@ export default function FoodLog() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Food Items
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Food Items</label>
+                <p className="field-help mt-1">
+                  Add the meal components. Autocomplete can help keep entries consistent.
+                </p>
+              </div>
 
-              <div className="mb-3 flex gap-2">
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row">
                 <FoodAutocompleteInput
                   value={foodItemInput}
                   onChange={setFoodItemInput}
                   onSelect={selectSuggestion}
                   onSubmit={addFoodItem}
                 />
-                <Button type="button" onClick={addFoodItem}>
+                <Button type="button" variant="secondary" onClick={addFoodItem}>
                   Add
                 </Button>
               </div>
@@ -293,14 +325,15 @@ export default function FoodLog() {
                   {formData.food_items.map((item, index) => (
                     <div
                       key={`${item.name}-${index}`}
-                      className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-4 py-3"
+                      className="flex items-center justify-between gap-3 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
                           {item.name}
                         </span>
+
                         {item.estimated_calories !== undefined && item.estimated_calories > 0 && (
-                          <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-xs text-brand-500 dark:text-brand-300">
+                          <span className="rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent-primary)]">
                             ~{item.estimated_calories} cal
                           </span>
                         )}
@@ -309,7 +342,7 @@ export default function FoodLog() {
                       <button
                         type="button"
                         onClick={() => removeFoodItem(index)}
-                        className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-signal-500 transition-colors"
+                        className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-danger)]"
                       >
                         Remove
                       </button>
@@ -318,9 +351,9 @@ export default function FoodLog() {
 
                   {totalEstimatedCalories > 0 && (
                     <div className="flex items-center justify-end px-1 pt-1">
-                      <span className="text-xs text-neutral-muted dark:text-dark-muted">
+                      <span className="text-xs text-[var(--color-text-tertiary)]">
                         Est. total:
-                        <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
+                        <span className="ml-1 font-medium text-[var(--color-text-primary)]">
                           {totalEstimatedCalories} cal
                         </span>
                       </span>
@@ -330,42 +363,40 @@ export default function FoodLog() {
               )}
             </div>
 
-            <div className="border-t border-neutral-border dark:border-dark-border pt-2">
+            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
               <button
                 type="button"
                 onClick={() => setShowDetails(!showDetails)}
-                className="flex w-full items-center justify-between py-2 text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
               >
-                <span className="font-medium">
-                  Details
-                  <span className="ml-1.5 font-normal opacity-60">(optional)</span>
+                <span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
+                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
                 </span>
+
                 {showDetails ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 )}
               </button>
 
               {showDetails && (
-                <div className="mt-4 space-y-6">
+                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
                   <div>
-                    <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                      Portion Size
-                    </label>
+                    <label className="field-label mb-3 block">Portion Size</label>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       {portionSizes.map((size) => (
                         <button
                           key={size}
                           type="button"
-                          onClick={() =>
-                            setFormData({ ...formData, portion_size: size })
-                          }
-                          className={`rounded-xl border-2 p-3 transition-all text-body-sm font-medium ${
+                          onClick={() => setFormData({ ...formData, portion_size: size })}
+                          className={[
+                            'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
                             formData.portion_size === size
-                              ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                              : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                          }`}
+                              ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                          ].join(' ')}
                         >
                           {size}
                         </button>
@@ -374,9 +405,7 @@ export default function FoodLog() {
                   </div>
 
                   <div>
-                    <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                      Digestive Tags
-                    </label>
+                    <label className="field-label mb-3 block">Digestive Tags</label>
 
                     <div className="flex flex-wrap gap-2">
                       {digestiveTags.map((tag) => (
@@ -384,11 +413,12 @@ export default function FoodLog() {
                           key={tag}
                           type="button"
                           onClick={() => toggleTag(tag)}
-                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                          className={[
+                            'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-smooth',
                             formData.tags.includes(tag)
-                              ? 'border-brand-500 bg-brand-500/10 text-brand-500 dark:text-brand-300'
-                              : 'border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted hover:border-brand-300 dark:hover:border-brand-700 hover:text-neutral-text dark:hover:text-dark-text'
-                          }`}
+                              ? 'border-[rgba(84,160,255,0.24)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
+                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-tertiary)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]',
+                          ].join(' ')}
                         >
                           <Tag className="h-3 w-3" />
                           {tag}
@@ -398,32 +428,30 @@ export default function FoodLog() {
                   </div>
 
                   <div>
-                    <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                    <label htmlFor="notes" className="field-label mb-2 block">
                       Notes
                     </label>
                     <textarea
                       id="notes"
                       value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                      rows={3}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={4}
                       placeholder="Location, cravings, mood, unusual reactions..."
-                      className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
+                      className="input-base min-h-[112px] w-full resize-none"
                     />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <Button type="submit" disabled={saving || formData.food_items.length === 0} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
 
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
                   Cancel
                 </Button>
               )}
@@ -431,14 +459,14 @@ export default function FoodLog() {
           </form>
         </Card>
       ) : (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {history.length === 0 ? (
             <EmptyState
               category="food"
-              icon={<Utensils className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />}
+              icon={<Utensils className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {history.map((log) => {
                 const logCalories = (log.food_items || []).reduce(
                   (sum, item) => sum + (item.estimated_calories || 0),
@@ -448,29 +476,31 @@ export default function FoodLog() {
                 return (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
+                    className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
                   >
-                    <div className="mb-3 flex items-start justify-between">
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
                           {formatDateTime(log.logged_at)}
                         </div>
-                        <div className="mt-0.5 text-xs capitalize text-neutral-muted dark:text-dark-muted">
-                          {log.meal_type} &middot; {log.portion_size}
-                          {logCalories > 0 ? ` \u00b7 ${logCalories} cal` : ''}
+                        <div className="mt-1 text-xs capitalize text-[var(--color-text-tertiary)]">
+                          {log.meal_type} · {log.portion_size}
+                          {logCalories > 0 ? ` · ${logCalories} cal` : ''}
                         </div>
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 text-sm">
                         <button
+                          type="button"
                           onClick={() => handleEdit(log as FoodFormData & { id: string })}
-                          className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                          className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                         >
                           Edit
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(log.id!)}
-                          className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
+                          className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
                         >
                           Delete
                         </button>
@@ -478,11 +508,11 @@ export default function FoodLog() {
                     </div>
 
                     {log.food_items?.length > 0 && (
-                      <div className="mb-3 flex flex-wrap gap-1.5">
+                      <div className="mb-4 flex flex-wrap gap-2">
                         {log.food_items.map((item, idx) => (
                           <span
                             key={`${item.name}-${idx}`}
-                            className="inline-flex items-center rounded-full bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/15 px-2.5 py-1 text-xs text-brand-500 dark:text-brand-300"
+                            className="inline-flex items-center rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-primary)]"
                           >
                             {item.name}
                           </span>
@@ -491,13 +521,13 @@ export default function FoodLog() {
                     )}
 
                     {log.tags?.length > 0 && (
-                      <div className="mb-3 flex flex-wrap gap-1.5">
+                      <div className="mb-4 flex flex-wrap gap-2">
                         {log.tags.map((tag, idx) => (
                           <span
                             key={`${tag}-${idx}`}
-                            className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted"
+                            className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
                           >
-                            <Tag className="mr-1 h-3 w-3" />
+                            <Tag className="mr-1 h-3 w-3 text-[var(--color-text-tertiary)]" />
                             {tag}
                           </span>
                         ))}
@@ -505,7 +535,7 @@ export default function FoodLog() {
                     )}
 
                     {log.notes && (
-                      <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                      <div className="rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                         {log.notes}
                       </div>
                     )}
