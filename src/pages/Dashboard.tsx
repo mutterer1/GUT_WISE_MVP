@@ -1,21 +1,23 @@
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import Card from '../components/Card';
-import Button from '../components/Button';
 import {
-  Waves,
-  Utensils,
-  Droplet,
-  Moon,
-  Frown,
-  Pill,
-  AlertCircle,
-  Heart,
-  Dumbbell,
-  Plus,
+  ArrowRight,
+  Brain,
   ClipboardCheck,
+  Droplet,
+  Heart,
+  Moon,
+  Pill,
+  Plus,
+  Sparkles,
+  Utensils,
+  Waves,
+  AlertCircle,
+  Frown,
+  Dumbbell,
   type LucideIcon,
 } from 'lucide-react';
+import Card from '../components/Card';
+import Button from '../components/Button';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAuth } from '../contexts/AuthContext';
 import { useAutoGenerateInsights } from '../hooks/useAutoGenerateInsights';
@@ -29,19 +31,12 @@ import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget
 import SignalRibbonBackground from '../components/dashboard/SignalRibbonBackground';
 import type { DashboardMetrics } from '../types/dashboard';
 
-interface QuickActionHoverClasses {
-  button: string;
-  iconBg: string;
-  iconColor: string;
-}
-
 interface QuickAction {
   label: string;
   shortLabel: string;
   path: string;
   icon: LucideIcon;
   tier: 'primary' | 'secondary';
-  hoverClasses?: QuickActionHoverClasses;
   sublabelKey?: string;
 }
 
@@ -53,12 +48,6 @@ const quickActions: QuickAction[] = [
     icon: Waves,
     tier: 'primary',
     sublabelKey: 'todayBMCount',
-    hoverClasses: {
-      button:
-        'hover:bg-orange-400/10 hover:border-orange-500/30 dark:hover:bg-orange-400/10 dark:hover:border-orange-500/25 hover:-translate-y-0.5 hover:shadow-sm',
-      iconBg: 'group-hover:bg-orange-400/20 dark:group-hover:bg-orange-400/20',
-      iconColor: 'group-hover:text-orange-600 dark:group-hover:text-orange-400',
-    },
   },
   {
     label: 'Symptoms',
@@ -67,12 +56,6 @@ const quickActions: QuickAction[] = [
     icon: AlertCircle,
     tier: 'primary',
     sublabelKey: 'todaySymptoms',
-    hoverClasses: {
-      button:
-        'hover:bg-rose-400/10 hover:border-rose-400/30 dark:hover:bg-rose-400/10 dark:hover:border-rose-400/25 hover:-translate-y-0.5 hover:shadow-sm',
-      iconBg: 'group-hover:bg-rose-400/20 dark:group-hover:bg-rose-400/20',
-      iconColor: 'group-hover:text-rose-500 dark:group-hover:text-rose-400',
-    },
   },
   {
     label: 'Food',
@@ -81,12 +64,6 @@ const quickActions: QuickAction[] = [
     icon: Utensils,
     tier: 'primary',
     sublabelKey: 'todayFood',
-    hoverClasses: {
-      button:
-        'hover:bg-emerald-400/10 hover:border-emerald-500/30 dark:hover:bg-emerald-400/10 dark:hover:border-emerald-500/25 hover:-translate-y-0.5 hover:shadow-sm',
-      iconBg: 'group-hover:bg-emerald-400/20 dark:group-hover:bg-emerald-400/20',
-      iconColor: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
-    },
   },
   {
     label: 'Hydration',
@@ -95,12 +72,6 @@ const quickActions: QuickAction[] = [
     icon: Droplet,
     tier: 'primary',
     sublabelKey: 'todayHydration',
-    hoverClasses: {
-      button:
-        'hover:bg-sky-400/10 hover:border-sky-400/30 dark:hover:bg-sky-400/10 dark:hover:border-sky-400/25 hover:-translate-y-0.5 hover:shadow-sm',
-      iconBg: 'group-hover:bg-sky-400/20 dark:group-hover:bg-sky-400/20',
-      iconColor: 'group-hover:text-sky-500 dark:group-hover:text-sky-400',
-    },
   },
   {
     label: 'Sleep',
@@ -108,12 +79,6 @@ const quickActions: QuickAction[] = [
     path: '/sleep-log',
     icon: Moon,
     tier: 'secondary',
-    hoverClasses: {
-      button:
-        'hover:bg-indigo-400/8 hover:border-indigo-400/25 dark:hover:bg-indigo-400/8 dark:hover:border-indigo-400/20 hover:-translate-y-px',
-      iconBg: 'group-hover:bg-indigo-400/15 dark:group-hover:bg-indigo-400/15',
-      iconColor: 'group-hover:text-indigo-400 dark:group-hover:text-indigo-300',
-    },
   },
   {
     label: 'Stress',
@@ -121,12 +86,6 @@ const quickActions: QuickAction[] = [
     path: '/stress-log',
     icon: Frown,
     tier: 'secondary',
-    hoverClasses: {
-      button:
-        'hover:bg-pink-400/8 hover:border-pink-400/25 dark:hover:bg-pink-400/8 dark:hover:border-pink-400/20 hover:-translate-y-px',
-      iconBg: 'group-hover:bg-pink-400/15 dark:group-hover:bg-pink-400/15',
-      iconColor: 'group-hover:text-pink-400 dark:group-hover:text-pink-300',
-    },
   },
   {
     label: 'Exercise',
@@ -134,12 +93,6 @@ const quickActions: QuickAction[] = [
     path: '/exercise-log',
     icon: Dumbbell,
     tier: 'secondary',
-    hoverClasses: {
-      button:
-        'hover:bg-blue-400/8 hover:border-blue-400/25 dark:hover:bg-blue-400/8 dark:hover:border-blue-400/20 hover:-translate-y-px',
-      iconBg: 'group-hover:bg-blue-400/15 dark:group-hover:bg-blue-400/15',
-      iconColor: 'group-hover:text-blue-400 dark:group-hover:text-blue-300',
-    },
   },
   {
     label: 'Medication',
@@ -147,12 +100,6 @@ const quickActions: QuickAction[] = [
     path: '/medication-log',
     icon: Pill,
     tier: 'secondary',
-    hoverClasses: {
-      button:
-        'hover:bg-slate-400/8 hover:border-slate-400/25 dark:hover:bg-slate-400/8 dark:hover:border-slate-400/20 hover:-translate-y-px',
-      iconBg: 'group-hover:bg-slate-400/15 dark:group-hover:bg-slate-400/15',
-      iconColor: 'group-hover:text-slate-400 dark:group-hover:text-slate-300',
-    },
   },
   {
     label: 'Cycle',
@@ -160,17 +107,11 @@ const quickActions: QuickAction[] = [
     path: '/menstrual-cycle-log',
     icon: Heart,
     tier: 'secondary',
-    hoverClasses: {
-      button:
-        'hover:bg-rose-300/8 hover:border-rose-300/25 dark:hover:bg-rose-300/8 dark:hover:border-rose-300/20 hover:-translate-y-px',
-      iconBg: 'group-hover:bg-rose-300/15 dark:group-hover:bg-rose-300/15',
-      iconColor: 'group-hover:text-rose-300 dark:group-hover:text-rose-200',
-    },
   },
 ];
 
-const primaryActions = quickActions.filter((a) => a.tier === 'primary');
-const secondaryActions = quickActions.filter((a) => a.tier === 'secondary');
+const primaryActions = quickActions.filter((action) => action.tier === 'primary');
+const secondaryActions = quickActions.filter((action) => action.tier === 'secondary');
 
 function getPrimarySublabel(action: QuickAction, metrics: DashboardMetrics): string | null {
   switch (action.sublabelKey) {
@@ -212,155 +153,213 @@ export default function Dashboard() {
       : 0;
 
   return (
-    <div className="flex min-h-screen bg-neutral-bg dark:bg-dark-bg">
-      <Sidebar />
+    <main className="page-shell">
+      <SignalRibbonBackground />
 
-      <main className="relative flex-1 p-md pt-16 sm:p-lg sm:pt-16 lg:ml-64 lg:p-lg lg:pt-lg">
-        <SignalRibbonBackground />
-        <div className="relative mx-auto max-w-7xl space-y-lg" style={{ zIndex: 1 }}>
+      <div className="page-wrap relative py-6 lg:py-8">
+        <div className="relative z-[1] mx-auto w-full max-w-7xl space-y-6">
           {error && (
-            <div className="rounded-xl border border-signal-500/30 bg-signal-500/10 p-md text-body-sm text-signal-500">
+            <div className="rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] px-4 py-3 text-sm text-[var(--color-danger)]">
               {error}
             </div>
           )}
 
-          <TodaySummaryWidget
-            bmCount={metrics.todayBMCount}
-            mealsCount={metrics.todayFood.meals}
-            snacksCount={metrics.todayFood.snacks}
-            hydrationMl={metrics.todayHydration.total_ml}
-            sleepHours={sleepHours}
-            symptomsCount={metrics.todaySymptoms.length}
-            loading={loading}
-            userName={userName}
-          />
+          <section className="page-enter surface-panel overflow-hidden rounded-[32px] p-5 sm:p-6 lg:p-8">
+            <div className="page-header items-start justify-between gap-6">
+              <div className="max-w-3xl">
+                <span className="badge-secondary mb-3 inline-flex">Daily Overview</span>
+                <h1 className="page-title">A clearer operating view for today&apos;s gut health signals.</h1>
+                <p className="page-subtitle mt-2">
+                  Track what changed, spot overlap across symptoms and behavior, and move into
+                  logging or review without hunting through the app.
+                </p>
+              </div>
 
-          <Card variant="discovery" padding="sm" className="overflow-hidden">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/12 text-brand-500 dark:text-brand-300">
-                  <ClipboardCheck className="h-5 w-5" />
+              <div className="surface-intelligence hidden min-w-[280px] rounded-[28px] p-4 lg:block">
+                <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
+                  <Brain className="h-5 w-5" />
                 </div>
-                <div>
-                  <h2 className="text-body-md font-sora font-semibold text-neutral-text dark:text-dark-text">
-                    New: one-pass daily check-in
-                  </h2>
-                  <p className="mt-1 text-body-sm text-neutral-muted dark:text-dark-muted">
-                    Log the day in one place so GutWise gets the overlap it needs across stool,
-                    symptoms, meals, hydration, sleep, stress, medication, cycle, and exercise.
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Intelligence works better with overlap
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  A fuller day of signals gives GutWise more context for patterns, drift, and
+                  recovery windows.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <TodaySummaryWidget
+                bmCount={metrics.todayBMCount}
+                mealsCount={metrics.todayFood.meals}
+                snacksCount={metrics.todayFood.snacks}
+                hydrationMl={metrics.todayHydration.total_ml}
+                sleepHours={sleepHours}
+                symptomsCount={metrics.todaySymptoms.length}
+                loading={loading}
+                userName={userName}
+              />
+            </div>
+          </section>
+
+          <section className="card-enter grid gap-4 xl:grid-cols-[1.3fr_0.95fr]">
+            <Card variant="discovery" padding="sm" className="rounded-[28px]">
+              <div className="flex h-full flex-col gap-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)]">
+                      <ClipboardCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                        One-pass daily check-in
+                      </h2>
+                      <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Log the day in one focused pass so symptoms, meals, hydration, sleep,
+                        stress, medication, exercise, and cycle context connect properly.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="hidden rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] sm:block">
+                    Recommended
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Button onClick={() => navigate('/daily-check-in')}>
+                    Open Daily Check-In
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+
+                  <p className="text-sm text-[var(--color-text-tertiary)]">
+                    Best option when you want pattern quality, not just data capture.
                   </p>
                 </div>
               </div>
-              <Button onClick={() => navigate('/daily-check-in')} className="shrink-0">
-                Open Daily Check-In
-              </Button>
-            </div>
-          </Card>
+            </Card>
 
-          <Card variant="elevated" padding="sm" className="relative overflow-hidden">
-            <div
-              className="glass-sheen-overlay"
-              aria-hidden="true"
-              style={{ animationDelay: '4s' }}
-            />
-            <div className="mb-4 flex items-center justify-between px-2 pt-1">
+            <Card variant="flat" padding="sm" className="rounded-[28px]">
+              <div className="flex h-full flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.12)] text-[var(--color-accent-secondary)]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                      Today&apos;s pattern posture
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      Review signal strength, then decide whether to log fast or inspect detail.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="surface-panel-quiet rounded-2xl p-4">
+                    <p className="metric-label">Hydration progress</p>
+                    <p className="metric-value mt-2">{Math.round(hydrationPercentage)}%</p>
+                  </div>
+
+                  <div className="surface-panel-quiet rounded-2xl p-4">
+                    <p className="metric-label">Symptoms logged</p>
+                    <p className="metric-value mt-2">{metrics.todaySymptoms.length}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-[var(--color-text-tertiary)]">
+                  GutWise can frame better insights when today includes both body signals and
+                  context signals.
+                </div>
+              </div>
+            </Card>
+          </section>
+
+          <section className="card-enter surface-panel rounded-[32px] p-5 sm:p-6 lg:p-7">
+            <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-body-md font-sora font-semibold text-neutral-text dark:text-dark-text">
-                  Quick Log
+                <span className="badge-secondary mb-3 inline-flex">Quick Capture</span>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                  Log one thing quickly
                 </h2>
-                <p className="mt-0.5 text-body-xs text-neutral-muted dark:text-dark-muted">
-                  Individual entries still work if you only want to log one thing
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  Use direct entry when you only need to record a single signal.
                 </p>
               </div>
-              <Plus className="h-4 w-4 text-neutral-muted dark:text-dark-muted" />
+
+              <div className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-[var(--color-text-tertiary)] sm:flex">
+                <Plus className="h-4 w-4" />
+              </div>
             </div>
 
-            <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {primaryActions.map((action) => {
                 const Icon = action.icon;
-                const hc = action.hoverClasses;
                 const sublabel = getPrimarySublabel(action, metrics);
+
                 return (
                   <button
                     key={action.path}
+                    type="button"
                     onClick={() => navigate(action.path)}
-                    className={`group flex flex-col items-center gap-2 rounded-xl border border-brand-500/20 bg-brand-500/8 p-4 transition-all duration-200 dark:border-brand-500/25 dark:bg-brand-500/12 ${
-                      hc?.button ??
-                      'hover:bg-brand-500/14 hover:border-brand-500/35 dark:hover:bg-brand-500/20'
-                    }`}
+                    className="group rounded-[24px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)] p-4 text-left transition-smooth hover:border-[rgba(84,160,255,0.32)] hover:bg-[rgba(84,160,255,0.1)]"
                   >
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500/15 transition-colors dark:bg-brand-500/20 ${
-                        hc?.iconBg ?? 'group-hover:bg-brand-500/25'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 text-brand-600 transition-transform group-hover:scale-110 dark:text-brand-300 ${
-                          hc?.iconColor ?? ''
-                        }`}
-                      />
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)] transition-smooth group-hover:scale-[1.04]">
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <div className="text-center">
-                      <span className="block text-xs font-semibold leading-tight text-neutral-text dark:text-dark-text">
-                        {action.label}
-                      </span>
-                      {sublabel && !loading && (
-                        <span className="mt-0.5 block text-[10px] leading-tight text-neutral-muted dark:text-dark-muted">
-                          {sublabel}
-                        </span>
-                      )}
-                    </div>
+
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                      {action.label}
+                    </p>
+
+                    {sublabel && !loading && (
+                      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">{sublabel}</p>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mb-2.5 flex items-center gap-3 px-1">
-              <div className="h-px flex-1 bg-neutral-border dark:bg-dark-border" />
-              <span className="text-[10px] font-medium uppercase tracking-widest text-neutral-muted/50 dark:text-dark-muted/50">
-                Lifestyle
-              </span>
-              <div className="h-px flex-1 bg-neutral-border dark:bg-dark-border" />
-            </div>
+            <div className="my-5 h-px bg-white/8" />
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
               {secondaryActions.map((action) => {
                 const Icon = action.icon;
-                const hc = action.hoverClasses;
+
                 return (
                   <button
                     key={action.path}
+                    type="button"
                     onClick={() => navigate(action.path)}
-                    className={`group flex flex-col items-center gap-1.5 rounded-lg border border-neutral-border bg-neutral-bg p-3 transition-all duration-200 dark:border-dark-border dark:bg-dark-bg ${
-                      hc?.button ??
-                      'hover:border-brand-500/30 hover:bg-brand-500/5 dark:hover:border-brand-500/25 dark:hover:bg-brand-500/8'
-                    }`}
+                    className="group rounded-[20px] border border-white/8 bg-white/[0.03] px-3 py-3 text-center transition-smooth hover:border-white/14 hover:bg-white/[0.05]"
                   >
-                    <Icon
-                      className={`h-3.5 w-3.5 text-neutral-muted transition-colors dark:text-dark-muted ${
-                        hc?.iconColor ?? 'group-hover:text-brand-500 dark:group-hover:text-brand-300'
-                      }`}
-                    />
-                    <span className="text-center text-[10px] font-medium leading-tight text-neutral-muted group-hover:text-neutral-text dark:text-dark-muted dark:group-hover:text-dark-text">
+                    <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/[0.05] text-[var(--color-text-tertiary)] transition-smooth group-hover:text-[var(--color-text-secondary)]">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-xs font-medium text-[var(--color-text-secondary)]">
                       {action.shortLabel}
                     </span>
                   </button>
                 );
               })}
             </div>
-          </Card>
+          </section>
 
-          <div>
-            <div className="mb-md">
-              <h2 className="text-h5 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                Today&apos;s Detail
-              </h2>
-              <p className="mt-0.5 text-body-sm text-neutral-muted dark:text-dark-muted">
-                Your tracked health metrics for today
-              </p>
+          <section className="space-y-4">
+            <div className="page-header">
+              <div>
+                <span className="badge-secondary mb-3 inline-flex">Detail</span>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                  Today&apos;s measured detail
+                </h2>
+                <p className="page-subtitle mt-2">
+                  A tighter view of logged symptoms, hydration, medication, and bowel metrics.
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <BMCountWidget count={metrics.todayBMCount} loading={loading} />
 
               <BristolScaleWidget
@@ -382,17 +381,19 @@ export default function Dashboard() {
                 <MedicationWidget medications={metrics.recentMedications} loading={loading} />
               </div>
             </div>
-          </div>
+          </section>
 
-          <PatternInsightsWidget
-            bmCount={metrics.todayBMCount}
-            symptomsCount={metrics.todaySymptoms.length}
-            stressLevel={metrics.todayStress.average_level}
-            hydrationPercentage={hydrationPercentage}
-            loading={loading}
-          />
+          <section className="card-enter">
+            <PatternInsightsWidget
+              bmCount={metrics.todayBMCount}
+              symptomsCount={metrics.todaySymptoms.length}
+              stressLevel={metrics.todayStress.average_level}
+              hydrationPercentage={hydrationPercentage}
+              loading={loading}
+            />
+          </section>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
