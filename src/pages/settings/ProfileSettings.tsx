@@ -39,11 +39,6 @@ function lbsToKg(lbs: number | null): number | null {
   return lbs / 2.20462;
 }
 
-const inputClass =
-  'w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-teal-500 focus:border-transparent';
-
-const labelClass = 'block text-sm font-sm text-white mb-2';
-
 export default function ProfileSettings() {
   const { user, profile } = useAuth();
   const [formData, setFormData] = useState<ProfileData>({
@@ -124,25 +119,29 @@ export default function ProfileSettings() {
   return (
     <SettingsPageLayout
       title="Profile Settings"
-      description="Manage your personal information and profile details"
+      description="Manage identity, physical baseline, and profile context used across your GutWise experience."
     >
-      <div className="space-y-6 pt-4">
-        <Card>
-          <div className="mb-6">
-            <div className="flex items-center justify-center w-20 h-20 bg-teal-50 rounded-full mx-auto mb-4">
-              <User className="h-10 w-10 text-teal-600" />
+      <div className="space-y-5">
+        <Card variant="elevated" className="rounded-[28px]">
+          <div className="mb-8">
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-[28px] bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]">
+              <User className="h-11 w-11" />
             </div>
+
             <div className="text-center">
-              <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition-smooth hover:bg-white/[0.05] hover:text-[var(--color-text-primary)]"
+              >
                 <Camera className="h-4 w-4" />
                 Upload Avatar
               </button>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label htmlFor="full_name" className={labelClass}>
+              <label htmlFor="full_name" className="field-label mb-2 block">
                 Full Name
               </label>
               <input
@@ -150,12 +149,12 @@ export default function ProfileSettings() {
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className={inputClass}
+                className="input-base w-full"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className={labelClass}>
+              <label htmlFor="email" className="field-label mb-2 block">
                 Email Address
               </label>
               <input
@@ -163,16 +162,14 @@ export default function ProfileSettings() {
                 id="email"
                 value={formData.email}
                 disabled
-                className="w-full px-4 py-2 border border-gray-100 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                className="w-full cursor-not-allowed rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-[var(--color-text-tertiary)] opacity-90"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Contact support to change your email address
-              </p>
+              <p className="field-help mt-2">Contact support to change your email address.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="date_of_birth" className={labelClass}>
+                <label htmlFor="date_of_birth" className="field-label mb-2 block">
                   Date of Birth
                 </label>
                 <input
@@ -180,19 +177,19 @@ export default function ProfileSettings() {
                   id="date_of_birth"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className={inputClass}
+                  className="input-base w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="gender" className={labelClass}>
+                <label htmlFor="gender" className="field-label mb-2 block">
                   Gender
                 </label>
                 <select
                   id="gender"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className={inputClass}
+                  className="input-base w-full"
                 >
                   <option value="">Not specified</option>
                   <option value="male">Male</option>
@@ -203,11 +200,11 @@ export default function ProfileSettings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className={labelClass}>Height</label>
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
+                <label className="field-label mb-2 block">Height</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
                     <input
                       type="number"
                       id="height_ft"
@@ -216,18 +213,19 @@ export default function ProfileSettings() {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          height_ft: e.target.value ? parseInt(e.target.value) : null,
+                          height_ft: e.target.value ? parseInt(e.target.value, 10) : null,
                         })
                       }
-                      className={inputClass}
+                      className="input-base w-full pr-10"
                       min="0"
                       max="8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-tertiary)]">
                       ft
                     </span>
                   </div>
-                  <div className="flex-1 relative">
+
+                  <div className="relative">
                     <input
                       type="number"
                       id="height_in"
@@ -236,14 +234,14 @@ export default function ProfileSettings() {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          height_in: e.target.value ? parseInt(e.target.value) : null,
+                          height_in: e.target.value ? parseInt(e.target.value, 10) : null,
                         })
                       }
-                      className={inputClass}
+                      className="input-base w-full pr-10"
                       min="0"
                       max="11"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-tertiary)]">
                       in
                     </span>
                   </div>
@@ -251,7 +249,7 @@ export default function ProfileSettings() {
               </div>
 
               <div>
-                <label htmlFor="weight_lbs" className={labelClass}>
+                <label htmlFor="weight_lbs" className="field-label mb-2 block">
                   Weight
                 </label>
                 <div className="relative">
@@ -266,11 +264,11 @@ export default function ProfileSettings() {
                         weight_lbs: e.target.value ? parseFloat(e.target.value) : null,
                       })
                     }
-                    className={inputClass}
+                    className="input-base w-full pr-12"
                     min="44"
                     max="660"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-tertiary)]">
                     lbs
                   </span>
                 </div>
@@ -280,30 +278,32 @@ export default function ProfileSettings() {
         </Card>
 
         {error && (
-          <Card className="bg-red-50 border border-red-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(255,120,120,0.2)] bg-[rgba(255,120,120,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <X className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-900">{error}</p>
-              </div>
+              <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-danger)]" />
+              <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
             </div>
           </Card>
         )}
 
         {message && (
-          <Card className="bg-green-50 border border-green-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-green-900">{message}</p>
-              </div>
+              <Save className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
+              <p className="text-sm font-medium text-[var(--color-accent-primary)]">{message}</p>
             </div>
           </Card>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button disabled={saving} onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="mr-2 h-4 w-4" />
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
           <Button variant="secondary" onClick={handleCancel}>
