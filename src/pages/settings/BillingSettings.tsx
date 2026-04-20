@@ -1,4 +1,4 @@
-import { CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, CreditCard } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -7,124 +7,166 @@ export default function BillingSettings() {
   return (
     <SettingsPageLayout
       title="Billing & Subscription"
-      description="View and manage your subscription and payment methods"
+      description="Review your plan, payment state, and upgrade paths without mixing billing with the rest of account settings."
     >
-      <div className="space-y-6">
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
-          <div className="p-4 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg border border-teal-200">
-            <div className="flex items-start justify-between">
+      <div className="space-y-5">
+        <Card variant="discovery" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Current Plan</h3>
+
+          <div className="mt-5 rounded-[24px] border border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.08)] p-5">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-medium text-gray-900 text-lg">Free Plan</p>
-                <p className="text-sm text-gray-600 mt-1">Limited access to tracking features</p>
+                <p className="text-lg font-semibold text-[var(--color-text-primary)]">Free Plan</p>
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                  Limited access to tracking features.
+                </p>
               </div>
+
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-green-600">Active</span>
+                <CheckCircle className="h-5 w-5 text-[var(--color-accent-primary)]" />
+                <span className="text-sm font-medium text-[var(--color-accent-primary)]">Active</span>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-teal-200">
-              <p className="text-2xl font-bold text-gray-900">$0.00<span className="text-sm text-gray-600">/month</span></p>
-              <p className="text-xs text-gray-600 mt-2">No billing information required</p>
+
+            <div className="mt-4 border-t border-[rgba(84,160,255,0.16)] pt-4">
+              <p className="text-3xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                $0.00
+                <span className="ml-1 text-sm font-medium text-[var(--color-text-tertiary)]">
+                  /month
+                </span>
+              </p>
+              <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                No billing information required.
+              </p>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Upgrade Options</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-colors">
-              <p className="font-medium text-gray-900">Pro Plan</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">$9.99<span className="text-sm text-gray-600">/month</span></p>
-              <ul className="mt-4 space-y-2 text-sm text-gray-600">
+        <Card variant="elevated" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Upgrade Options</h3>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="surface-panel-quiet rounded-[24px] p-5 transition-smooth hover:bg-white/[0.05]">
+              <p className="text-base font-semibold text-[var(--color-text-primary)]">Pro Plan</p>
+              <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                $9.99
+                <span className="ml-1 text-sm font-medium text-[var(--color-text-tertiary)]">
+                  /month
+                </span>
+              </p>
+
+              <ul className="mt-4 space-y-2 text-sm text-[var(--color-text-secondary)]">
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-primary)]" />
                   Unlimited logging
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-primary)]" />
                   Advanced analytics
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-primary)]" />
                   Priority support
                 </li>
               </ul>
-              <Button className="w-full mt-4" variant="outline">
+
+              <Button className="mt-5 w-full" variant="secondary">
                 Upgrade Now
               </Button>
             </div>
 
-            <div className="p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-colors">
-              <p className="font-medium text-gray-900">Premium Plan</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">$19.99<span className="text-sm text-gray-600">/month</span></p>
-              <ul className="mt-4 space-y-2 text-sm text-gray-600">
+            <div className="surface-intelligence rounded-[24px] p-5 transition-smooth hover:bg-[rgba(133,93,255,0.12)]">
+              <p className="text-base font-semibold text-[var(--color-text-primary)]">Premium Plan</p>
+              <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                $19.99
+                <span className="ml-1 text-sm font-medium text-[var(--color-text-tertiary)]">
+                  /month
+                </span>
+              </p>
+
+              <ul className="mt-4 space-y-2 text-sm text-[var(--color-text-secondary)]">
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-secondary)]" />
                   Everything in Pro
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-secondary)]" />
                   AI-powered insights
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-[var(--color-accent-secondary)]" />
                   Integration with health apps
                 </li>
               </ul>
-              <Button className="w-full mt-4" variant="outline">
+
+              <Button className="mt-5 w-full" variant="primary">
                 Upgrade Now
               </Button>
             </div>
           </div>
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
-          <div className="bg-gray-50 rounded-lg p-6 text-center">
-            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-3">No payment method on file</p>
-            <Button variant="outline">
+        <Card variant="flat" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Payment Methods</h3>
+
+          <div className="surface-panel-quiet mt-5 rounded-[24px] p-8 text-center">
+            <CreditCard className="mx-auto mb-3 h-12 w-12 text-[var(--color-text-tertiary)]" />
+            <p className="text-sm text-[var(--color-text-secondary)]">No payment method on file</p>
+            <Button variant="secondary" className="mt-4">
               Add Payment Method
             </Button>
           </div>
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing History</h3>
-          <div className="overflow-x-auto">
+        <Card variant="flat" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Billing History</h3>
+
+          <div className="mt-5 overflow-x-auto rounded-[24px] border border-white/8 bg-white/[0.03]">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-sm text-gray-600">Date</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-gray-600">Description</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-gray-600">Amount</th>
-                  <th className="text-left py-3 px-4 font-medium text-sm text-gray-600">Status</th>
+                <tr className="border-b border-white/8">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text-tertiary)]">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text-tertiary)]">
+                    Description
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text-tertiary)]">
+                    Amount
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text-tertiary)]">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-600">-</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">No billing history</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">-</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">-</td>
+                <tr className="hover:bg-white/[0.04]">
+                  <td className="px-4 py-4 text-sm text-[var(--color-text-secondary)]">-</td>
+                  <td className="px-4 py-4 text-sm text-[var(--color-text-secondary)]">
+                    No billing history
+                  </td>
+                  <td className="px-4 py-4 text-sm text-[var(--color-text-secondary)]">-</td>
+                  <td className="px-4 py-4 text-sm text-[var(--color-text-secondary)]">-</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </Card>
 
-        <Card className="bg-blue-50 border border-blue-200">
+        <Card
+          variant="flat"
+          className="rounded-[24px] border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.06)]"
+        >
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
             <div>
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 Have questions about billing?
               </p>
-              <p className="text-sm text-blue-800 mt-1">
-                Contact our support team for assistance with subscriptions, invoices, or refunds
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Contact support for assistance with subscriptions, invoices, or refunds.
               </p>
-              <Button variant="outline" size="sm" className="mt-3">
+              <Button variant="secondary" size="sm" className="mt-3">
                 Contact Support
               </Button>
             </div>
