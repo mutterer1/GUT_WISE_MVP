@@ -31,6 +31,7 @@ export default function MedicalContextSettings() {
 
   const loadFacts = useCallback(async () => {
     if (!user?.id) return;
+
     try {
       const data = await fetchActiveMedicalFacts(user.id, {
         active_only: true,
@@ -59,8 +60,10 @@ export default function MedicalContextSettings() {
 
   const handleCreate = async (detail: Record<string, unknown>, notes: string) => {
     if (!user?.id || viewState.mode !== 'add') return;
+
     setSaving(true);
     setError('');
+
     try {
       await createMedicalFact(user.id, {
         category: viewState.category,
@@ -79,8 +82,10 @@ export default function MedicalContextSettings() {
 
   const handleUpdate = async (detail: Record<string, unknown>, notes: string) => {
     if (!user?.id || viewState.mode !== 'edit') return;
+
     setSaving(true);
     setError('');
+
     try {
       await updateMedicalFact(user.id, viewState.fact.id, {
         detail,
@@ -97,8 +102,10 @@ export default function MedicalContextSettings() {
 
   const handleDelete = async (factId: string) => {
     if (!user?.id) return;
+
     setSaving(true);
     setError('');
+
     try {
       await deactivateMedicalFact(user.id, factId);
       setConfirmDelete(null);
@@ -115,6 +122,7 @@ export default function MedicalContextSettings() {
 
   if (viewState.mode === 'add') {
     const config = getCategoryConfig(viewState.category);
+
     return (
       <SettingsPageLayout
         title={`Add ${config.label.replace(/s$/, '')}`}
@@ -134,6 +142,7 @@ export default function MedicalContextSettings() {
 
   if (viewState.mode === 'edit') {
     const config = getCategoryConfig(viewState.fact.category);
+
     return (
       <SettingsPageLayout
         title={`Edit ${config.label.replace(/s$/, '')}`}
@@ -155,20 +164,24 @@ export default function MedicalContextSettings() {
   return (
     <SettingsPageLayout
       title="Medical Context"
-      description="Your health background helps GutWise surface patterns specific to your situation — not just population-level averages."
+      description="Your health background helps GutWise surface patterns specific to your situation, not just population-level averages."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
       {loading ? (
-        <Card>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading medical context...</p>
+        <Card variant="elevated" className="rounded-[28px]">
+          <p className="text-sm text-[var(--color-text-tertiary)]">Loading medical context...</p>
         </Card>
       ) : (
-        <div className="space-y-3">
-          <Card padding="sm" className="bg-brand-50/50 dark:bg-brand-900/10 border-brand-200/60 dark:border-brand-800/20">
-            <p className="text-xs text-brand-700 dark:text-brand-300 leading-relaxed">
-              This stays private to your account and is used only to make your insights more relevant to your health background.
-              You control everything you add here, and can edit or remove any entry at any time.
+        <div className="space-y-4">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.06)]"
+          >
+            <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+              This stays private to your account and is used only to make your insights more relevant
+              to your health background. You control everything you add here, and can edit or remove
+              any entry at any time.
             </p>
           </Card>
 
@@ -178,30 +191,32 @@ export default function MedicalContextSettings() {
             const count = categoryFacts.length;
 
             return (
-              <Card key={config.key} padding="none">
+              <Card key={config.key} variant="elevated" padding="none" className="rounded-[28px]">
                 <button
                   type="button"
                   onClick={() => toggleCategory(config.key)}
-                  className="w-full flex items-center justify-between px-6 py-4 text-left"
+                  className="flex w-full items-center justify-between px-6 py-4 text-left"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                      <ChevronDown className="h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
                     )}
+
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
                         {config.label}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      <p className="truncate text-xs text-[var(--color-text-tertiary)]">
                         {config.description}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+
+                  <div className="ml-4 flex flex-shrink-0 items-center gap-3">
                     {count > 0 && (
-                      <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-xs font-medium">
+                      <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full border border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.08)] px-2 text-xs font-medium text-[var(--color-accent-primary)]">
                         {count}
                       </span>
                     )}
@@ -209,24 +224,28 @@ export default function MedicalContextSettings() {
                 </button>
 
                 {isExpanded && (
-                  <div className="px-6 pb-4 border-t border-gray-100 dark:border-white/[0.06]">
+                  <div className="border-t border-white/8 px-6 pb-4">
                     {categoryFacts.length > 0 ? (
-                      <ul className="divide-y divide-gray-100 dark:divide-white/[0.06]">
+                      <ul className="divide-y divide-white/8">
                         {categoryFacts.map((fact) => {
-                          const displayValue = (fact.detail as Record<string, unknown>)[config.displayField] as string;
+                          const displayValue = (fact.detail as Record<string, unknown>)[
+                            config.displayField
+                          ] as string;
+
                           return (
                             <li key={fact.id} className="flex items-center justify-between py-3">
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">
                                   {displayValue || 'Unnamed entry'}
                                 </p>
                                 {fact.provenance.notes && (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                  <p className="mt-0.5 truncate text-xs text-[var(--color-text-tertiary)]">
                                     {fact.provenance.notes}
                                   </p>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+
+                              <div className="ml-3 flex flex-shrink-0 items-center gap-1">
                                 {confirmDelete === fact.id ? (
                                   <>
                                     <Button
@@ -234,7 +253,7 @@ export default function MedicalContextSettings() {
                                       variant="ghost"
                                       onClick={() => handleDelete(fact.id)}
                                       disabled={saving}
-                                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                      className="text-[var(--color-danger)] hover:bg-[rgba(255,120,120,0.08)]"
                                     >
                                       Confirm
                                     </Button>
@@ -251,14 +270,14 @@ export default function MedicalContextSettings() {
                                     <button
                                       type="button"
                                       onClick={() => setViewState({ mode: 'edit', fact })}
-                                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                                      className="rounded-xl p-1.5 text-[var(--color-text-tertiary)] transition-smooth hover:bg-white/[0.05] hover:text-[var(--color-text-primary)]"
                                     >
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => setConfirmDelete(fact.id)}
-                                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                      className="rounded-xl p-1.5 text-[var(--color-text-tertiary)] transition-smooth hover:bg-[rgba(255,120,120,0.08)] hover:text-[var(--color-danger)]"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </button>
@@ -270,9 +289,7 @@ export default function MedicalContextSettings() {
                         })}
                       </ul>
                     ) : (
-                      <p className="text-xs text-gray-400 dark:text-gray-500 py-3">
-                        No entries yet
-                      </p>
+                      <p className="py-3 text-xs text-[var(--color-text-tertiary)]">No entries yet</p>
                     )}
 
                     <Button
@@ -281,7 +298,7 @@ export default function MedicalContextSettings() {
                       onClick={() => setViewState({ mode: 'add', category: config.key })}
                       className="mt-2"
                     >
-                      <Plus className="h-3.5 w-3.5 mr-1.5" />
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
                       Add {config.label.replace(/s$/, '').replace(/ie$/, 'y')}
                     </Button>
                   </div>
@@ -290,10 +307,11 @@ export default function MedicalContextSettings() {
             );
           })}
 
-          <Card padding="sm" className="bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/[0.06]">
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              GutWise uses this context to surface patterns relevant to your health background. This is not medical advice — always work with your care team for medical decisions.
-              You can update or remove any entry above at any time.
+          <Card variant="flat" className="rounded-[24px]">
+            <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+              GutWise uses this context to surface patterns relevant to your health background. This
+              is not medical advice. Always work with your care team for medical decisions. You can
+              update or remove any entry above at any time.
             </p>
           </Card>
         </div>
@@ -304,10 +322,16 @@ export default function MedicalContextSettings() {
 
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
-    <Card className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 mb-4">
+    <Card
+      variant="flat"
+      className="mb-4 rounded-[24px] border-[rgba(255,120,120,0.2)] bg-[rgba(255,120,120,0.06)]"
+    >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-red-900 dark:text-red-200">{message}</p>
-        <button onClick={onDismiss} className="text-red-400 hover:text-red-600 dark:hover:text-red-300">
+        <p className="text-sm text-[var(--color-danger)]">{message}</p>
+        <button
+          onClick={onDismiss}
+          className="text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-danger)]"
+        >
           <span className="sr-only">Dismiss</span>
           &times;
         </button>
