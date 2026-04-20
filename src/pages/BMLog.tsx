@@ -1,5 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Save, Clock, AlertCircle, Activity, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Pencil,
+  Save,
+} from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -101,7 +109,7 @@ export default function BMLog() {
     if (editingId && hasNonDefaultDetails(formData)) {
       setShowDetails(true);
     }
-  }, [editingId]);
+  }, [editingId, formData]);
 
   const handleReset = () => {
     resetForm();
@@ -111,7 +119,7 @@ export default function BMLog() {
   return (
     <LogPageShell
       title="Bowel Movement Log"
-      subtitle="Log quickly. All details are optional."
+      subtitle="Capture the essential signal fast, then expand only if the event needs more context."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -127,17 +135,18 @@ export default function BMLog() {
       />
 
       {!showHistory ? (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {editingId && (
-            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="font-medium">Editing entry</span>
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
               </div>
+
               <button
                 type="button"
                 onClick={handleReset}
-                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -145,50 +154,70 @@ export default function BMLog() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Clock className="mr-1 inline h-4 w-4" />
-                Time
-              </label>
-              <input
-                type="datetime-local"
-                id="logged_at"
-                value={formData.logged_at}
-                onChange={(e) =>
-                  setFormData({ ...formData, logged_at: e.target.value })
-                }
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                required
-              />
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="logged_at" className="field-label mb-2 block">
+                  <Clock className="mr-1 inline h-4 w-4" />
+                  Time
+                </label>
+
+                <input
+                  type="datetime-local"
+                  id="logged_at"
+                  value={formData.logged_at}
+                  onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
+                  className="input-base w-full"
+                  required
+                />
+
+                <p className="field-help mt-2">
+                  Anchor the event first. Everything else can stay lightweight.
+                </p>
+              </div>
+
+              <div className="surface-intelligence rounded-[24px] p-4 sm:p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                  Stool framing
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                  Bristol Type {formData.bristol_type}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  Type 4 is usually the target reference point. Log what actually happened, not what
+                  you hoped to see.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <div className="mb-3 flex items-baseline justify-between">
-                <label className="text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                  Bristol Stool Scale
-                </label>
-                <span className="text-xs text-neutral-muted dark:text-dark-muted">Type 4 is ideal</span>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <label className="field-label">Bristol Stool Scale</label>
+                  <p className="field-help mt-1">Choose the closest match to the event.</p>
+                </div>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                  Type 4 ideal
+                </span>
               </div>
 
               <div className="-mx-1 overflow-x-auto px-1 pb-1">
-                <div className="grid grid-cols-7 gap-1.5 min-w-[392px]">
+                <div className="grid min-w-[448px] grid-cols-7 gap-2">
                   {BRISTOL_SCALE.map((item) => (
                     <button
                       key={item.value}
                       type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, bristol_type: item.value })
-                      }
-                      className={`rounded-xl border-2 px-1 py-3 transition-all ${
+                      onClick={() => setFormData({ ...formData, bristol_type: item.value })}
+                      className={[
+                        'rounded-[20px] border px-2 py-4 text-left transition-smooth',
                         formData.bristol_type === item.value
-                          ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 shadow-sm'
-                          : 'border-neutral-border dark:border-dark-border hover:border-brand-300 dark:hover:border-brand-700'
-                      }`}
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] shadow-[0_0_0_1px_rgba(84,160,255,0.12)]'
+                          : 'border-white/8 bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
                     >
-                      <div className="text-xl font-bold text-neutral-text dark:text-dark-text leading-none">
+                      <div className="text-xl font-semibold leading-none text-[var(--color-text-primary)]">
                         {item.value}
                       </div>
-                      <div className="mt-1.5 text-[10px] leading-tight text-neutral-muted dark:text-dark-muted">
+                      <div className="mt-2 text-[11px] leading-4 text-[var(--color-text-tertiary)]">
                         {item.desc}
                       </div>
                     </button>
@@ -197,10 +226,8 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Amount
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label className="field-label mb-3 block">Amount</label>
 
               <div className="grid grid-cols-3 gap-3">
                 {(['small', 'medium', 'large'] as const).map((size) => (
@@ -208,11 +235,12 @@ export default function BMLog() {
                     key={size}
                     type="button"
                     onClick={() => setFormData({ ...formData, amount: size })}
-                    className={`rounded-xl border-2 p-4 capitalize transition-all text-body-sm font-medium ${
+                    className={[
+                      'rounded-[20px] border px-4 py-4 text-sm font-medium capitalize transition-smooth',
                       formData.amount === size
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
                     {size}
                   </button>
@@ -220,33 +248,31 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div className="border-t border-neutral-border dark:border-dark-border pt-2">
+            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
               <button
                 type="button"
                 onClick={() => setShowDetails(!showDetails)}
-                className="flex w-full items-center justify-between py-2 text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
               >
-                <span className="font-medium">
-                  Details
-                  <span className="ml-1.5 font-normal opacity-60">(optional)</span>
+                <span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
+                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
                 </span>
+
                 {showDetails ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 )}
               </button>
 
               {showDetails && (
-                <div className="mt-4 space-y-6">
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
+                  <div className="grid gap-5 md:grid-cols-3">
                     <SliderField
                       label="Urgency Level"
                       value={formData.urgency}
-                      onChange={(value) =>
-                        setFormData({ ...formData, urgency: value })
-                      }
-                      accent="accent-brand-500"
+                      onChange={(value) => setFormData({ ...formData, urgency: value })}
                       low="Low"
                       high="High"
                     />
@@ -254,10 +280,7 @@ export default function BMLog() {
                     <SliderField
                       label="Pain Level"
                       value={formData.pain_level}
-                      onChange={(value) =>
-                        setFormData({ ...formData, pain_level: value })
-                      }
-                      accent="accent-signal-500"
+                      onChange={(value) => setFormData({ ...formData, pain_level: value })}
                       low="None"
                       high="Severe"
                     />
@@ -265,16 +288,13 @@ export default function BMLog() {
                     <SliderField
                       label="Difficulty Level"
                       value={formData.difficulty_level}
-                      onChange={(value) =>
-                        setFormData({ ...formData, difficulty_level: value })
-                      }
-                      accent="accent-orange-500"
+                      onChange={(value) => setFormData({ ...formData, difficulty_level: value })}
                       low="Easy"
                       high="Hard"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <ToggleField
                       label="Incomplete Evacuation"
                       active={formData.incomplete_evacuation}
@@ -284,7 +304,6 @@ export default function BMLog() {
                           incomplete_evacuation: !formData.incomplete_evacuation,
                         })
                       }
-                      activeClass="bg-brand-500"
                     />
 
                     <ToggleField
@@ -296,7 +315,6 @@ export default function BMLog() {
                           blood_present: !formData.blood_present,
                         })
                       }
-                      activeClass="bg-signal-500"
                     />
 
                     <ToggleField
@@ -308,41 +326,34 @@ export default function BMLog() {
                           mucus_present: !formData.mucus_present,
                         })
                       }
-                      activeClass="bg-orange-500"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                    <label htmlFor="notes" className="field-label mb-2 block">
                       Notes
                     </label>
                     <textarea
                       id="notes"
                       value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                      rows={3}
-                      placeholder="Any additional observations..."
-                      className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={4}
+                      placeholder="Any context worth remembering..."
+                      className="input-base min-h-[112px] w-full resize-none"
                     />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <Button type="submit" disabled={saving} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
-                {saving
-                  ? 'Saving...'
-                  : editingId
-                  ? 'Update Entry'
-                  : 'Save Entry'}
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
 
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={handleReset}>
+                <Button type="button" variant="secondary" size="lg" onClick={handleReset}>
                   Cancel
                 </Button>
               )}
@@ -350,89 +361,67 @@ export default function BMLog() {
           </form>
         </Card>
       ) : (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {history.length === 0 ? (
             <EmptyState
               category="bm"
-              icon={<Activity className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />}
+              icon={<Activity className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
+                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
                 >
-                  <div className="mb-3 flex items-start justify-between">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                      <div className="text-sm font-medium text-[var(--color-text-primary)]">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
-                        Bristol Type {log.bristol_type} &middot; {log.amount}
+                      <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                        Bristol Type {log.bristol_type} · {log.amount}
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 text-sm">
                       <button
-                        onClick={() =>
-                          handleEdit(log as BMFormData & { id: string })
-                        }
-                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                        type="button"
+                        onClick={() => handleEdit(log as BMFormData & { id: string })}
+                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                       >
                         Edit
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => handleDelete(log.id!)}
-                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
+                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <span className="text-neutral-muted dark:text-dark-muted">Urgency:</span>
-                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
-                        {Number(log.urgency).toFixed(1)}/10
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-neutral-muted dark:text-dark-muted">Pain:</span>
-                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
-                        {Number(log.pain_level).toFixed(1)}/10
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-neutral-muted dark:text-dark-muted">Difficulty:</span>
-                      <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">
-                        {Number(log.difficulty_level).toFixed(1)}/10
-                      </span>
-                    </div>
+                  <div className="grid gap-3 text-sm sm:grid-cols-3">
+                    <MetricChip label="Urgency" value={`${Number(log.urgency).toFixed(1)}/10`} />
+                    <MetricChip label="Pain" value={`${Number(log.pain_level).toFixed(1)}/10`} />
+                    <MetricChip
+                      label="Difficulty"
+                      value={`${Number(log.difficulty_level).toFixed(1)}/10`}
+                    />
                   </div>
 
-                  {(log.incomplete_evacuation ||
-                    log.blood_present ||
-                    log.mucus_present) && (
-                    <div className="mt-3 flex gap-2 flex-wrap">
-                      {log.incomplete_evacuation && (
-                        <Badge label="Incomplete" color="yellow" />
-                      )}
-                      {log.blood_present && (
-                        <Badge label="Blood" color="red" />
-                      )}
-                      {log.mucus_present && (
-                        <Badge label="Mucus" color="orange" />
-                      )}
+                  {(log.incomplete_evacuation || log.blood_present || log.mucus_present) && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {log.incomplete_evacuation && <Badge label="Incomplete" />}
+                      {log.blood_present && <Badge label="Blood" />}
+                      {log.mucus_present && <Badge label="Mucus" />}
                     </div>
                   )}
 
                   {log.notes && (
-                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       {log.notes}
                     </div>
                   )}
@@ -450,21 +439,20 @@ function SliderField({
   label,
   value,
   onChange,
-  accent,
   low,
   high,
 }: {
   label: string;
   value: number;
   onChange: (value: number) => void;
-  accent: string;
   low: string;
   high: string;
 }) {
   return (
-    <div>
-      <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-        {label}: <span className="text-neutral-text dark:text-dark-text">{value.toFixed(1)}</span>
+    <div className="surface-panel-quiet rounded-[22px] p-4">
+      <label className="field-label mb-2 block">
+        {label}:{' '}
+        <span className="font-medium text-[var(--color-text-primary)]">{value.toFixed(1)}</span>
       </label>
 
       <input
@@ -474,10 +462,10 @@ function SliderField({
         step="0.1"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border ${accent}`}
+        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
       />
 
-      <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
+      <div className="mt-2 flex justify-between text-xs text-[var(--color-text-tertiary)]">
         <span>{low}</span>
         <span>{high}</span>
       </div>
@@ -489,52 +477,49 @@ function ToggleField({
   label,
   active,
   onToggle,
-  activeClass,
 }: {
   label: string;
   active: boolean;
   onToggle: () => void;
-  activeClass: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
-      <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">{label}</span>
+    <div className="surface-panel-quiet flex items-center justify-between rounded-[22px] p-4">
+      <span className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</span>
 
       <button
         type="button"
         onClick={onToggle}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          active ? activeClass : 'bg-neutral-border dark:bg-dark-border'
-        }`}
+        className={[
+          'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+          active ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
+        ].join(' ')}
       >
         <span
-          className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-            active ? 'translate-x-6' : 'translate-x-1'
-          }`}
+          className={[
+            'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+            active ? 'translate-x-6' : 'translate-x-1',
+          ].join(' ')}
         />
       </button>
     </div>
   );
 }
 
-function Badge({
-  label,
-  color,
-}: {
-  label: string;
-  color: 'yellow' | 'red' | 'orange';
-}) {
-  const styles = {
-    yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-    red: 'bg-signal-500/10 text-signal-500',
-    orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-  };
-
+function MetricChip({ label, value }: { label: string; value: string }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${styles[color]}`}
-    >
-      <AlertCircle className="mr-1 h-3 w-3" />
+    <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3">
+      <span className="text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <div className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">{value}</div>
+    </div>
+  );
+}
+
+function Badge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
+      <AlertCircle className="mr-1 h-3 w-3 text-[var(--color-accent-primary)]" />
       {label}
     </span>
   );
