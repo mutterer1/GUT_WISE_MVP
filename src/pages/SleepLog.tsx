@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Moon, Pencil } from 'lucide-react';
+import { Activity, Clock, Moon, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -46,24 +46,24 @@ export default function SleepLog() {
       felt_rested: false,
       notes: '' as const,
     },
-    buildInsertPayload: (formData, userId) => ({
+    buildInsertPayload: (data, userId) => ({
       user_id: userId,
-      logged_at: formData.logged_at,
-      sleep_start: formData.sleep_start,
-      sleep_end: formData.sleep_end,
-      quality: formData.quality,
-      interruptions: formData.interruptions,
-      felt_rested: formData.felt_rested,
-      notes: formData.notes || null,
+      logged_at: data.logged_at,
+      sleep_start: data.sleep_start,
+      sleep_end: data.sleep_end,
+      quality: data.quality,
+      interruptions: data.interruptions,
+      felt_rested: data.felt_rested,
+      notes: data.notes || null,
     }),
-    buildUpdatePayload: (formData) => ({
-      logged_at: formData.logged_at,
-      sleep_start: formData.sleep_start,
-      sleep_end: formData.sleep_end,
-      quality: formData.quality,
-      interruptions: formData.interruptions,
-      felt_rested: formData.felt_rested,
-      notes: formData.notes || null,
+    buildUpdatePayload: (data) => ({
+      logged_at: data.logged_at,
+      sleep_start: data.sleep_start,
+      sleep_end: data.sleep_end,
+      quality: data.quality,
+      interruptions: data.interruptions,
+      felt_rested: data.felt_rested,
+      notes: data.notes || null,
     }),
   });
 
@@ -76,24 +76,23 @@ export default function SleepLog() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       return `${hours}h ${minutes}m`;
     }
+
     return '0h 0m';
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.sleep_start || !formData.sleep_end) {
-      return;
-    }
-    if (new Date(formData.sleep_end) <= new Date(formData.sleep_start)) {
-      return;
-    }
+
+    if (!formData.sleep_start || !formData.sleep_end) return;
+    if (new Date(formData.sleep_end) <= new Date(formData.sleep_start)) return;
+
     await handleSubmit(e);
   };
 
   return (
     <LogPageShell
       title="Sleep Log"
-      subtitle="Track sleep patterns, quality, and restfulness"
+      subtitle="Capture bedtime, wake time, and recovery quality so sleep can be read alongside gut symptoms and daily context."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -109,17 +108,17 @@ export default function SleepLog() {
       />
 
       {!showHistory ? (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {editingId && (
-            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="font-medium">Editing entry</span>
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -127,9 +126,9 @@ export default function SleepLog() {
           )}
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label htmlFor="sleep_start" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="sleep_start" className="field-label mb-2 block">
                   <Moon className="mr-1 inline h-4 w-4" />
                   Bedtime
                 </label>
@@ -138,13 +137,13 @@ export default function SleepLog() {
                   id="sleep_start"
                   value={formData.sleep_start}
                   onChange={(e) => setFormData({ ...formData, sleep_start: e.target.value })}
-                  className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  className="input-base w-full"
                   required
                 />
               </div>
 
-              <div>
-                <label htmlFor="sleep_end" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="sleep_end" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
                   Wake Time
                 </label>
@@ -153,21 +152,31 @@ export default function SleepLog() {
                   id="sleep_end"
                   value={formData.sleep_end}
                   onChange={(e) => setFormData({ ...formData, sleep_end: e.target.value })}
-                  className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  className="input-base w-full"
                   required
                 />
               </div>
             </div>
 
-            <div className="rounded-xl bg-brand-500/10 dark:bg-brand-500/10 border border-brand-500/20 p-4">
-              <div className="text-body-sm font-medium text-brand-700 dark:text-brand-300">
-                Total Sleep Duration: <span className="text-lg">{calculateDuration()}</span>
-              </div>
+            <div className="surface-intelligence rounded-[28px] p-4 sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                Sleep duration
+              </p>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                {calculateDuration()}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                The recovery window matters as much as sleep quality when you compare symptoms,
+                hydration, and stress.
+              </p>
             </div>
 
-            <div>
-              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Sleep Quality: <span className="text-neutral-text dark:text-dark-text">{formData.quality}/10</span>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label className="field-label mb-2 block">
+                Sleep Quality:{' '}
+                <span className="font-medium text-[var(--color-text-primary)]">
+                  {formData.quality}/10
+                </span>
               </label>
               <input
                 type="range"
@@ -175,68 +184,90 @@ export default function SleepLog() {
                 max="10"
                 step="1"
                 value={formData.quality}
-                onChange={(e) => setFormData({ ...formData, quality: parseInt(e.target.value) })}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, quality: parseInt(e.target.value, 10) })
+                }
+                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
               />
-              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
+              <div className="mt-2 flex justify-between text-xs text-[var(--color-text-tertiary)]">
                 <span>Poor</span>
                 <span>Excellent</span>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="interruptions" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Number of Interruptions
-              </label>
-              <input
-                type="number"
-                id="interruptions"
-                value={formData.interruptions}
-                onChange={(e) => setFormData({ ...formData, interruptions: parseInt(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                min="0"
-                required
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl bg-neutral-bg dark:bg-dark-bg p-4 border border-neutral-border dark:border-dark-border">
-              <span className="text-body-sm font-medium text-neutral-text dark:text-dark-text">Felt Rested Upon Waking</span>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, felt_rested: !formData.felt_rested })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  formData.felt_rested ? 'bg-brand-500' : 'bg-neutral-border dark:bg-dark-border'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                    formData.felt_rested ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <label htmlFor="interruptions" className="field-label mb-2 block">
+                  Number of Interruptions
+                </label>
+                <input
+                  type="number"
+                  id="interruptions"
+                  value={formData.interruptions}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      interruptions: parseInt(e.target.value, 10) || 0,
+                    })
+                  }
+                  className="input-base w-full"
+                  min="0"
+                  required
                 />
-              </button>
+              </div>
+
+              <div className="surface-panel-quiet flex items-center justify-between rounded-[28px] p-4 sm:p-5">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                    Felt Rested Upon Waking
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                    Use your subjective recovery read, not just hours slept.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, felt_rested: !formData.felt_rested })
+                  }
+                  className={[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+                    formData.felt_rested ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                      formData.felt_rested ? 'translate-x-6' : 'translate-x-1',
+                    ].join(' ')}
+                  />
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Notes (Optional)
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
+                Notes
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
-                rows={3}
+                className="input-base min-h-[112px] w-full resize-none"
+                rows={4}
                 placeholder="Dreams, sleep environment, disturbances..."
               />
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <Button type="submit" disabled={saving} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
                   Cancel
                 </Button>
               )}
@@ -244,60 +275,59 @@ export default function SleepLog() {
           </form>
         </Card>
       ) : (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {history.length === 0 ? (
-            <EmptyState category="sleep" icon={<Moon className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
+            <EmptyState
+              category="sleep"
+              icon={<Moon className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {history.map((log) => {
                 const duration = log.duration_minutes
                   ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m`
                   : 'N/A';
+
                 return (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
+                    className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
                   >
-                    <div className="mb-3 flex items-start justify-between">
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
-                          {formatDateTime(log.sleep_start)} &rarr; {formatDateTime(log.sleep_end)}
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {formatDateTime(log.sleep_start)} → {formatDateTime(log.sleep_end)}
                         </div>
-                        <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
+                        <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                           Duration: {duration}
                         </div>
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 text-sm">
                         <button
+                          type="button"
                           onClick={() => handleEdit(log as SleepFormData & { id: string })}
-                          className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                          className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                         >
                           Edit
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(log.id!)}
-                          className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
+                          className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
                         >
                           Delete
                         </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-xs">
-                      <div>
-                        <span className="text-neutral-muted dark:text-dark-muted">Quality:</span>
-                        <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.quality}/10</span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-muted dark:text-dark-muted">Interruptions:</span>
-                        <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.interruptions}</span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-muted dark:text-dark-muted">Rested:</span>
-                        <span className="ml-1 font-medium text-neutral-text dark:text-dark-text">{log.felt_rested ? 'Yes' : 'No'}</span>
-                      </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <MetricChip label="Quality" value={`${log.quality}/10`} />
+                      <MetricChip label="Interruptions" value={`${log.interruptions}`} />
+                      <MetricChip label="Rested" value={log.felt_rested ? 'Yes' : 'No'} />
                     </div>
+
                     {log.notes && (
-                      <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                      <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                         {log.notes}
                       </div>
                     )}
@@ -309,5 +339,16 @@ export default function SleepLog() {
         </Card>
       )}
     </LogPageShell>
+  );
+}
+
+function MetricChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3">
+      <span className="text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <div className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">{value}</div>
+    </div>
   );
 }
