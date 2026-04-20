@@ -16,6 +16,7 @@ import {
   Dumbbell,
   type LucideIcon,
 } from 'lucide-react';
+import MainLayout from '../components/MainLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -153,10 +154,10 @@ export default function Dashboard() {
       : 0;
 
   return (
-    <main className="page-shell">
-      <SignalRibbonBackground />
+    <MainLayout>
+      <div className="relative">
+        <SignalRibbonBackground />
 
-      <div className="page-wrap relative py-6 lg:py-8">
         <div className="relative z-[1] mx-auto w-full max-w-7xl space-y-6">
           {error && (
             <div className="rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] px-4 py-3 text-sm text-[var(--color-danger)]">
@@ -394,6 +395,6 @@ export default function Dashboard() {
           </section>
         </div>
       </div>
-    </main>
+    </MainLayout>
   );
 }
