@@ -11,11 +11,11 @@ import {
   Sparkles,
   FileSearch,
   ArrowUpRight,
+  Layers3,
 } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import TrustExplainer from '../../components/TrustExplainer';
 import CandidateReviewList from './CandidateReviewList';
 import { CATEGORY_CONFIGS, buildDefaultDetail } from './medicalContextFields';
 import { useAuth } from '../../contexts/AuthContext';
@@ -247,9 +247,8 @@ export default function MedicalDocumentIntake() {
     return (
       <SettingsPageLayout
         title="Review a Document Detail"
-        description="Promote one verified detail from an uploaded record into your medical context review queue."
+        description="Promote one verified detail from an uploaded record into a controlled medical context review queue."
       >
-        <TrustExplainer variant="documents" className="mb-4" />
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
         <Card variant="elevated" className="rounded-[30px]">
@@ -261,8 +260,8 @@ export default function MedicalDocumentIntake() {
                   Add a structured detail from this document
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  This keeps uploaded material separate from live insights until you explicitly
-                  review and approve what should count.
+                  Add only details the record states clearly. The candidate stays inactive until you
+                  review it in the queue.
                 </p>
               </div>
 
@@ -273,10 +272,10 @@ export default function MedicalDocumentIntake() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                      Human-reviewed workflow
+                      Review before merge
                     </p>
                     <p className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">
-                      Only accepted details can become active context.
+                      Accepted details become active context only after confirmation.
                     </p>
                   </div>
                 </div>
@@ -345,7 +344,7 @@ export default function MedicalDocumentIntake() {
                               Mark as true
                             </p>
                             <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                              Use this when the document clearly confirms the field.
+                              Use this only when the record explicitly confirms the field.
                             </p>
                           </div>
                           <input
@@ -396,11 +395,9 @@ export default function MedicalDocumentIntake() {
                     Review Rules
                   </h3>
                   <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-                    <p>Only add details that are explicitly stated in the uploaded record.</p>
-                    <p>Leave uncertain fields blank rather than guessing from context.</p>
-                    <p>
-                      Accepted candidates affect downstream personalization only after review.
-                    </p>
+                    <p>Capture only facts explicitly stated in the document.</p>
+                    <p>Leave uncertain fields blank instead of inferring from context.</p>
+                    <p>Keep source notes short so later review stays traceable.</p>
                   </div>
                 </Card>
 
@@ -413,11 +410,11 @@ export default function MedicalDocumentIntake() {
                     <FileSearch className="mt-0.5 h-5 w-5 text-[var(--color-accent-secondary)]" />
                     <div>
                       <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                        Keep provenance clear
+                        Preserve provenance
                       </p>
                       <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                        Short source notes make later review easier when you compare multiple
-                        documents from different visits.
+                        A clean source note makes it easier to compare overlapping facts from
+                        different visits or providers.
                       </p>
                     </div>
                   </div>
@@ -450,25 +447,26 @@ export default function MedicalDocumentIntake() {
       title="Medical Documents"
       description="Bring outside clinical records into GutWise through a controlled intake and review workflow."
     >
-      <TrustExplainer variant="documents" className="mb-4" />
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
       {loading ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <p className="text-sm text-[var(--color-text-secondary)]">Loading document review workspace...</p>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Loading document review workspace...
+          </p>
         </Card>
       ) : (
         <div className="space-y-5">
-          <Card variant="elevated" className="rounded-[30px] overflow-hidden">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <Card variant="elevated" className="overflow-hidden rounded-[30px]">
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
               <div>
-                <span className="badge-secondary mb-3 inline-flex">Clinical Intake</span>
+                <span className="badge-secondary mb-3 inline-flex">Document Intake</span>
                 <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
-                  Upload records, then decide what becomes active context
+                  Upload records, extract facts manually, then review before merge
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
-                  GutWise treats uploaded files as reference material first. Nothing from a
-                  document reaches personalization or insights until you explicitly review it.
+                  Uploaded files stay separate from active personalization. GutWise uses them as
+                  reference material until you promote and approve specific details.
                 </p>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -491,6 +489,23 @@ export default function MedicalDocumentIntake() {
                     helper="Awaiting your decision"
                   />
                 </div>
+
+                <div className="surface-panel-soft mt-5 rounded-[24px] p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)]">
+                      <Layers3 className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        Workflow boundary
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        1. Upload the record. 2. Add only the details you want reviewed. 3. Accept
+                        confirmed candidates before anything becomes active context.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="surface-panel-soft rounded-[26px] p-5">
@@ -503,14 +518,14 @@ export default function MedicalDocumentIntake() {
                       New intake
                     </p>
                     <p className="mt-1 text-sm leading-6 text-[var(--color-text-tertiary)]">
-                      Accepted: PDF, image, text, DOC, DOCX. Maximum size 10 MB.
+                      Accepted: PDF, image, text, DOC, DOCX. Maximum file size 10 MB.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-[22px] border border-dashed border-white/12 bg-[rgba(255,255,255,0.02)] p-4">
                   <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
-                    Typical examples include lab results, discharge paperwork, visit summaries, and
+                    Typical uploads include lab results, discharge paperwork, visit summaries, and
                     medication instructions from your care team.
                   </p>
 
@@ -536,7 +551,7 @@ export default function MedicalDocumentIntake() {
 
                 <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
                   <ShieldCheck className="h-4 w-4 text-[var(--color-accent-primary)]" />
-                  Files create review records first, not automatic medical conclusions.
+                  Uploads create review records first, not automatic conclusions.
                 </div>
               </div>
             </div>
@@ -550,7 +565,7 @@ export default function MedicalDocumentIntake() {
                     Uploaded Documents
                   </h3>
                   <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                    Review operational state for each record before promoting details.
+                    Track intake status, then open manual detail review where needed.
                   </p>
                 </div>
 
@@ -568,8 +583,8 @@ export default function MedicalDocumentIntake() {
                         No documents uploaded yet
                       </p>
                       <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                        Start with a recent clinical document, then add only the specific details
-                        you want GutWise to consider.
+                        Start with a recent clinical document, then promote only the specific facts
+                        you want GutWise to evaluate.
                       </p>
                     </div>
                   </div>
@@ -655,7 +670,7 @@ export default function MedicalDocumentIntake() {
 
                             <div className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-[var(--color-text-tertiary)]">
                               <ArrowUpRight className="h-3.5 w-3.5" />
-                              Review stays manual
+                              Manual review only
                             </div>
                           </div>
                         </div>
@@ -667,23 +682,6 @@ export default function MedicalDocumentIntake() {
             </Card>
 
             <div className="space-y-5">
-              <Card variant="discovery" glowIntensity="subtle" className="rounded-[30px]">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                      Review Queue
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                      Candidate facts remain inactive until you accept them. This creates a cleaner
-                      boundary between outside records and GutWise intelligence.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
               <Card variant="flat" className="rounded-[30px]">
                 <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-5">
                   <div className="flex items-center gap-3">
@@ -738,27 +736,30 @@ export default function MedicalDocumentIntake() {
                   />
                 </div>
               </Card>
+
+              <Card
+                variant="discovery"
+                glowIntensity="subtle"
+                className="rounded-[30px] border-[rgba(133,93,255,0.14)]"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                      Review Standard
+                    </h3>
+                    <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <p>Use uploaded records as evidence, not automatic medical interpretation.</p>
+                      <p>Add a detail only when you want it to enter structured review.</p>
+                      <p>Accepted candidates become usable context only after your confirmation.</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </div>
           </section>
-
-          <Card
-            variant="flat"
-            className="rounded-[26px] border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)]"
-          >
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
-              <div>
-                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                  Document safety boundary
-                </p>
-                <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  <p>Uploads create a review trail, not an automatic interpretation.</p>
-                  <p>Use “Add Detail” only for facts you want to move into structured review.</p>
-                  <p>Accepted details become usable context only after your confirmation step.</p>
-                </div>
-              </div>
-            </div>
-          </Card>
         </div>
       )}
     </SettingsPageLayout>
