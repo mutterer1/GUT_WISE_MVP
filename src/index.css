@@ -20,7 +20,7 @@
     margin: 0;
     font-family: var(--gw-font-body);
     font-size: var(--gw-font-size-md);
-    line-height: var(--gw-line-height-normal);
+    line-height: 1.6;
     letter-spacing: var(--gw-letter-spacing-normal);
     background:
       var(--gw-gradient-hero),
@@ -94,7 +94,7 @@
     margin: 0;
     color: var(--text-secondary);
     font-size: var(--gw-font-size-md);
-    line-height: var(--gw-line-height-relaxed);
+    line-height: 1.68;
   }
 
   a {
@@ -165,9 +165,9 @@
   .page-header {
     display: flex;
     flex-direction: column;
-    gap: var(--gw-space-3);
-    padding-top: clamp(28px, 4vw, 48px);
-    padding-bottom: clamp(20px, 3vw, 32px);
+    gap: clamp(10px, 1.2vw, 14px);
+    padding-top: clamp(24px, 3vw, 38px);
+    padding-bottom: clamp(18px, 2.2vw, 26px);
   }
 
   .page-eyebrow {
@@ -179,22 +179,24 @@
   }
 
   .page-title {
-    font-size: clamp(2.125rem, 4vw, 3.75rem);
-    line-height: 1.04;
-    letter-spacing: -0.04em;
+    font-size: clamp(2.05rem, 4vw, 3.55rem);
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+    text-wrap: balance;
   }
 
   .page-subtitle {
-    max-width: 880px;
-    font-size: clamp(1rem, 1.4vw, 1.3rem);
-    line-height: 1.65;
+    max-width: 760px;
+    font-size: clamp(0.98rem, 1.25vw, 1.18rem);
+    line-height: 1.66;
     color: var(--text-secondary);
+    text-wrap: pretty;
   }
 
   .section-stack {
     display: flex;
     flex-direction: column;
-    gap: clamp(20px, 2vw, 28px);
+    gap: clamp(18px, 1.8vw, 26px);
   }
 
   .surface-panel {
@@ -211,8 +213,7 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-      radial-gradient(circle at top center, rgba(255, 255, 255, 0.04), transparent 42%);
+    background: radial-gradient(circle at top center, rgba(255, 255, 255, 0.04), transparent 42%);
     opacity: 0.9;
   }
 
@@ -623,16 +624,18 @@
     }
 
     .page-header {
-      padding-top: 24px;
-      padding-bottom: 20px;
+      padding-top: 22px;
+      padding-bottom: 18px;
+      gap: 10px;
     }
 
     .page-title {
-      font-size: clamp(2rem, 8vw, 2.8rem);
+      font-size: clamp(1.95rem, 8vw, 2.7rem);
     }
 
     .page-subtitle {
-      font-size: 1rem;
+      font-size: 0.98rem;
+      line-height: 1.62;
     }
   }
 }
