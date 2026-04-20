@@ -124,7 +124,7 @@ export default function CandidateReviewList({
             className="overflow-hidden rounded-[26px] border border-white/8"
           >
             <div className="px-5 py-4 sm:px-6 sm:py-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : candidate.id)}
@@ -139,7 +139,7 @@ export default function CandidateReviewList({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
                         {displayValue}
                       </p>
@@ -157,12 +157,12 @@ export default function CandidateReviewList({
                       <span>Source: {formatSource(candidate.extraction_source)}</span>
                     </div>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                       <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-3">
                         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                           Category
                         </p>
-                        <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+                        <p className="mt-1.5 text-sm font-medium text-[var(--color-text-primary)]">
                           {config.label}
                         </p>
                       </div>
@@ -171,7 +171,7 @@ export default function CandidateReviewList({
                         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                           Review State
                         </p>
-                        <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+                        <p className="mt-1.5 text-sm font-medium text-[var(--color-text-primary)]">
                           {statusMeta.tone}
                         </p>
                       </div>
@@ -180,7 +180,7 @@ export default function CandidateReviewList({
                 </button>
 
                 {isPending && (
-                  <div className="flex flex-col gap-2 lg:w-[170px]">
+                  <div className="grid grid-cols-2 gap-2 xl:w-[196px] xl:grid-cols-1">
                     <Button
                       size="sm"
                       onClick={() => onAccept(candidate.id)}
@@ -206,11 +206,18 @@ export default function CandidateReviewList({
 
               {isExpanded && (
                 <div className="mt-5 border-t border-white/8 pt-5">
-                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                  <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
                     <div>
-                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
-                        Extracted Fields
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                          Extracted Fields
+                        </p>
+                        {candidate.extraction_notes && (
+                          <span className="hidden rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] sm:inline-flex">
+                            Source note included
+                          </span>
+                        )}
+                      </div>
 
                       <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {config.fields.map((field) => {
@@ -253,25 +260,6 @@ export default function CandidateReviewList({
                     </div>
 
                     <div className="space-y-4">
-                      <Card
-                        variant="discovery"
-                        glowIntensity="subtle"
-                        className="rounded-[24px] border-[rgba(133,93,255,0.14)]"
-                      >
-                        <div className="flex items-start gap-3">
-                          <Sparkles className="mt-0.5 h-5 w-5 text-[var(--color-accent-secondary)]" />
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                              Review standard
-                            </p>
-                            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                              Confirm only what the record states clearly. Leave ambiguous details
-                              out of active context.
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-
                       <Card variant="flat" className="rounded-[24px]">
                         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                           Traceability
@@ -288,6 +276,25 @@ export default function CandidateReviewList({
                               <span>Reviewed {formatReviewedDate(candidate.reviewed_at)}</span>
                             </div>
                           )}
+                        </div>
+                      </Card>
+
+                      <Card
+                        variant="discovery"
+                        glowIntensity="subtle"
+                        className="rounded-[24px] border-[rgba(133,93,255,0.14)]"
+                      >
+                        <div className="flex items-start gap-3">
+                          <Sparkles className="mt-0.5 h-5 w-5 text-[var(--color-accent-secondary)]" />
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                              Review standard
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                              Confirm only what the record states clearly. Leave ambiguous details
+                              out of active context.
+                            </p>
+                          </div>
                         </div>
                       </Card>
                     </div>
