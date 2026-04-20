@@ -10,21 +10,23 @@ export default function EmptyState({ category, icon }: EmptyStateProps) {
   const copy = getEmptyStateMessage(category);
 
   return (
-    <div
-      className="py-12 px-4 text-center"
-      style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
-    >
-      <div
-        className="w-16 h-16 mx-auto mb-md rounded-2xl bg-neutral-bg dark:bg-dark-elevated flex items-center justify-center"
-        style={{ animation: 'emptyStateIconFloat 3s ease-in-out infinite' }}
-      >
+    <div className="animate-empty-state flex flex-col items-center justify-center px-6 py-14 text-center sm:px-8 sm:py-16">
+      <div className="surface-panel-soft empty-state-icon-float mb-5 flex h-18 w-18 items-center justify-center rounded-[var(--gw-radius-xl)] border border-[rgba(143,128,246,0.12)] bg-[rgba(115,83,230,0.08)] text-[var(--gw-brand-300)] shadow-[var(--gw-glow-intelligence-soft)]">
         {icon}
       </div>
-      <h3 className="text-body-md font-semibold text-neutral-text dark:text-dark-text mb-1">{copy.title}</h3>
-      <p className="text-body-sm text-neutral-muted dark:text-dark-muted mb-3 max-w-xs mx-auto leading-relaxed">
-        {copy.subtitle}
-      </p>
-      <p className="text-body-xs text-neutral-muted dark:text-dark-muted max-w-xs mx-auto">{copy.hint}</p>
+
+      <div className="max-w-[34rem]">
+        <p className="eyebrow mb-3">Nothing to show yet</p>
+        <h3 className="mb-3 text-[clamp(1.5rem,2vw,2rem)] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+          {copy.title}
+        </h3>
+        <p className="mx-auto mb-4 max-w-[30rem] text-[var(--text-secondary)]">
+          {copy.subtitle}
+        </p>
+        <p className="mx-auto max-w-[28rem] text-sm leading-relaxed text-[var(--text-muted)]">
+          {copy.hint}
+        </p>
+      </div>
     </div>
   );
 }
