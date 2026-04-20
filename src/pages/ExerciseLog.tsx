@@ -1,4 +1,4 @@
-import { Save, Clock, Activity, Dumbbell, Pencil } from 'lucide-react';
+import { Activity, Clock, Dumbbell, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -18,9 +18,18 @@ interface ExerciseFormData {
 }
 
 const exerciseTypes = [
-  'Walking', 'Running', 'Cycling', 'Swimming',
-  'Yoga', 'Strength Training', 'HIIT', 'Pilates',
-  'Dancing', 'Hiking', 'Sports', 'Stretching',
+  'Walking',
+  'Running',
+  'Cycling',
+  'Swimming',
+  'Yoga',
+  'Strength Training',
+  'HIIT',
+  'Pilates',
+  'Dancing',
+  'Hiking',
+  'Sports',
+  'Stretching',
 ];
 
 const intensityLabels: Record<number, string> = {
@@ -59,31 +68,31 @@ export default function ExerciseLog() {
       indoor_outdoor: null,
       notes: '',
     },
-    buildInsertPayload: (formData, userId) => ({
+    buildInsertPayload: (data, userId) => ({
       user_id: userId,
-      logged_at: formData.logged_at,
-      exercise_type: formData.exercise_type,
-      duration_minutes: formData.duration_minutes,
-      intensity_level: formData.intensity_level,
-      perceived_exertion: formData.perceived_exertion,
-      indoor_outdoor: formData.indoor_outdoor || null,
-      notes: formData.notes || null,
+      logged_at: data.logged_at,
+      exercise_type: data.exercise_type,
+      duration_minutes: data.duration_minutes,
+      intensity_level: data.intensity_level,
+      perceived_exertion: data.perceived_exertion,
+      indoor_outdoor: data.indoor_outdoor || null,
+      notes: data.notes || null,
     }),
-    buildUpdatePayload: (formData) => ({
-      logged_at: formData.logged_at,
-      exercise_type: formData.exercise_type,
-      duration_minutes: formData.duration_minutes,
-      intensity_level: formData.intensity_level,
-      perceived_exertion: formData.perceived_exertion,
-      indoor_outdoor: formData.indoor_outdoor || null,
-      notes: formData.notes || null,
+    buildUpdatePayload: (data) => ({
+      logged_at: data.logged_at,
+      exercise_type: data.exercise_type,
+      duration_minutes: data.duration_minutes,
+      intensity_level: data.intensity_level,
+      perceived_exertion: data.perceived_exertion,
+      indoor_outdoor: data.indoor_outdoor || null,
+      notes: data.notes || null,
     }),
   });
 
   return (
     <LogPageShell
       title="Exercise Log"
-      subtitle="Track workouts, movement, and physical activity"
+      subtitle="Track movement, intensity, and exertion so activity can be compared against digestion, stress, and recovery."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -99,17 +108,17 @@ export default function ExerciseLog() {
       />
 
       {!showHistory ? (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {editingId && (
-            <div className="mb-6 flex items-center justify-between rounded-xl bg-brand-500/8 dark:bg-brand-500/10 border border-brand-500/20 px-4 py-3">
-              <div className="flex items-center gap-2 text-body-sm text-brand-500 dark:text-brand-300">
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="font-medium">Editing entry</span>
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="text-body-sm text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text transition-colors"
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
               >
                 Cancel
               </button>
@@ -117,64 +126,87 @@ export default function ExerciseLog() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="logged_at" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Clock className="mr-1 inline h-4 w-4" />
-                Time
-              </label>
-              <input
-                type="datetime-local"
-                id="logged_at"
-                value={formData.logged_at}
-                onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                required
-              />
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <label htmlFor="logged_at" className="field-label mb-2 block">
+                  <Clock className="mr-1 inline h-4 w-4" />
+                  Time
+                </label>
+                <input
+                  type="datetime-local"
+                  id="logged_at"
+                  value={formData.logged_at}
+                  onChange={(e) => setFormData({ ...formData, logged_at: e.target.value })}
+                  className="input-base w-full"
+                  required
+                />
+                <p className="field-help mt-2">
+                  Time the session so movement can be evaluated against symptoms and meals.
+                </p>
+              </div>
+
+              <div className="surface-intelligence rounded-[24px] p-4 sm:p-5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
+                  Session snapshot
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+                  {formData.exercise_type || 'Select an activity'}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  {formData.duration_minutes} min · {intensityLabels[formData.intensity_level]}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                <Activity className="mr-1 inline h-4 w-4" />
-                Exercise Type
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">
+                  <Activity className="mr-1 inline h-4 w-4" />
+                  Exercise Type
+                </label>
+              </div>
+
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 {exerciseTypes.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setFormData({ ...formData, exercise_type: type })}
-                    className={`rounded-xl border-2 p-3 text-body-sm font-medium transition-all ${
+                    className={[
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
                       formData.exercise_type === type
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
                     {type}
                   </button>
                 ))}
               </div>
+
               {!exerciseTypes.includes(formData.exercise_type) && (
                 <input
                   type="text"
                   placeholder="Or type a custom activity..."
                   value={exerciseTypes.includes(formData.exercise_type) ? '' : formData.exercise_type}
                   onChange={(e) => setFormData({ ...formData, exercise_type: e.target.value })}
-                  className="mt-3 w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50"
+                  className="input-base mt-4 w-full"
                 />
               )}
+
               {exerciseTypes.includes(formData.exercise_type) && (
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, exercise_type: '' })}
-                  className="mt-2 text-xs text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                  className="mt-3 text-xs text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                 >
                   Use custom type instead
                 </button>
               )}
             </div>
 
-            <div>
-              <label htmlFor="duration" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="duration" className="field-label mb-2 block">
                 Duration (minutes)
               </label>
               <input
@@ -183,21 +215,28 @@ export default function ExerciseLog() {
                 min="0"
                 max="600"
                 value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    duration_minutes: parseInt(e.target.value, 10) || 0,
+                  })
+                }
+                className="input-base w-full"
                 required
               />
-              <div className="mt-2 flex gap-2">
+
+              <div className="mt-3 flex flex-wrap gap-2">
                 {[15, 30, 45, 60, 90].map((mins) => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => setFormData({ ...formData, duration_minutes: mins })}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                    className={[
+                      'rounded-full px-3 py-1 text-xs font-medium transition-smooth',
                       formData.duration_minutes === mins
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
-                    }`}
+                        ? 'bg-[var(--color-accent-primary)] text-white'
+                        : 'border border-white/10 bg-white/[0.03] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]',
+                    ].join(' ')}
                   >
                     {mins}m
                   </button>
@@ -205,9 +244,12 @@ export default function ExerciseLog() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Intensity: <span className="text-neutral-text dark:text-dark-text">{formData.intensity_level}/5 - {intensityLabels[formData.intensity_level]}</span>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label className="field-label mb-2 block">
+                Intensity:{' '}
+                <span className="font-medium text-[var(--color-text-primary)]">
+                  {formData.intensity_level}/5 - {intensityLabels[formData.intensity_level]}
+                </span>
               </label>
               <input
                 type="range"
@@ -215,18 +257,23 @@ export default function ExerciseLog() {
                 max="5"
                 step="1"
                 value={formData.intensity_level}
-                onChange={(e) => setFormData({ ...formData, intensity_level: parseInt(e.target.value) })}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, intensity_level: parseInt(e.target.value, 10) })
+                }
+                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
               />
-              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
+              <div className="mt-2 flex justify-between text-xs text-[var(--color-text-tertiary)]">
                 <span>Very Light</span>
                 <span>Maximum</span>
               </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Perceived Exertion (Optional): <span className="text-neutral-text dark:text-dark-text">{formData.perceived_exertion ?? '-'}/10</span>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label className="field-label mb-2 block">
+                Perceived Exertion (optional):{' '}
+                <span className="font-medium text-[var(--color-text-primary)]">
+                  {formData.perceived_exertion ?? '-'}/10
+                </span>
               </label>
               <input
                 type="range"
@@ -234,10 +281,15 @@ export default function ExerciseLog() {
                 max="10"
                 step="1"
                 value={formData.perceived_exertion ?? 5}
-                onChange={(e) => setFormData({ ...formData, perceived_exertion: parseInt(e.target.value) })}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-border dark:bg-dark-border accent-brand-500"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    perceived_exertion: parseInt(e.target.value, 10),
+                  })
+                }
+                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
               />
-              <div className="mt-1 flex justify-between text-xs text-neutral-muted dark:text-dark-muted">
+              <div className="mt-2 flex justify-between text-xs text-[var(--color-text-tertiary)]">
                 <span>Easy</span>
                 <span>Max Effort</span>
               </div>
@@ -245,17 +297,18 @@ export default function ExerciseLog() {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, perceived_exertion: null })}
-                  className="mt-1 text-xs text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text"
+                  className="mt-2 text-xs text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
                 >
                   Clear
                 </button>
               )}
             </div>
 
-            <div>
-              <label className="mb-3 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Location (Optional)
-              </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-3">
+                <label className="field-label">Location</label>
+                <p className="field-help mt-1">(optional)</p>
+              </div>
               <div className="flex gap-3">
                 {(['indoor', 'outdoor'] as const).map((loc) => (
                   <button
@@ -267,11 +320,12 @@ export default function ExerciseLog() {
                         indoor_outdoor: formData.indoor_outdoor === loc ? null : loc,
                       })
                     }
-                    className={`flex-1 rounded-xl border-2 p-3 text-body-sm font-medium capitalize transition-all ${
+                    className={[
+                      'flex-1 rounded-[20px] border p-3 text-sm font-medium capitalize transition-smooth',
                       formData.indoor_outdoor === loc
-                        ? 'border-brand-500 bg-brand-500/10 dark:bg-brand-500/10 text-neutral-text dark:text-dark-text shadow-sm'
-                        : 'border-neutral-border dark:border-dark-border text-neutral-text dark:text-dark-text hover:border-brand-300 dark:hover:border-brand-700'
-                    }`}
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
                   >
                     {loc}
                   </button>
@@ -279,27 +333,28 @@ export default function ExerciseLog() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
-                Notes (Optional)
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
+                Notes
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
               </label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full rounded-xl border border-neutral-border dark:border-dark-border bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text px-4 py-2.5 text-body-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-neutral-muted/50 dark:placeholder:text-dark-muted/50 resize-none"
-                rows={3}
+                className="input-base min-h-[112px] w-full resize-none"
+                rows={4}
                 placeholder="How did the workout feel?"
               />
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <Button type="submit" disabled={saving || !formData.exercise_type} size="lg">
                 <Save className="mr-2 inline h-4 w-4" />
                 {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
               </Button>
               {editingId && (
-                <Button type="button" variant="outline" size="lg" onClick={resetForm}>
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
                   Cancel
                 </Button>
               )}
@@ -307,57 +362,66 @@ export default function ExerciseLog() {
           </form>
         </Card>
       ) : (
-        <Card>
+        <Card variant="elevated" className="rounded-[28px]">
           {history.length === 0 ? (
-            <EmptyState category="exercise" icon={<Dumbbell className="h-8 w-8 text-neutral-muted dark:text-dark-muted" />} />
+            <EmptyState
+              category="exercise"
+              icon={<Dumbbell className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
+            />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {history.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-xl border border-neutral-border dark:border-dark-border p-4 transition-colors hover:border-brand-300 dark:hover:border-brand-700"
+                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
                 >
-                  <div className="mb-3 flex items-start justify-between">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <div className="text-body-sm font-medium text-neutral-text dark:text-dark-text">
+                      <div className="text-sm font-medium text-[var(--color-text-primary)]">
                         {formatDateTime(log.logged_at)}
                       </div>
-                      <div className="mt-0.5 text-xs text-neutral-muted dark:text-dark-muted">
-                        {log.exercise_type} &middot; {log.duration_minutes}min &middot; Intensity {log.intensity_level}/5
+                      <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                        {log.exercise_type} · {log.duration_minutes}min · Intensity {log.intensity_level}/5
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 text-sm">
                       <button
+                        type="button"
                         onClick={() => handleEdit(log as ExerciseFormData & { id: string })}
-                        className="text-body-sm font-medium text-brand-500 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-100"
+                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                       >
                         Edit
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(log.id!)}
-                        className="text-body-sm font-medium text-signal-500 hover:text-signal-700"
+                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
                       >
                         Delete
                       </button>
                     </div>
                   </div>
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center rounded-full bg-brand-500/10 border border-brand-500/20 px-2.5 py-1 text-xs text-brand-500 dark:text-brand-300">
+
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full border border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.10)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-primary)]">
                       {intensityLabels[log.intensity_level] || `Intensity ${log.intensity_level}`}
                     </span>
+
                     {log.indoor_outdoor && (
-                      <span className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs capitalize text-neutral-muted dark:text-dark-muted">
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs capitalize text-[var(--color-text-secondary)]">
                         {log.indoor_outdoor}
                       </span>
                     )}
+
                     {log.perceived_exertion != null && (
-                      <span className="inline-flex items-center rounded-full bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border px-2.5 py-1 text-xs text-neutral-muted dark:text-dark-muted">
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs text-[var(--color-text-secondary)]">
                         RPE {log.perceived_exertion}/10
                       </span>
                     )}
                   </div>
+
                   {log.notes && (
-                    <div className="mt-3 rounded-lg bg-neutral-bg dark:bg-dark-bg px-3 py-2 text-body-sm text-neutral-muted dark:text-dark-muted">
+                    <div className="rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       {log.notes}
                     </div>
                   )}
