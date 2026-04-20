@@ -12,7 +12,7 @@ interface TrustExplainerContent {
   title: string;
   subtitle: string;
   points: string[];
-  closing?: string;
+  note: string;
 }
 
 const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
@@ -20,28 +20,28 @@ const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
     title: 'How GutWise builds insights',
     subtitle: 'Insights come from repeated overlap in your logs, not one-off entries.',
     points: [
-      'GutWise describes patterns in your data, not diagnoses.',
+      'GutWise summarizes patterns in your data, not diagnoses.',
       'Confidence improves when the same signal appears across multiple days.',
     ],
-    closing: 'If evidence is thin, GutWise should say so clearly.',
+    note: 'If evidence is limited, GutWise should say so clearly.',
   },
   reports: {
-    title: 'How to read this report',
-    subtitle: 'This summary is organized to support a better conversation with your clinician.',
+    title: 'How to use this report',
+    subtitle: 'Use the report as a structured conversation aid for clinical review.',
     points: [
-      'Observed data comes first, followed by plain-language interpretation.',
-      'Use the report as a timeline and discussion aid, not a conclusion.',
+      'Observed data appears first, followed by plain-language interpretation.',
+      'Treat the report as a timeline and discussion tool, not a conclusion.',
     ],
-    closing: 'GutWise does not diagnose conditions or replace professional care.',
+    note: 'GutWise does not diagnose conditions or replace professional care.',
   },
   documents: {
     title: 'How document review works',
-    subtitle: 'Uploaded records stay separate until you decide which details to activate.',
+    subtitle: 'Uploaded records stay separate until you choose which details to activate.',
     points: [
       'Uploading creates a review record, not an automatic medical interpretation.',
       'Only reviewed and approved details can become active medical context.',
     ],
-    closing: 'You stay in control of what GutWise uses to personalize patterns.',
+    note: 'You stay in control of what GutWise uses to personalize patterns.',
   },
 };
 
@@ -51,43 +51,42 @@ export default function TrustExplainer({
 }: TrustExplainerProps) {
   const selected = content[variant];
 
+  const iconClassName =
+    variant === 'documents'
+      ? 'bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)]'
+      : variant === 'reports'
+        ? 'bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]'
+        : 'bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]';
+
+  const Icon =
+    variant === 'documents' ? FileSearch : variant === 'reports' ? ShieldCheck : BrainCircuit;
+
   return (
     <Card
       variant={variant === 'insights' ? 'discovery' : 'flat'}
-      glowIntensity={variant === 'insights' ? 'subtle' : 'subtle'}
+      glowIntensity="subtle"
       padding="sm"
       className={`rounded-[28px] ${className}`}
     >
       <div className="flex items-start gap-4">
         <div
-          className={[
-            'mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl',
-            variant === 'documents'
-              ? 'bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)]'
-              : variant === 'reports'
-                ? 'bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]'
-                : 'bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]',
-          ].join(' ')}
+          className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl ${iconClassName}`}
         >
-          {variant === 'documents' ? (
-            <FileSearch className="h-5 w-5" />
-          ) : variant === 'reports' ? (
-            <ShieldCheck className="h-5 w-5" />
-          ) : (
-            <BrainCircuit className="h-5 w-5" />
-          )}
+          <Icon className="h-5 w-5" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
-            {selected.title}
-          </h2>
+          <div className="max-w-[60ch]">
+            <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+              {selected.title}
+            </h2>
 
-          <p className="mt-2 max-w-[62ch] text-sm leading-6 text-[var(--color-text-secondary)]">
-            {selected.subtitle}
-          </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+              {selected.subtitle}
+            </p>
+          </div>
 
-          <div className="mt-4 space-y-2.5">
+          <div className="mt-4 grid gap-2.5">
             {selected.points.map((point) => (
               <div key={point} className="flex items-start gap-3">
                 <span className="mt-[7px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[var(--color-text-tertiary)]" />
@@ -96,11 +95,14 @@ export default function TrustExplainer({
             ))}
           </div>
 
-          {selected.closing && (
-            <p className="mt-4 text-sm leading-6 text-[var(--color-text-secondary)]">
-              {selected.closing}
+          <div className="mt-4 rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              Important
             </p>
-          )}
+            <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+              {selected.note}
+            </p>
+          </div>
         </div>
       </div>
     </Card>
