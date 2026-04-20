@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Save, X, ShieldCheck, MonitorSmartphone } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  MonitorSmartphone,
+  Save,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -49,7 +57,7 @@ export default function PrivacySecuritySettings() {
 
       if (updateError) throw updateError;
 
-      setMessage('Password updated. You\'ll be signed out momentarily.');
+      setMessage("Password updated. You'll be signed out momentarily.");
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -76,7 +84,7 @@ export default function PrivacySecuritySettings() {
     <button
       type="button"
       onClick={onClick}
-      className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+      className="p-2 text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
     >
       {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
     </button>
@@ -85,27 +93,26 @@ export default function PrivacySecuritySettings() {
   return (
     <SettingsPageLayout
       title="Privacy & Security"
-      description="Control how your account is secured and how your health data is handled"
+      description="Manage account protection, session visibility, and how GutWise handles sensitive health data."
     >
-      <div className="space-y-6">
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-100 mb-1">Account Password</h3>
-          <p className="text-sm text-gray-100 mb-4">
+      <div className="space-y-5">
+        <Card variant="elevated" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Account Password</h3>
+          <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
             A strong password keeps your health data accessible only to you.
           </p>
 
           {!showPasswordForm ? (
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordForm(true)}
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Change Password
-            </Button>
+            <div className="mt-5">
+              <Button variant="secondary" onClick={() => setShowPasswordForm(true)}>
+                <Lock className="mr-2 h-4 w-4" />
+                Change Password
+              </Button>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="mt-5 space-y-4">
               <div>
-                <label htmlFor="current_password" className="block text-sm font-medium text-gray-100 mb-2">
+                <label htmlFor="current_password" className="field-label mb-2 block">
                   Current Password
                 </label>
                 <div className="relative">
@@ -114,9 +121,9 @@ export default function PrivacySecuritySettings() {
                     id="current_password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent pr-10"
+                    className="input-base w-full pr-12"
                   />
-                  <div className="absolute right-0 top-0 h-full flex items-center">
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
                     <PasswordToggle
                       isVisible={showPasswords.current}
                       onClick={() =>
@@ -131,7 +138,7 @@ export default function PrivacySecuritySettings() {
               </div>
 
               <div>
-                <label htmlFor="new_password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new_password" className="field-label mb-2 block">
                   New Password
                 </label>
                 <div className="relative">
@@ -140,9 +147,9 @@ export default function PrivacySecuritySettings() {
                     id="new_password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent pr-10"
+                    className="input-base w-full pr-12"
                   />
-                  <div className="absolute right-0 top-0 h-full flex items-center">
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
                     <PasswordToggle
                       isVisible={showPasswords.new}
                       onClick={() =>
@@ -157,7 +164,7 @@ export default function PrivacySecuritySettings() {
               </div>
 
               <div>
-                <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirm_password" className="field-label mb-2 block">
                   Confirm New Password
                 </label>
                 <div className="relative">
@@ -166,9 +173,9 @@ export default function PrivacySecuritySettings() {
                     id="confirm_password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent pr-10"
+                    className="input-base w-full pr-12"
                   />
-                  <div className="absolute right-0 top-0 h-full flex items-center">
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
                     <PasswordToggle
                       isVisible={showPasswords.confirm}
                       onClick={() =>
@@ -182,9 +189,9 @@ export default function PrivacySecuritySettings() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-wrap gap-3 pt-2">
                 <Button disabled={saving} onClick={handleChangePassword}>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   {saving ? 'Saving...' : 'Update Password'}
                 </Button>
                 <Button
@@ -204,57 +211,74 @@ export default function PrivacySecuritySettings() {
           )}
         </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-100 mb-1">Two-Factor Authentication</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Adds a second verification step when signing in — useful if you share a device or want extra protection for your health data.
+        <Card variant="flat" className="rounded-[28px]">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+            Two-Factor Authentication
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+            Adds a second verification step at sign-in. Useful if you share a device or want an
+            extra layer of protection.
           </p>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+
+          <div className="surface-panel-quiet mt-5 flex items-center justify-between rounded-[24px] p-4">
             <div>
-              <p className="font-medium text-gray-900">Enable 2FA</p>
-              <p className="text-sm text-gray-700 mt-0.5">
-                Verify your identity with a second step at sign-in
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Enable 2FA</p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Verify your identity with a second step at sign-in.
               </p>
             </div>
-            <Button variant="outline" disabled>
+
+            <Button variant="ghost" disabled>
               Coming Soon
             </Button>
           </div>
         </Card>
 
-        <Card>
+        <Card variant="flat" className="rounded-[28px]">
           <div className="flex items-start gap-3">
-            <MonitorSmartphone className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+            <MonitorSmartphone className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-text-tertiary)]" />
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-gray-100 mb-1">Active Session</h3>
-              <p className="text-sm text-gray-500">
-                You're signed in on this device. Only one session is shown at a time.
+              <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Active Session
+              </h3>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                You&apos;re signed in on this device. Only one session is shown at a time.
               </p>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
                 Signed in as {user?.email}
               </p>
             </div>
           </div>
         </Card>
 
-        <Card>
+        <Card
+          variant="flat"
+          className="rounded-[28px] border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.06)]"
+        >
           <div className="flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-brand-500 flex-shrink-0 mt-0.5" />
+            <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
             <div>
-              <h3 className="text-base font-semibold text-gray-100 mb-2">Your data is private by design</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+              <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+                Your data is private by design
+              </h3>
+              <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                 <p>
-                  GutWise stores your health data securely and encrypted. It is never sold, shared with advertisers, or used to train models outside your own insights.
+                  GutWise stores your health data securely and encrypted. It is never sold, shared
+                  with advertisers, or used to train models outside your own insights.
                 </p>
                 <p>
                   You can export or permanently delete your data at any time from{' '}
-                  <a href="/settings/data" className="text-brand-600 hover:text-brand-700 font-medium">
+                  <a
+                    href="/settings/data-management"
+                    className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
+                  >
                     Data Management
-                  </a>.
+                  </a>
+                  .
                 </p>
                 <a
                   href="/privacy"
-                  className="inline-flex items-center text-brand-600 hover:text-brand-700 font-medium transition-colors mt-1"
+                  className="inline-flex items-center font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
                 >
                   Read our full Privacy Policy
                   <span className="ml-1">→</span>
@@ -265,23 +289,25 @@ export default function PrivacySecuritySettings() {
         </Card>
 
         {error && (
-          <Card className="bg-red-50 border border-red-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(255,120,120,0.2)] bg-[rgba(255,120,120,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <X className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-900">{error}</p>
-              </div>
+              <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-danger)]" />
+              <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
             </div>
           </Card>
         )}
 
         {message && (
-          <Card className="bg-green-50 border border-green-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-green-900">{message}</p>
-              </div>
+              <Save className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
+              <p className="text-sm font-medium text-[var(--color-accent-primary)]">{message}</p>
             </div>
           </Card>
         )}
