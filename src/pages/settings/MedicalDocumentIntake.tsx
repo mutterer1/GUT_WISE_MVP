@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Upload, FileText, Plus, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  Plus,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  Sparkles,
+  FileSearch,
+  ArrowUpRight,
+} from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -33,27 +45,63 @@ interface SeedForm {
 
 const INTAKE_STATUS_META: Record<
   string,
-  { icon: typeof Clock; label: string; className: string }
+  { icon: typeof Clock; label: string; tone: string; chipClassName: string }
 > = {
-  uploaded: { icon: Upload, label: 'Uploaded', className: 'text-blue-600 dark:text-blue-400' },
-  processing: { icon: Clock, label: 'Processing', className: 'text-amber-600 dark:text-amber-400' },
+  uploaded: {
+    icon: Upload,
+    label: 'Uploaded',
+    tone: 'Awaiting triage',
+    chipClassName:
+      'border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]',
+  },
+  processing: {
+    icon: Clock,
+    label: 'Processing',
+    tone: 'In document review',
+    chipClassName:
+      'border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.12)] text-[rgba(245,190,80,0.98)]',
+  },
   review_ready: {
     icon: AlertTriangle,
     label: 'Ready to Review',
-    className: 'text-amber-600 dark:text-amber-400',
+    tone: 'Details available',
+    chipClassName:
+      'border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.12)] text-[rgba(245,190,80,0.98)]',
   },
   completed: {
-    icon: CheckCircle,
+    icon: CheckCircle2,
     label: 'Completed',
-    className: 'text-green-600 dark:text-green-400',
+    tone: 'Review closed',
+    chipClassName:
+      'border-[rgba(52,211,153,0.22)] bg-[rgba(52,211,153,0.12)] text-[rgba(110,231,183,0.98)]',
   },
-  failed: { icon: XCircle, label: 'Failed', className: 'text-red-600 dark:text-red-400' },
+  failed: {
+    icon: XCircle,
+    label: 'Failed',
+    tone: 'Needs another upload',
+    chipClassName:
+      'border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.12)] text-[rgba(252,165,165,0.98)]',
+  },
 };
+
+const fieldClassName =
+  'w-full rounded-[18px] border border-white/10 bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition-smooth placeholder:text-[var(--color-text-tertiary)] focus:border-[rgba(84,160,255,0.32)] focus:bg-[rgba(255,255,255,0.06)]';
+const labelClassName =
+  'mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]';
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return 'Recently';
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export default function MedicalDocumentIntake() {
@@ -71,6 +119,7 @@ export default function MedicalDocumentIntake() {
 
   const loadData = useCallback(async () => {
     if (!user?.id) return;
+
     try {
       const [intakeData, candidateData] = await Promise.all([
         fetchDocumentIntakes(user.id),
@@ -78,6 +127,7 @@ export default function MedicalDocumentIntake() {
           ? fetchPendingCandidates(user.id)
           : fetchAllCandidates(user.id),
       ]);
+
       setIntakes(intakeData);
       setCandidates(candidateData);
     } catch (err) {
@@ -85,7 +135,7 @@ export default function MedicalDocumentIntake() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, statusFilter]);
+  }, [statusFilter, user?.id]);
 
   useEffect(() => {
     loadData();
@@ -93,6 +143,7 @@ export default function MedicalDocumentIntake() {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user?.id || !e.target.files?.length) return;
+
     const file = e.target.files[0];
     setError('');
 
@@ -133,8 +184,10 @@ export default function MedicalDocumentIntake() {
 
   const handleSeedCandidate = async () => {
     if (!user?.id || !seedForm) return;
+
     setSaving(true);
     setError('');
+
     try {
       await seedCandidateFromIntake(user.id, seedForm.intakeId, {
         category: seedForm.category,
@@ -153,8 +206,10 @@ export default function MedicalDocumentIntake() {
 
   const handleAccept = async (candidateId: string) => {
     if (!user?.id) return;
+
     setProcessing(candidateId);
     setError('');
+
     try {
       await acceptCandidate(user.id, candidateId);
       await loadData();
@@ -167,8 +222,10 @@ export default function MedicalDocumentIntake() {
 
   const handleReject = async (candidateId: string) => {
     if (!user?.id) return;
+
     setProcessing(candidateId);
     setError('');
+
     try {
       await rejectCandidate(user.id, candidateId);
       await loadData();
@@ -179,109 +236,196 @@ export default function MedicalDocumentIntake() {
     }
   };
 
-  const pendingCount = candidates.filter((c) => c.review_status === 'pending_review').length;
+  const pendingCount = candidates.filter((candidate) => candidate.review_status === 'pending_review')
+    .length;
+  const readyDocuments = intakes.filter((intake) => intake.candidate_count > 0).length;
+  const completedDocuments = intakes.filter((intake) => intake.intake_status === 'completed').length;
 
   if (viewMode === 'seed' && seedForm) {
-    const config = CATEGORY_CONFIGS.find((c) => c.key === seedForm.category)!;
+    const config = CATEGORY_CONFIGS.find((category) => category.key === seedForm.category)!;
+
     return (
       <SettingsPageLayout
-        title="Add a Detail from Your Document"
-        description="Add one detail from your document. It will stay in review until you confirm it."
+        title="Review a Document Detail"
+        description="Promote one verified detail from an uploaded record into your medical context review queue."
       >
         <TrustExplainer variant="documents" className="mb-4" />
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
-        <Card>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                Category
-              </label>
-              <select
-                value={seedForm.category}
-                onChange={(e) => {
-                  const cat = e.target.value as MedicalFactCategory;
-                  setSeedForm({ ...seedForm, category: cat, detail: buildDefaultDetail(cat) });
-                }}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white"
-              >
-                {CATEGORY_CONFIGS.map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+
+        <Card variant="elevated" className="rounded-[30px]">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 border-b border-white/8 pb-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <span className="badge-secondary mb-3 inline-flex">Manual Confirmation</span>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                  Add a structured detail from this document
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  This keeps uploaded material separate from live insights until you explicitly
+                  review and approve what should count.
+                </p>
+              </div>
+
+              <div className="surface-intelligence rounded-[24px] px-4 py-4 lg:max-w-[260px]">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                      Human-reviewed workflow
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                      Only accepted details can become active context.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {config.fields.map((field) => (
-              <div key={field.key}>
-                <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {field.label}
-                  {field.required && <span className="ml-0.5 text-red-500">*</span>}
-                </label>
-                {field.type === 'select' ? (
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="space-y-5">
+                <div>
+                  <label className={labelClassName}>Detail Category</label>
                   <select
-                    value={(seedForm.detail[field.key] as string) || ''}
-                    onChange={(e) =>
+                    value={seedForm.category}
+                    onChange={(e) => {
+                      const category = e.target.value as MedicalFactCategory;
                       setSeedForm({
                         ...seedForm,
-                        detail: { ...seedForm.detail, [field.key]: e.target.value },
-                      })
-                    }
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white"
+                        category,
+                        detail: buildDefaultDetail(category),
+                      });
+                    }}
+                    className={fieldClassName}
                   >
-                    <option value="">Select...</option>
-                    {field.options?.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
+                    {CATEGORY_CONFIGS.map((category) => (
+                      <option key={category.key} value={category.key}>
+                        {category.label}
                       </option>
                     ))}
                   </select>
-                ) : field.type === 'boolean' ? (
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!seedForm.detail[field.key]}
-                      onChange={(e) =>
-                        setSeedForm({
-                          ...seedForm,
-                          detail: { ...seedForm.detail, [field.key]: e.target.checked },
-                        })
-                      }
-                      className="rounded border-gray-300 dark:border-white/20"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Yes</span>
-                  </label>
-                ) : (
-                  <input
-                    type={field.type === 'date' ? 'date' : 'text'}
-                    value={(seedForm.detail[field.key] as string) || ''}
-                    placeholder={field.placeholder}
-                    onChange={(e) =>
-                      setSeedForm({
-                        ...seedForm,
-                        detail: { ...seedForm.detail, [field.key]: e.target.value },
-                      })
-                    }
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:placeholder-gray-500"
-                  />
-                )}
-              </div>
-            ))}
+                </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                Source Note <span className="font-normal text-gray-400">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={seedForm.notes}
-                onChange={(e) => setSeedForm({ ...seedForm, notes: e.target.value })}
-                placeholder="Where in the document did you find this? e.g. page 2, discharge summary"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:placeholder-gray-500"
-              />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {config.fields.map((field) => (
+                    <div
+                      key={field.key}
+                      className={field.type === 'boolean' ? 'sm:col-span-2' : undefined}
+                    >
+                      <label className={labelClassName}>
+                        {field.label}
+                        {field.required && (
+                          <span className="ml-1 text-[rgba(248,113,113,0.95)]">*</span>
+                        )}
+                      </label>
+
+                      {field.type === 'select' ? (
+                        <select
+                          value={(seedForm.detail[field.key] as string) || ''}
+                          onChange={(e) =>
+                            setSeedForm({
+                              ...seedForm,
+                              detail: { ...seedForm.detail, [field.key]: e.target.value },
+                            })
+                          }
+                          className={fieldClassName}
+                        >
+                          <option value="">Select...</option>
+                          {field.options?.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === 'boolean' ? (
+                        <label className="surface-panel-soft flex items-center justify-between rounded-[22px] px-4 py-4">
+                          <div>
+                            <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                              Mark as true
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                              Use this when the document clearly confirms the field.
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={!!seedForm.detail[field.key]}
+                            onChange={(e) =>
+                              setSeedForm({
+                                ...seedForm,
+                                detail: { ...seedForm.detail, [field.key]: e.target.checked },
+                              })
+                            }
+                            className="h-4 w-4 rounded border-white/20 bg-transparent text-[var(--color-accent-primary)]"
+                          />
+                        </label>
+                      ) : (
+                        <input
+                          type={field.type === 'date' ? 'date' : 'text'}
+                          value={(seedForm.detail[field.key] as string) || ''}
+                          placeholder={field.placeholder}
+                          onChange={(e) =>
+                            setSeedForm({
+                              ...seedForm,
+                              detail: { ...seedForm.detail, [field.key]: e.target.value },
+                            })
+                          }
+                          className={fieldClassName}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <label className={labelClassName}>Source Note</label>
+                  <input
+                    type="text"
+                    value={seedForm.notes}
+                    onChange={(e) => setSeedForm({ ...seedForm, notes: e.target.value })}
+                    placeholder="Example: page 2, discharge summary, medication list"
+                    className={fieldClassName}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Card variant="flat" className="rounded-[24px]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                    Review Rules
+                  </h3>
+                  <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    <p>Only add details that are explicitly stated in the uploaded record.</p>
+                    <p>Leave uncertain fields blank rather than guessing from context.</p>
+                    <p>
+                      Accepted candidates affect downstream personalization only after review.
+                    </p>
+                  </div>
+                </Card>
+
+                <Card
+                  variant="discovery"
+                  glowIntensity="subtle"
+                  className="rounded-[24px] border-[rgba(133,93,255,0.14)]"
+                >
+                  <div className="flex items-start gap-3">
+                    <FileSearch className="mt-0.5 h-5 w-5 text-[var(--color-accent-secondary)]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        Keep provenance clear
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Short source notes make later review easier when you compare multiple
+                        documents from different visits.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex flex-col gap-3 border-t border-white/8 pt-5 sm:flex-row">
               <Button onClick={handleSeedCandidate} disabled={saving}>
                 {saving ? 'Saving...' : 'Submit for Review'}
               </Button>
@@ -304,175 +448,315 @@ export default function MedicalDocumentIntake() {
   return (
     <SettingsPageLayout
       title="Medical Documents"
-      description="Share documents from your care team. You choose which details to apply - nothing reaches your insights until you personally review and approve it."
+      description="Bring outside clinical records into GutWise through a controlled intake and review workflow."
     >
       <TrustExplainer variant="documents" className="mb-4" />
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
       {loading ? (
-        <Card>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+        <Card variant="elevated" className="rounded-[28px]">
+          <p className="text-sm text-[var(--color-text-secondary)]">Loading document review workspace...</p>
         </Card>
       ) : (
-        <div className="space-y-6">
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Uploaded Documents
-              </h2>
-              <label className="cursor-pointer">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx"
-                  onChange={handleFileSelect}
-                  disabled={saving}
-                />
-                <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={saving}>
-                  <Upload className="mr-1.5 h-3.5 w-3.5" />
-                  {saving ? 'Uploading...' : 'Upload Document'}
-                </Button>
-              </label>
-            </div>
+        <div className="space-y-5">
+          <Card variant="elevated" className="rounded-[30px] overflow-hidden">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+              <div>
+                <span className="badge-secondary mb-3 inline-flex">Clinical Intake</span>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                  Upload records, then decide what becomes active context
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
+                  GutWise treats uploaded files as reference material first. Nothing from a
+                  document reaches personalization or insights until you explicitly review it.
+                </p>
 
-            {intakes.length === 0 ? (
-              <Card>
-                <div className="flex items-center gap-3 py-2">
-                  <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No documents yet. You can upload lab results, discharge summaries, or other
-                    records from your care team, then add reviewed details from them when you are
-                    ready.
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <MetricTile
+                    label="Documents"
+                    value={String(intakes.length)}
+                    tone="primary"
+                    helper="Tracked in this workspace"
+                  />
+                  <MetricTile
+                    label="Ready"
+                    value={String(readyDocuments)}
+                    tone="secondary"
+                    helper="Contain reviewable details"
+                  />
+                  <MetricTile
+                    label="Pending"
+                    value={String(pendingCount)}
+                    tone="neutral"
+                    helper="Awaiting your decision"
+                  />
+                </div>
+              </div>
+
+              <div className="surface-panel-soft rounded-[26px] p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)]">
+                    <Upload className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-[var(--color-text-primary)]">
+                      New intake
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--color-text-tertiary)]">
+                      Accepted: PDF, image, text, DOC, DOCX. Maximum size 10 MB.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[22px] border border-dashed border-white/12 bg-[rgba(255,255,255,0.02)] p-4">
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
+                    Typical examples include lab results, discharge paperwork, visit summaries, and
+                    medication instructions from your care team.
+                  </p>
+
+                  <label className="mt-4 block">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx"
+                      onChange={handleFileSelect}
+                      disabled={saving}
+                    />
+                    <Button
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={saving}
+                    >
+                      <Upload className="h-4 w-4" />
+                      {saving ? 'Uploading...' : 'Upload Document'}
+                    </Button>
+                  </label>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
+                  <ShieldCheck className="h-4 w-4 text-[var(--color-accent-primary)]" />
+                  Files create review records first, not automatic medical conclusions.
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+            <Card variant="elevated" className="rounded-[30px]">
+              <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                    Uploaded Documents
+                  </h3>
+                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                    Review operational state for each record before promoting details.
                   </p>
                 </div>
-              </Card>
-            ) : (
-              <div className="space-y-2">
-                {intakes.map((intake) => {
-                  const statusMeta =
-                    INTAKE_STATUS_META[intake.intake_status] || INTAKE_STATUS_META.uploaded;
-                  const StatusIcon = statusMeta.icon;
-                  return (
-                    <Card key={intake.id} padding="sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1 flex items-center gap-3">
-                          <FileText className="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
+
+                <div className="hidden rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-[var(--color-text-tertiary)] sm:inline-flex">
+                  {completedDocuments} completed
+                </div>
+              </div>
+
+              {intakes.length === 0 ? (
+                <div className="surface-panel-quiet mt-5 rounded-[24px] p-6">
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 h-5 w-5 text-[var(--color-text-tertiary)]" />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                        No documents uploaded yet
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Start with a recent clinical document, then add only the specific details
+                        you want GutWise to consider.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {intakes.map((intake) => {
+                    const statusMeta =
+                      INTAKE_STATUS_META[intake.intake_status] || INTAKE_STATUS_META.uploaded;
+                    const StatusIcon = statusMeta.icon;
+
+                    return (
+                      <div
+                        key={intake.id}
+                        className="surface-panel-quiet rounded-[24px] border border-white/8 p-4 transition-smooth hover:border-white/12 hover:bg-white/[0.05]"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                              {intake.file_name}
-                            </p>
-                            <div className="mt-0.5 flex items-center gap-2">
-                              <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                                {formatFileSize(intake.file_size_bytes)}
-                              </span>
-                              <span className="text-[11px] text-gray-300 dark:text-gray-600">
-                                &middot;
-                              </span>
-                              <span
-                                className={`flex items-center gap-1 text-[11px] ${statusMeta.className}`}
-                              >
-                                <StatusIcon className="h-3 w-3" />
-                                {statusMeta.label}
-                              </span>
-                              {intake.candidate_count > 0 && (
-                                <>
-                                  <span className="text-[11px] text-gray-300 dark:text-gray-600">
-                                    &middot;
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.05)] text-[var(--color-text-tertiary)]">
+                                <FileText className="h-5 w-5" />
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                                    {intake.file_name}
+                                  </p>
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${statusMeta.chipClassName}`}
+                                  >
+                                    <StatusIcon className="h-3 w-3" />
+                                    {statusMeta.label}
                                   </span>
-                                  <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                                    {intake.candidate_count} detail
-                                    {intake.candidate_count !== 1 ? 's' : ''} to review
-                                  </span>
-                                </>
-                              )}
+                                </div>
+
+                                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-tertiary)]">
+                                  <span>{formatFileSize(intake.file_size_bytes)}</span>
+                                  <span>{statusMeta.tone}</span>
+                                  <span>Added {formatDate(intake.created_at)}</span>
+                                </div>
+
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                  <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-3">
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                                      Reviewable details
+                                    </p>
+                                    <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                                      {intake.candidate_count}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-3">
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                                      Workflow state
+                                    </p>
+                                    <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+                                      {statusMeta.tone}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 lg:w-[180px]">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const defaultCategory = CATEGORY_CONFIGS[0].key;
+                                setSeedForm({
+                                  intakeId: intake.id,
+                                  category: defaultCategory,
+                                  detail: buildDefaultDetail(defaultCategory),
+                                  notes: '',
+                                });
+                                setViewMode('seed');
+                              }}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Add Detail
+                            </Button>
+
+                            <div className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-[var(--color-text-tertiary)]">
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                              Review stays manual
                             </div>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const defaultCat = CATEGORY_CONFIGS[0].key;
-                            setSeedForm({
-                              intakeId: intake.id,
-                              category: defaultCat,
-                              detail: buildDefaultDetail(defaultCat),
-                              notes: '',
-                            });
-                            setViewMode('seed');
-                          }}
-                        >
-                          <Plus className="mr-1 h-3.5 w-3.5" />
-                          Add Detail
-                        </Button>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
 
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Details to Review
-                </h2>
-                {pendingCount > 0 && (
-                  <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                    {pendingCount}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('pending_review')}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === 'pending_review'
-                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]'
-                  }`}
-                >
-                  Pending
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('all')}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === 'all'
-                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.04]'
-                  }`}
-                >
-                  All
-                </button>
-              </div>
+            <div className="space-y-5">
+              <Card variant="discovery" glowIntensity="subtle" className="rounded-[30px]">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                      Review Queue
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      Candidate facts remain inactive until you accept them. This creates a cleaner
+                      boundary between outside records and GutWise intelligence.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card variant="flat" className="rounded-[30px]">
+                <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-5">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                        Details to Review
+                      </h3>
+                      <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                        Accept confirmed facts. Reject uncertain or irrelevant ones.
+                      </p>
+                    </div>
+
+                    {pendingCount > 0 && (
+                      <span className="inline-flex min-w-[1.75rem] items-center justify-center rounded-full border border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.12)] px-2 py-1 text-[11px] font-semibold text-[rgba(245,190,80,0.98)]">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('pending_review')}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-smooth ${
+                        statusFilter === 'pending_review'
+                          ? 'bg-[rgba(84,160,255,0.16)] text-[var(--color-accent-primary)]'
+                          : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+                      }`}
+                    >
+                      Pending
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter('all')}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-smooth ${
+                        statusFilter === 'all'
+                          ? 'bg-[rgba(84,160,255,0.16)] text-[var(--color-accent-primary)]'
+                          : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <CandidateReviewList
+                    candidates={candidates}
+                    onAccept={handleAccept}
+                    onReject={handleReject}
+                    processing={processing}
+                  />
+                </div>
+              </Card>
             </div>
-
-            <CandidateReviewList
-              candidates={candidates}
-              onAccept={handleAccept}
-              onReject={handleReject}
-              processing={processing}
-            />
           </section>
 
           <Card
-            padding="sm"
-            className="border-gray-200 bg-gray-50 dark:border-white/[0.06] dark:bg-white/[0.02]"
+            variant="flat"
+            className="rounded-[26px] border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)]"
           >
-            <div className="space-y-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              <p>
-                Nothing from an uploaded document is applied to your insights until you personally
-                review and approve it.
-              </p>
-              <p>
-                To use something from a document, tap &quot;Add Detail&quot; next to the document above,
-                then confirm it before it becomes active.
-              </p>
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Document safety boundary
+                </p>
+                <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                  <p>Uploads create a review trail, not an automatic interpretation.</p>
+                  <p>Use “Add Detail” only for facts you want to move into structured review.</p>
+                  <p>Accepted details become usable context only after your confirmation step.</p>
+                </div>
+              </div>
             </div>
           </Card>
         </div>
@@ -481,14 +765,53 @@ export default function MedicalDocumentIntake() {
   );
 }
 
+function MetricTile({
+  label,
+  value,
+  helper,
+  tone,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  tone: 'primary' | 'secondary' | 'neutral';
+}) {
+  const toneClassName =
+    tone === 'primary'
+      ? 'border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)]'
+      : tone === 'secondary'
+        ? 'border-[rgba(133,93,255,0.16)] bg-[rgba(133,93,255,0.08)]'
+        : 'border-white/8 bg-[rgba(255,255,255,0.03)]';
+
+  return (
+    <div className={`rounded-[22px] border px-4 py-4 ${toneClassName}`}>
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">{helper}</p>
+    </div>
+  );
+}
+
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
-    <Card className="mb-4 border border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/20">
+    <Card
+      variant="flat"
+      className="mb-4 rounded-[24px] border-[rgba(248,113,113,0.2)] bg-[rgba(127,29,29,0.2)]"
+    >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-red-900 dark:text-red-200">{message}</p>
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[rgba(252,165,165,0.98)]" />
+          <p className="text-sm leading-6 text-[rgba(254,202,202,0.98)]">{message}</p>
+        </div>
+
         <button
+          type="button"
           onClick={onDismiss}
-          className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+          className="text-[rgba(252,165,165,0.9)] transition-smooth hover:text-white"
         >
           <span className="sr-only">Dismiss</span>
           &times;
