@@ -15,32 +15,32 @@ export default function Card({
   className = '',
   padding = 'md',
   variant = 'elevated',
-  glowIntensity = 'subtle'
+  glowIntensity = 'subtle',
 }: CardProps) {
   const paddingStyles = {
     none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+    sm: 'p-4 sm:p-5',
+    md: 'p-5 sm:p-6',
+    lg: 'p-6 sm:p-8',
   };
 
-  const getDiscoveryGlow = (intensity: GlowIntensity) => {
-    switch (intensity) {
-      case 'bright':
-        return 'shadow-glow-bright dark:shadow-glow-bright dark:animate-glow-pulse border-discovery-500/30 dark:border-discovery-500/20';
-      case 'medium':
-        return 'shadow-glow-medium dark:shadow-glow-medium border-discovery-300/20 dark:border-discovery-500/15';
-      case 'subtle':
-      default:
-        return 'shadow-glow-subtle dark:shadow-glow-subtle border-neutral-border dark:border-dark-border';
-    }
+  const discoveryIntensityStyles = {
+    subtle:
+      'border-[rgba(143,128,246,0.10)] shadow-[var(--gw-glow-intelligence-soft)]',
+    medium:
+      'border-[rgba(143,128,246,0.18)] shadow-[0_0_0_1px_rgba(143,128,246,0.12),0_22px_56px_rgba(115,83,230,0.18)]',
+    bright:
+      'border-[rgba(143,128,246,0.24)] shadow-[0_0_0_1px_rgba(143,128,246,0.18),0_28px_72px_rgba(115,83,230,0.24)]',
   };
 
   const variantStyles = {
-    elevated: 'bg-neutral-surface border border-neutral-border rounded-2xl shadow-soft dark:bg-dark-surface dark:border-dark-border dark:shadow-dark-soft',
-    glass: 'bg-neutral-surface/80 backdrop-blur-soft border border-neutral-border/20 rounded-2xl shadow-glass dark:bg-dark-elevated/60 dark:border-dark-border dark:shadow-dark-glass',
-    flat: 'bg-neutral-surface border border-neutral-border rounded-2xl dark:bg-dark-surface dark:border-dark-border',
-    discovery: `bg-neutral-surface rounded-2xl dark:bg-dark-surface ${getDiscoveryGlow(glowIntensity)}`,
+    elevated:
+      'surface-panel',
+    glass:
+      'surface-panel-soft glass-sheen',
+    flat:
+      'surface-panel-quiet',
+    discovery: `surface-intelligence ${discoveryIntensityStyles[glowIntensity]}`,
   };
 
   return (
