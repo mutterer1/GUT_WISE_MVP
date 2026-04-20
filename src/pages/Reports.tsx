@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Printer, Download, FileText, ClipboardList, MessageSquare, Loader2 } from 'lucide-react';
+import {
+  Printer,
+  Download,
+  FileText,
+  ClipboardList,
+  MessageSquare,
+  Loader2,
+} from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
 import TrustExplainer from '../components/TrustExplainer';
@@ -138,15 +145,11 @@ export default function Reports() {
     if (bmAnalytics) {
       if (bmAnalytics.averagePerDay > 6) {
         concerns.push(
-          `Frequent bowel movements were recorded (${bmAnalytics.averagePerDay.toFixed(
-            1
-          )}/day) during this period`
+          `Frequent bowel movements were recorded (${bmAnalytics.averagePerDay.toFixed(1)}/day) during this period`
         );
       } else if (bmAnalytics.averagePerDay < 1) {
         concerns.push(
-          `Bowel movements were less frequent than usual (${bmAnalytics.averagePerDay.toFixed(
-            1
-          )}/day) during this period`
+          `Bowel movements were less frequent than usual (${bmAnalytics.averagePerDay.toFixed(1)}/day) during this period`
         );
       }
     }
@@ -233,17 +236,17 @@ export default function Reports() {
     label: string;
     accent?: boolean;
   }) => (
-    <div className="mb-md flex items-center gap-3 px-0.5 print:hidden">
+    <div className="mb-4 flex items-center gap-3 px-0.5 print:hidden">
       <span
         className={`flex-shrink-0 text-xs font-semibold uppercase tracking-widest ${
-          accent ? 'text-brand-500' : 'text-neutral-muted dark:text-dark-muted'
+          accent ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'
         }`}
       >
         {label}
       </span>
       <div
         className={`h-px flex-1 ${
-          accent ? 'bg-brand-500/25' : 'bg-neutral-border dark:bg-dark-border'
+          accent ? 'bg-[rgba(84,160,255,0.25)]' : 'bg-white/8'
         }`}
       />
     </div>
@@ -251,20 +254,21 @@ export default function Reports() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8 print:p-8">
-        <div className="mb-lg print:hidden">
-          <div className="mb-1 flex items-start justify-between">
-            <div>
-              <h1 className="text-h4 font-sora font-semibold text-neutral-text dark:text-dark-text">
-                Health Summary Report
-              </h1>
-              <p className="mt-0.5 text-body-sm text-neutral-muted dark:text-dark-muted">
-                A summary of your tracked data, ready to share with your care team
+      <div className="mx-auto max-w-5xl print:p-8">
+        <section className="page-enter surface-panel mb-6 rounded-[32px] p-5 sm:p-6 lg:p-8 print:hidden">
+          <div className="page-header items-start justify-between gap-5">
+            <div className="max-w-3xl">
+              <span className="badge-secondary mb-3 inline-flex">Clinical Summary</span>
+              <h1 className="page-title">Health Summary Report</h1>
+              <p className="page-subtitle mt-2">
+                A more structured report of your tracked data, ready to review privately or share
+                with your care team.
               </p>
             </div>
+
             <div className="ml-4 flex flex-shrink-0 gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={handlePrint}
                 className="flex items-center gap-2 text-sm"
               >
@@ -277,9 +281,9 @@ export default function Reports() {
               </Button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mb-lg print:hidden">
+        <div className="mb-6 print:hidden">
           <DateRangeSelector
             startDate={startDate}
             endDate={endDate}
@@ -287,7 +291,7 @@ export default function Reports() {
           />
         </div>
 
-        <div className="mb-lg print:hidden">
+        <div className="mb-6 print:hidden">
           <TrustExplainer variant="reports" />
         </div>
 
@@ -314,33 +318,28 @@ export default function Reports() {
 
         {loading && (
           <div className="flex h-72 flex-col items-center justify-center gap-3">
-            <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
-            <p className="text-body-sm text-neutral-muted dark:text-dark-muted">
+            <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent-primary)]" />
+            <p className="text-sm text-[var(--color-text-tertiary)]">
               Compiling report data...
             </p>
           </div>
         )}
 
         {error && (
-          <div className="mb-md flex items-start gap-3 rounded-xl border border-signal-500/30 bg-signal-500/10 p-md">
-            <p className="text-body-sm font-medium text-signal-700 dark:text-signal-300">
-              {error}
-            </p>
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] p-4">
+            <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
           </div>
         )}
 
         {!loading && !error && !bmAnalytics && (
-          <div
-            className="rounded-2xl border border-neutral-border bg-neutral-surface p-12 text-center shadow-soft dark:border-dark-border dark:bg-dark-surface"
-            style={{ animation: 'emptyStateFadeIn 0.4s ease-out both' }}
-          >
-            <div className="mx-auto mb-md flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500/10 dark:bg-brand-500/12">
-              <ClipboardList className="h-6 w-6 text-brand-500" />
+          <div className="surface-panel rounded-[32px] p-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(84,160,255,0.12)]">
+              <ClipboardList className="h-6 w-6 text-[var(--color-accent-primary)]" />
             </div>
-            <p className="mb-1 text-body-md font-semibold text-neutral-text dark:text-dark-text">
+            <p className="mb-1 text-base font-semibold text-[var(--color-text-primary)]">
               No bowel movement logs found
             </p>
-            <p className="mx-auto max-w-sm text-body-sm leading-relaxed text-neutral-muted dark:text-dark-muted">
+            <p className="mx-auto max-w-sm text-sm leading-relaxed text-[var(--color-text-secondary)]">
               Reports require at least one bowel movement log in the selected period. Try a
               different date range or continue logging daily.
             </p>
@@ -385,63 +384,67 @@ export default function Reports() {
 
             <PatientNotesSection value={patientNotes} onChange={setPatientNotes} />
 
-            <div className="mt-6 rounded-2xl border border-neutral-border bg-neutral-surface p-6 dark:border-dark-border dark:bg-dark-surface print:mt-10">
-              <div className="mb-md flex items-center gap-2 border-b border-neutral-border pb-3 dark:border-dark-border">
-                <MessageSquare className="h-4 w-4 text-brand-500" />
-                <p className="text-xs font-semibold uppercase tracking-widest text-brand-500">
+            <div className="mt-6 rounded-[28px] border border-white/8 bg-white/[0.03] p-6 dark:bg-white/[0.02] print:mt-10">
+              <div className="mb-4 flex items-center gap-2 border-b border-white/8 pb-3">
+                <MessageSquare className="h-4 w-4 text-[var(--color-accent-primary)]" />
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent-primary)]">
                   Suggested Discussion Points
                 </p>
               </div>
+
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-neutral-bg p-4 dark:bg-dark-elevated">
-                  <p className="mb-1 text-xs font-semibold text-neutral-text dark:text-dark-text">
+                <div className="surface-panel-quiet rounded-[20px] p-4">
+                  <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
                     Pattern review
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-muted dark:text-dark-muted">
+                  <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                     Discuss observed trends and flagged patterns with your gastroenterologist for
                     clinical context.
                   </p>
                 </div>
-                <div className="rounded-xl bg-neutral-bg p-4 dark:bg-dark-elevated">
-                  <p className="mb-1 text-xs font-semibold text-neutral-text dark:text-dark-text">
+
+                <div className="surface-panel-quiet rounded-[20px] p-4">
+                  <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
                     Follow-up timeline
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-muted dark:text-dark-muted">
+                  <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                     Reassessment after 4-6 weeks can help evaluate whether symptoms or patterns have
                     changed.
                   </p>
                 </div>
-                <div className="rounded-xl bg-neutral-bg p-4 dark:bg-dark-elevated">
-                  <p className="mb-1 text-xs font-semibold text-neutral-text dark:text-dark-text">
+
+                <div className="surface-panel-quiet rounded-[20px] p-4">
+                  <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
                     Diagnostics
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-muted dark:text-dark-muted">
+                  <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                     Your clinician may recommend additional testing, such as labs or imaging, based
                     on the patterns shown here.
                   </p>
                 </div>
-                <div className="rounded-xl bg-neutral-bg p-4 dark:bg-dark-elevated">
-                  <p className="mb-1 text-xs font-semibold text-neutral-text dark:text-dark-text">
+
+                <div className="surface-panel-quiet rounded-[20px] p-4">
+                  <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
                     Continued logging
                   </p>
-                  <p className="text-xs leading-relaxed text-neutral-muted dark:text-dark-muted">
+                  <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                     Systematic tracking improves the accuracy of pattern detection over time.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-neutral-border bg-neutral-bg p-md dark:border-dark-border dark:bg-dark-surface print:mt-6">
-              <p className="text-xs leading-relaxed text-neutral-muted dark:text-dark-muted">
-                <span className="font-medium text-neutral-text dark:text-dark-text">Notice:</span>{' '}
-                This report is compiled from patient-reported data and is intended to support
-                clinical conversation - it does not constitute a medical diagnosis or treatment
+            <div className="mt-4 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 print:mt-6">
+              <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                <span className="font-medium text-[var(--color-text-primary)]">Notice:</span> This
+                report is compiled from patient-reported data and is intended to support clinical
+                conversation. It does not constitute a medical diagnosis or treatment
                 recommendation. All clinical decisions should be made by qualified healthcare
                 professionals based on comprehensive assessment and appropriate testing.
               </p>
             </div>
 
-            <div className="mt-6 pb-4 text-center text-xs text-neutral-muted dark:text-dark-muted print:mt-10">
+            <div className="mt-6 pb-4 text-center text-xs text-[var(--color-text-tertiary)] print:mt-10">
               <p>End of report | {formatDateRange()}</p>
             </div>
           </>
@@ -462,36 +465,16 @@ export default function Reports() {
             display: block !important;
           }
 
-          .print\\:ml-0 {
-            margin-left: 0 !important;
-          }
-
           .print\\:p-8 {
             padding: 2rem !important;
-          }
-
-          .print\\:mt-12 {
-            margin-top: 3rem !important;
           }
 
           .print\\:mt-10 {
             margin-top: 2.5rem !important;
           }
 
-          .print\\:mt-8 {
-            margin-top: 2rem !important;
-          }
-
           .print\\:mt-6 {
             margin-top: 1.5rem !important;
-          }
-
-          .print\\:border-0 {
-            border: 0 !important;
-          }
-
-          .print\\:p-0 {
-            padding: 0 !important;
           }
 
           @page {
