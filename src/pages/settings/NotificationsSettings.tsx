@@ -94,62 +94,70 @@ export default function NotificationsSettings() {
     {
       key: 'email' as const,
       label: 'Email Notifications',
-      description: 'Receive important updates and announcements via email',
+      description: 'Receive important updates and announcements via email.',
     },
     {
       key: 'push' as const,
       label: 'Push Notifications',
-      description: 'Get real-time alerts on your device',
+      description: 'Get real-time alerts on your device.',
     },
     {
       key: 'dailyDigest' as const,
       label: 'Daily Digest',
-      description: 'Summary of your daily health activities',
+      description: 'Receive a summary of your daily health activities.',
     },
     {
       key: 'insights' as const,
       label: 'Insights & Patterns',
-      description: 'Notifications about health insights and patterns',
+      description: 'Get notified when GutWise finds meaningful patterns.',
     },
     {
       key: 'reminders' as const,
       label: 'Reminders',
-      description: 'Reminders to log your health data',
+      description: 'Receive prompts to keep your tracking cadence consistent.',
     },
     {
       key: 'weeklyReport' as const,
       label: 'Weekly Report',
-      description: 'Comprehensive weekly health summary',
+      description: 'Receive a broader weekly summary of your health picture.',
     },
   ];
 
   return (
     <SettingsPageLayout
       title="Notification Settings"
-      description="Control how and when you receive updates"
+      description="Control how and when GutWise reaches you across reminders, insights, and summary updates."
     >
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-5">
+        <Card variant="elevated" className="rounded-[28px]">
           <div className="space-y-4">
             {notificationOptions.map((option) => (
               <div
                 key={option.key}
-                className="flex items-center justify-between p-4 border border-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="surface-panel-quiet flex items-center justify-between gap-4 rounded-[24px] p-4"
               >
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-100">{option.label}</h3>
-                  <p className="text-sm text-gray-700 mt-1">{option.description}</p>
+                  <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
+                    {option.label}
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    {option.description}
+                  </p>
                 </div>
+
                 <button
+                  type="button"
                   onClick={() => togglePreference(option.key)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ml-4 flex-shrink-0 ${
-                    preferences[option.key] ? 'bg-teal-500' : 'bg-gray-300'
-                  }`}
+                  className={[
+                    'relative ml-4 inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-smooth',
+                    preferences[option.key] ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
+                  ].join(' ')}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                      preferences[option.key] ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={[
+                      'inline-block h-5 w-5 rounded-full bg-white transition-transform',
+                      preferences[option.key] ? 'translate-x-5' : 'translate-x-0',
+                    ].join(' ')}
                   />
                 </button>
               </div>
@@ -157,44 +165,50 @@ export default function NotificationsSettings() {
           </div>
         </Card>
 
-        <Card className="bg-blue-50 border border-blue-200">
+        <Card
+          variant="flat"
+          className="rounded-[24px] border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.06)]"
+        >
           <div className="flex items-start gap-3">
-            <Bell className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <Bell className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
             <div>
-              <p className="text-sm font-medium text-blue-900">
-                You can manage your notification preferences at any time
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                Preferences can be changed at any time
               </p>
-              <p className="text-sm text-blue-800 mt-1">
-                Changes will take effect immediately after saving
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                Changes take effect immediately after saving, so you can tune notification load
+                without leaving the page.
               </p>
             </div>
           </div>
         </Card>
 
         {error && (
-          <Card className="bg-red-50 border border-red-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(255,120,120,0.2)] bg-[rgba(255,120,120,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <X className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-900">{error}</p>
-              </div>
+              <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-danger)]" />
+              <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>
             </div>
           </Card>
         )}
 
         {message && (
-          <Card className="bg-green-50 border border-green-200">
+          <Card
+            variant="flat"
+            className="rounded-[24px] border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.06)]"
+          >
             <div className="flex items-start gap-3">
-              <Save className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-green-900">{message}</p>
-              </div>
+              <Save className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-accent-primary)]" />
+              <p className="text-sm font-medium text-[var(--color-accent-primary)]">{message}</p>
             </div>
           </Card>
         )}
 
         <Button disabled={saving} onClick={handleSave}>
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="mr-2 h-4 w-4" />
           {saving ? 'Saving...' : 'Save Preferences'}
         </Button>
       </div>
