@@ -1,177 +1,465 @@
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sectionRiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes quietPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes softFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 @keyframes toastSlideIn {
-  from { opacity: 0; transform: translateX(100%) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateX(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
 }
 
 @keyframes toastSlideOut {
-  from { opacity: 1; transform: translateX(0) scale(1); }
-  to { opacity: 0; transform: translateX(100%) scale(0.95); }
+  from {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) translateX(20px) scale(0.97);
+  }
 }
 
 @keyframes toastProgressShrink {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
 }
 
 @keyframes toastCheckPop {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-@keyframes emptyStateFadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes emptyStateIconFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes welcomeSlideDown {
-  from { opacity: 0; transform: translateY(-16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes encouragementFade {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes flamePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-@keyframes glassSheen {
   0% {
-    transform: translateX(-100%) skewX(-12deg);
+    transform: scale(0.72);
     opacity: 0;
   }
-  5% {
+  55% {
+    transform: scale(1.08);
     opacity: 1;
   }
-  38% {
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
     opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlayFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes glassSweep {
+  0% {
+    transform: translateX(-150%) skewX(-16deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  34% {
+    opacity: 0.9;
   }
   44% {
-    transform: translateX(220%) skewX(-12deg);
+    transform: translateX(260%) skewX(-16deg);
     opacity: 0;
   }
   100% {
-    transform: translateX(220%) skewX(-12deg);
+    transform: translateX(260%) skewX(-16deg);
     opacity: 0;
   }
 }
 
-.glass-sheen-overlay {
-  position: absolute;
-  top: -60%;
-  left: -25%;
-  width: 35%;
-  height: 220%;
-  background: linear-gradient(
-    108deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.03) 47%,
-    rgba(255, 255, 255, 0.055) 52%,
-    rgba(255, 255, 255, 0.03) 57%,
-    transparent 68%
-  );
-  pointer-events: none;
-  animation: glassSheen 11s ease-in-out infinite;
-  animation-delay: 1.5s;
+@keyframes ringDrawIn {
+  from {
+    stroke-dashoffset: 240;
+    opacity: 0.35;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .glass-sheen-overlay {
-    animation: none;
+@keyframes metricCountIn {
+  from {
     opacity: 0;
+    transform: translateY(8px);
+    filter: blur(3px);
   }
-}
-
-@keyframes hintSoftPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
-
-.hint-pulse {
-  animation: hintSoftPulse 3.2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hint-pulse {
-    animation: none;
-    opacity: 0.75;
-  }
-}
-
-.progress-arc-segment {
-  transition: stroke 0.6s ease-out, opacity 0.6s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progress-arc-segment {
-    transition: none;
-  }
-
-  .animate-fade-in {
-    animation: none !important;
-    opacity: 1 !important;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 
 @keyframes ribbonDrift {
-  0% { transform: translateX(0) translateY(0); }
-  25% { transform: translateX(12px) translateY(-6px); }
-  50% { transform: translateX(6px) translateY(4px); }
-  75% { transform: translateX(-8px) translateY(-3px); }
-  100% { transform: translateX(0) translateY(0); }
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(14px) translateY(-7px);
+  }
+  50% {
+    transform: translateX(8px) translateY(5px);
+  }
+  75% {
+    transform: translateX(-10px) translateY(-4px);
+  }
+  100% {
+    transform: translateX(0) translateY(0);
+  }
 }
 
 @keyframes ribbonDriftEcho {
-  0% { transform: translateX(0) translateY(0); }
-  30% { transform: translateX(-10px) translateY(5px); }
-  60% { transform: translateX(8px) translateY(-4px); }
-  100% { transform: translateX(0) translateY(0); }
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  30% {
+    transform: translateX(-12px) translateY(6px);
+  }
+  60% {
+    transform: translateX(9px) translateY(-5px);
+  }
+  100% {
+    transform: translateX(0) translateY(0);
+  }
 }
 
 @keyframes bloomPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+
+@keyframes emptyStateFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hintSoftPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.52;
+  }
+}
+
+@keyframes welcomeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes encouragementFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-in {
+  animation: pageFadeIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-section-in {
+  animation: sectionRiseIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-card-up {
+  animation: cardFadeUp 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-card-in {
+  animation: cardFadeIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-empty-state {
+  animation: emptyStateFadeIn 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-modal-in {
+  animation: modalIn 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-modal-out {
+  animation: modalOut 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.animate-overlay-in {
+  animation: overlayFadeIn 180ms ease both;
+}
+
+.animate-overlay-out {
+  animation: overlayFadeOut 160ms ease both;
+}
+
+.animate-metric-in {
+  animation: metricCountIn 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-ring-in {
+  animation: ringDrawIn 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.glass-sheen-overlay {
+  position: absolute;
+  top: -50%;
+  left: -26%;
+  width: 32%;
+  height: 210%;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.015) 44%,
+    rgba(255, 255, 255, 0.055) 50%,
+    rgba(255, 255, 255, 0.018) 56%,
+    transparent 68%
+  );
+  animation: glassSweep 12s ease-in-out infinite;
+  animation-delay: 1.8s;
+}
+
+.hint-pulse {
+  animation: hintSoftPulse 3.4s ease-in-out infinite;
+}
+
+.empty-state-icon-float {
+  animation: softFloat 5.5s ease-in-out infinite;
+}
+
+.progress-arc-segment {
+  transition:
+    stroke 560ms ease-out,
+    opacity 560ms ease-out,
+    filter 560ms ease-out;
 }
 
 .ribbon-drift {
-  animation: ribbonDrift 80s ease-in-out infinite;
+  animation: ribbonDrift 82s ease-in-out infinite;
   will-change: transform;
 }
 
 .ribbon-drift-echo {
-  animation: ribbonDriftEcho 90s ease-in-out infinite;
+  animation: ribbonDriftEcho 94s ease-in-out infinite;
   will-change: transform;
 }
 
 .ribbon-bloom-primary {
-  animation: bloomPulse 60s ease-in-out infinite;
+  animation: bloomPulse 62s ease-in-out infinite;
 }
 
 .ribbon-bloom-secondary {
-  animation: bloomPulse 75s ease-in-out infinite;
-  animation-delay: -20s;
+  animation: bloomPulse 76s ease-in-out infinite;
+  animation-delay: -18s;
 }
 
 .ribbon-bloom-tertiary {
-  animation: bloomPulse 65s ease-in-out infinite;
-  animation-delay: -35s;
+  animation: bloomPulse 68s ease-in-out infinite;
+  animation-delay: -32s;
+}
+
+.toast-enter {
+  animation: toastSlideIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.toast-exit {
+  animation: toastSlideOut 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.toast-progress {
+  animation: toastProgressShrink linear forwards;
+}
+
+.toast-check {
+  animation: toastCheckPop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.welcome-slide-down {
+  animation: welcomeSlideDown 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.encouragement-fade {
+  animation: encouragementFade 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.stagger-1 {
+  animation-delay: 40ms;
+}
+
+.stagger-2 {
+  animation-delay: 90ms;
+}
+
+.stagger-3 {
+  animation-delay: 140ms;
+}
+
+.stagger-4 {
+  animation-delay: 190ms;
+}
+
+.stagger-5 {
+  animation-delay: 240ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-page-in,
+  .animate-section-in,
+  .animate-card-up,
+  .animate-card-in,
+  .animate-empty-state,
+  .animate-modal-in,
+  .animate-modal-out,
+  .animate-overlay-in,
+  .animate-overlay-out,
+  .animate-metric-in,
+  .animate-ring-in,
+  .toast-enter,
+  .toast-exit,
+  .toast-progress,
+  .toast-check,
+  .welcome-slide-down,
+  .encouragement-fade,
+  .hint-pulse,
+  .empty-state-icon-float,
   .ribbon-drift,
   .ribbon-drift-echo,
   .ribbon-bloom-primary,
   .ribbon-bloom-secondary,
-  .ribbon-bloom-tertiary {
-    animation: none;
+  .ribbon-bloom-tertiary,
+  .glass-sheen-overlay {
+    animation: none !important;
+  }
+
+  .progress-arc-segment {
+    transition: none;
+  }
+
+  .stagger-1,
+  .stagger-2,
+  .stagger-3,
+  .stagger-4,
+  .stagger-5 {
+    animation-delay: 0ms !important;
   }
 }
