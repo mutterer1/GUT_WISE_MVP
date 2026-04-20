@@ -3,13 +3,12 @@ import {
   Printer,
   Download,
   FileText,
-  ClipboardList,
+  CalendarRange,
   MessageSquare,
   Loader2,
 } from 'lucide-react';
 import MainLayout from '../components/MainLayout';
 import Button from '../components/Button';
-import TrustExplainer from '../components/TrustExplainer';
 import { useAuth } from '../contexts/AuthContext';
 import DateRangeSelector from '../components/reports/DateRangeSelector';
 import ExecutiveSummary from '../components/reports/ExecutiveSummary';
@@ -194,6 +193,9 @@ export default function Reports() {
     return concerns;
   };
 
+  const primaryConcerns = getPrimaryConcerns();
+  const reviewFlagCount = clinicalAlerts.length + primaryConcerns.length;
+
   const observedDataRows = bmAnalytics
     ? [
         {
@@ -223,8 +225,8 @@ export default function Reports() {
         },
         {
           label: 'Repeated patterns highlighted',
-          value: String(getPrimaryConcerns().length),
-          note: getPrimaryConcerns().length > 0 ? 'Summarized below' : 'None highlighted',
+          value: String(primaryConcerns.length),
+          note: primaryConcerns.length > 0 ? 'Summarized below' : 'None highlighted',
         },
       ]
     : [];
@@ -256,17 +258,32 @@ export default function Reports() {
     <MainLayout>
       <div className="mx-auto max-w-5xl print:p-8">
         <section className="page-enter surface-panel mb-6 rounded-[32px] p-5 sm:p-6 lg:p-8 print:hidden">
-          <div className="page-header items-start justify-between gap-5">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <span className="badge-secondary mb-3 inline-flex">Clinical Summary</span>
+              <span className="badge-secondary mb-3 inline-flex">Clinical Report</span>
               <h1 className="page-title">Health Summary Report</h1>
-              <p className="page-subtitle mt-2">
-                A more structured report of your tracked data, ready to review privately or share
-                with your care team.
+              <p className="page-subtitle mt-2 max-w-2xl">
+                A structured review of tracked bowel, symptom, trigger, and medication data for
+                private review or clinician discussion.
               </p>
+
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <div className="surface-panel-quiet inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs text-[var(--color-text-secondary)]">
+                  <CalendarRange className="h-3.5 w-3.5 text-[var(--color-accent-primary)]" />
+                  <span>{formatDateRange()}</span>
+                </div>
+                <div className="surface-panel-quiet inline-flex rounded-full px-3.5 py-2 text-xs text-[var(--color-text-secondary)]">
+                  {getDayCount()} tracked day{getDayCount() === 1 ? '' : 's'}
+                </div>
+                <div className="surface-panel-quiet inline-flex rounded-full px-3.5 py-2 text-xs text-[var(--color-text-secondary)]">
+                  {reviewFlagCount > 0
+                    ? `${reviewFlagCount} review item${reviewFlagCount === 1 ? '' : 's'}`
+                    : 'No major review flags'}
+                </div>
+              </div>
             </div>
 
-            <div className="ml-4 flex flex-shrink-0 gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <Button
                 variant="secondary"
                 onClick={handlePrint}
@@ -289,10 +306,6 @@ export default function Reports() {
             endDate={endDate}
             onDateRangeChange={handleDateRangeChange}
           />
-        </div>
-
-        <div className="mb-6 print:hidden">
-          <TrustExplainer variant="reports" />
         </div>
 
         <div className="mb-8 hidden print:block">
@@ -319,9 +332,7 @@ export default function Reports() {
         {loading && (
           <div className="flex h-72 flex-col items-center justify-center gap-3">
             <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent-primary)]" />
-            <p className="text-sm text-[var(--color-text-tertiary)]">
-              Compiling report data...
-            </p>
+            <p className="text-sm text-[var(--color-text-tertiary)]">Compiling report data...</p>
           </div>
         )}
 
@@ -334,21 +345,44 @@ export default function Reports() {
         {!loading && !error && !bmAnalytics && (
           <div className="surface-panel rounded-[32px] p-12 text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(84,160,255,0.12)]">
-              <ClipboardList className="h-6 w-6 text-[var(--color-accent-primary)]" />
+              <FileText className="h-6 w-6 text-[var(--color-accent-primary)]" />
             </div>
             <p className="mb-1 text-base font-semibold text-[var(--color-text-primary)]">
-              No bowel movement logs found
+              No reportable data found
             </p>
             <p className="mx-auto max-w-sm text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              Reports require at least one bowel movement log in the selected period. Try a
-              different date range or continue logging daily.
+              Reports need at least one bowel movement log inside the selected range. Adjust the
+              dates or continue logging to generate a clinical summary.
             </p>
           </div>
         )}
 
         {!loading && !error && bmAnalytics && (
           <>
-            <SectionGroupLabel label="Key Findings" accent />
+            <div className="surface-panel-soft mb-5 rounded-[28px] p-4 sm:p-5 print:hidden">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-accent-primary)]">
+                    Report framing
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    Lead with observed data, then use the flagged patterns and notes below to guide
+                    a focused clinical conversation. GutWise summarizes patient-reported logs and
+                    does not diagnose conditions.
+                  </p>
+                </div>
+                <div className="surface-panel-quiet rounded-[20px] px-4 py-3 text-sm text-[var(--color-text-secondary)] sm:max-w-[16rem]">
+                  Generated{' '}
+                  {new Date().toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <SectionGroupLabel label="Summary" accent />
 
             <ExecutiveSummary
               dateRange={formatDateRange()}
@@ -359,7 +393,7 @@ export default function Reports() {
               criticalAlerts={clinicalAlerts.filter(
                 (a) => a.severity === 'critical' || a.severity === 'high'
               )}
-              primaryConcerns={getPrimaryConcerns()}
+              primaryConcerns={primaryConcerns}
             />
 
             <ObservedDataTable rows={observedDataRows} />
@@ -369,15 +403,10 @@ export default function Reports() {
             <SectionGroupLabel label="Supporting Detail" />
 
             <BMAnalyticsSection analytics={bmAnalytics} />
-
             <BristolDistributionSection distribution={bristolDistribution} />
-
             <SymptomProgressionSection trends={symptomTrends} />
-
             <HealthMarkersSection correlations={healthMarkers} />
-
             <TriggerPatternsSection triggers={triggerPatterns} />
-
             <MedicationCorrelationSection correlations={medicationCorrelations} />
 
             <SectionGroupLabel label="Patient Perspective" />
@@ -388,59 +417,57 @@ export default function Reports() {
               <div className="mb-4 flex items-center gap-2 border-b border-white/8 pb-3">
                 <MessageSquare className="h-4 w-4 text-[var(--color-accent-primary)]" />
                 <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-accent-primary)]">
-                  Suggested Discussion Points
+                  Appointment Prep
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="surface-panel-quiet rounded-[20px] p-4">
                   <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
-                    Pattern review
+                    Start with change over time
                   </p>
                   <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                    Discuss observed trends and flagged patterns with your gastroenterologist for
-                    clinical context.
+                    Review what changed across the selected period before narrowing into one-off
+                    symptoms or meals.
                   </p>
                 </div>
 
                 <div className="surface-panel-quiet rounded-[20px] p-4">
                   <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
-                    Follow-up timeline
+                    Confirm the highest-priority concern
                   </p>
                   <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                    Reassessment after 4-6 weeks can help evaluate whether symptoms or patterns have
-                    changed.
+                    Use your notes section to make sure the most disruptive symptom or question is
+                    addressed first.
                   </p>
                 </div>
 
                 <div className="surface-panel-quiet rounded-[20px] p-4">
                   <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
-                    Diagnostics
+                    Validate likely triggers
                   </p>
                   <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                    Your clinician may recommend additional testing, such as labs or imaging, based
-                    on the patterns shown here.
+                    Treat food or medication correlations as patterns to investigate, not direct
+                    proof of cause.
                   </p>
                 </div>
 
                 <div className="surface-panel-quiet rounded-[20px] p-4">
                   <p className="mb-1 text-xs font-semibold text-[var(--color-text-primary)]">
-                    Continued logging
+                    Decide the next logging window
                   </p>
                   <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                    Systematic tracking improves the accuracy of pattern detection over time.
+                    If the picture is still unclear, keep logging through the next 2-4 weeks to
+                    strengthen comparisons.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 rounded-[24px] border border-white/8 bg-white/[0.03] p-4 print:mt-6">
+            <div className="mt-4 rounded-[24px] border border-white/8 bg-white/[0.03] px-4 py-3 print:mt-6">
               <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                <span className="font-medium text-[var(--color-text-primary)]">Notice:</span> This
-                report is compiled from patient-reported data and is intended to support clinical
-                conversation. It does not constitute a medical diagnosis or treatment
-                recommendation. All clinical decisions should be made by qualified healthcare
-                professionals based on comprehensive assessment and appropriate testing.
+                Patient-reported summary for clinical discussion only. This report does not provide
+                diagnosis or treatment recommendations.
               </p>
             </div>
 
