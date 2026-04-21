@@ -111,6 +111,12 @@ export default function BMLog() {
     }
   }, [editingId, formData]);
 
+  useEffect(() => {
+    if (!editingId && !hasNonDefaultDetails(formData)) {
+      setShowDetails(false);
+    }
+  }, [editingId, formData]);
+
   const handleReset = () => {
     resetForm();
     setShowDetails(false);
@@ -272,7 +278,7 @@ export default function BMLog() {
                     <SliderField
                       label="Urgency Level"
                       value={formData.urgency}
-                      onChange={(value) => setFormData({ ...formData, urgency: value })}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, urgency: value }))}
                       low="Low"
                       high="High"
                     />
@@ -280,7 +286,7 @@ export default function BMLog() {
                     <SliderField
                       label="Pain Level"
                       value={formData.pain_level}
-                      onChange={(value) => setFormData({ ...formData, pain_level: value })}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, pain_level: value }))}
                       low="None"
                       high="Severe"
                     />
@@ -288,7 +294,7 @@ export default function BMLog() {
                     <SliderField
                       label="Difficulty Level"
                       value={formData.difficulty_level}
-                      onChange={(value) => setFormData({ ...formData, difficulty_level: value })}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, difficulty_level: value }))}
                       low="Easy"
                       high="Hard"
                     />
@@ -299,10 +305,7 @@ export default function BMLog() {
                       label="Incomplete Evacuation"
                       active={formData.incomplete_evacuation}
                       onToggle={() =>
-                        setFormData({
-                          ...formData,
-                          incomplete_evacuation: !formData.incomplete_evacuation,
-                        })
+                        setFormData((prev) => ({ ...prev, incomplete_evacuation: !prev.incomplete_evacuation }))
                       }
                     />
 
@@ -310,10 +313,7 @@ export default function BMLog() {
                       label="Blood Present"
                       active={formData.blood_present}
                       onToggle={() =>
-                        setFormData({
-                          ...formData,
-                          blood_present: !formData.blood_present,
-                        })
+                        setFormData((prev) => ({ ...prev, blood_present: !prev.blood_present }))
                       }
                     />
 
@@ -321,10 +321,7 @@ export default function BMLog() {
                       label="Mucus Present"
                       active={formData.mucus_present}
                       onToggle={() =>
-                        setFormData({
-                          ...formData,
-                          mucus_present: !formData.mucus_present,
-                        })
+                        setFormData((prev) => ({ ...prev, mucus_present: !prev.mucus_present }))
                       }
                     />
                   </div>
@@ -336,7 +333,7 @@ export default function BMLog() {
                     <textarea
                       id="notes"
                       value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      onChange={(e) => { const v = e.target.value; setFormData((prev) => ({ ...prev, notes: v })); }}
                       rows={4}
                       placeholder="Any context worth remembering..."
                       className="input-base min-h-[112px] w-full resize-none"
