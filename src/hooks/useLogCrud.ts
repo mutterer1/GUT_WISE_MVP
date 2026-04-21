@@ -40,6 +40,28 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   fetchHistory: () => Promise<void>;
 }
 
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message.trim().length > 0) {
+    return err.message;
+  }
+
+  if (typeof err === 'object' && err !== null) {
+    const errorLike = err as Record<string, unknown>;
+    const message =
+      typeof errorLike.message === 'string' ? errorLike.message.trim() : '';
+    const details =
+      typeof errorLike.details === 'string' ? errorLike.details.trim() : '';
+    const hint = typeof errorLike.hint === 'string' ? errorLike.hint.trim() : '';
+
+    const parts = [message, details, hint].filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+  }
+
+  return fallback;
+}
+
 export function useLogCrud<T extends { id?: string; logged_at: string }>(
   config: UseLogCrudConfig<T>
 ): UseLogCrudReturn<T> {
@@ -68,34 +90,35 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const { message, toastVisible, error, showSuccess, showError, clearError, dismissToast } = useLogFeedback();
+  const { message, toastVisible, error, showSuccess, showError, clearError, dismissToast } =
+    useLogFeedback();
 
-  const {
-    showHistory,
-    setShowHistory,
-    history,
-    fetchHistory,
-  } = useLogHistory<T & { id: string }>({
-    table,
-    userId: user?.id,
-    historyLimit,
-    onError: showError,
-  });
+  const { showHistory, setShowHistory, history, fetchHistory } = useLogHistory<T & { id: string }>(
+    {
+      table,
+      userId: user?.id,
+      historyLimit,
+      onError: showError,
+    }
+  );
 
   const resetForm = useCallback(() => {
     setFormData(createDefaultFormData());
     setEditingId(null);
   }, [createDefaultFormData]);
 
-  const runSaveSideEffects = useCallback((mode: 'create' | 'update', entryId?: string) => {
-    if (mode === 'update') {
-      showSuccess(getUpdateMessage());
-      saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId });
-    } else {
-      showSuccess(getSuccessMessage(logType));
-      saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
-    }
-  }, [logType, showSuccess]);
+  const runSaveSideEffects = useCallback(
+    (mode: 'create' | 'update', entryId?: string) => {
+      if (mode === 'update') {
+        showSuccess(getUpdateMessage());
+        saveEventManager.emit({ type: 'update', logType, timestamp: Date.now(), entryId });
+      } else {
+        showSuccess(getSuccessMessage(logType));
+        saveEventManager.emit({ type: 'save', logType, timestamp: Date.now() });
+      }
+    },
+    [logType, showSuccess]
+  );
 
   const saveEntry = useCallback(async (): Promise<{ mode: 'create' | 'update' }> => {
     if (!user?.id) {
@@ -129,7 +152,15 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
     runSaveSideEffects('create');
     return { mode: 'create' };
-  }, [user?.id, formData, editingId, table, buildUpdatePayload, buildInsertPayload, runSaveSideEffects]);
+  }, [
+    user?.id,
+    formData,
+    editingId,
+    table,
+    buildUpdatePayload,
+    buildInsertPayload,
+    runSaveSideEffects,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +176,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       }
     } catch (err) {
       console.error(`Error saving entry to ${table}:`, err);
-      showError(err instanceof Error ? err.message : 'Failed to save entry');
+      showError(getErrorMessage(err, 'Failed to save entry'));
     } finally {
       setSaving(false);
     }
@@ -202,7 +233,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       }
     } catch (err) {
       console.error(`Error deleting entry from ${table}:`, err);
-      showError(err instanceof Error ? err.message : 'Failed to delete entry');
+      showError(getErrorMessage(err, 'Failed to delete entry'));
     }
   };
 
