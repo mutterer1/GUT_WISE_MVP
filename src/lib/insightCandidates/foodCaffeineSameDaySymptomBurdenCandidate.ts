@@ -29,7 +29,7 @@ function hasSymptomContext(day: UserDailyFeatures): boolean {
 }
 
 function isCaffeineExposureDay(day: UserDailyFeatures): boolean {
-  return (day.hydration_caffeine_mg ?? 0) > 0 || day.caffeine_beverage_count >= 1;
+  return day.caffeine_beverage_count >= 1;
 }
 
 function isElevatedSymptomBurden(
@@ -170,8 +170,6 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     supportingLogTypes
   );
 
-  const exposedDays = eligibleDays.filter((day) => isCaffeineExposureDay(day));
-
   const evidence: CandidateEvidence = {
     support_count: supportCount,
     exposure_count: exposureCount,
@@ -193,22 +191,12 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
     evidence_gaps: evidenceGaps,
-    notes: [
-      'Same-day comparison of caffeine exposure days against non-caffeine days.',
-      'Exposure now recognizes total daily caffeine mg, not just beverage count.',
-    ],
+    notes: ['Same-day comparison of caffeine exposure days against non-caffeine days.'],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
       caffeine_exposure_day_count: exposureCount,
-      average_exposed_caffeine_mg:
-        exposureCount > 0
-          ? Math.round(
-              exposedDays.reduce((sum, day) => sum + (day.hydration_caffeine_mg ?? 0), 0) /
-                exposureCount
-            )
-          : 0,
     },
   };
 
@@ -217,7 +205,7 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     insight_key: INSIGHT_KEY,
     category: 'food',
     subtype: 'food_caffeine_same_day_symptom_burden',
-    trigger_factors: ['hydration_caffeine_mg', 'caffeine_beverage_count'],
+    trigger_factors: ['caffeine_beverage_count'],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
