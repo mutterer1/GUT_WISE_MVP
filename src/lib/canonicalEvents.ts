@@ -11,6 +11,8 @@ import type {
 } from '../types/logs';
 import type { CanonicalEvent, EventType } from '../types/canonicalEvents';
 import { EVENT_TYPE_TO_SOURCE_TABLE } from '../types/canonicalEvents';
+import { deriveFoodIntelligence } from './foodIntelligence';
+import { deriveMedicationIntelligence } from './medicationIntelligence';
 
 function deriveLocalDate(occurredAt: string): string {
   const iso = occurredAt.split('T')[0];
@@ -106,11 +108,30 @@ export function normalizeSymptomEvent(row: SymptomLogRow): CanonicalEvent {
 }
 
 export function normalizeFoodEvent(row: FoodLogRow): CanonicalEvent {
+  const derived = deriveFoodIntelligence({
+    food_items: row.food_items,
+    tags: row.tags,
+  });
+
   return {
     ...baseEvent(row, 'food'),
     payload: {
       food_items: row.food_items,
       meal_type: row.meal_type,
+      food_item_names: derived.food_item_names,
+      matched_ingredient_ids: derived.matched_ingredient_ids,
+      ingredient_signals: derived.ingredient_signals,
+      gut_trigger_load: derived.gut_trigger_load,
+      high_fodmap_food_count: derived.high_fodmap_food_count,
+      dairy_food_count: derived.dairy_food_count,
+      gluten_food_count: derived.gluten_food_count,
+      artificial_sweetener_food_count: derived.artificial_sweetener_food_count,
+      high_fat_food_count: derived.high_fat_food_count,
+      spicy_food_count: derived.spicy_food_count,
+      caffeine_food_count: derived.caffeine_food_count,
+      alcohol_food_count: derived.alcohol_food_count,
+      fiber_dense_food_count: derived.fiber_dense_food_count,
+      common_gut_effects: derived.common_gut_effects,
       ...(row.tags != null && { tags: row.tags }),
       ...(row.portion_size != null && { portion_size: row.portion_size }),
       ...(row.calories != null && { calories: row.calories }),
@@ -125,7 +146,19 @@ export function normalizeHydrationEvent(row: HydrationLogRow): CanonicalEvent {
     payload: {
       amount_ml: row.amount_ml,
       beverage_type: row.beverage_type,
+      ...(row.beverage_category != null && { beverage_category: row.beverage_category }),
       ...(row.caffeine_content != null && { caffeine_content: row.caffeine_content }),
+      ...(row.caffeine_mg != null && { caffeine_mg: row.caffeine_mg }),
+      ...(row.effective_hydration_ml != null && {
+        effective_hydration_ml: row.effective_hydration_ml,
+      }),
+      ...(row.water_goal_contribution_ml != null && {
+        water_goal_contribution_ml: row.water_goal_contribution_ml,
+      }),
+      ...(row.electrolyte_present != null && {
+        electrolyte_present: row.electrolyte_present,
+      }),
+      ...(row.alcohol_present != null && { alcohol_present: row.alcohol_present }),
       ...(row.notes != null && { notes: row.notes }),
     },
   };
@@ -160,6 +193,12 @@ export function normalizeStressEvent(row: StressLogRow): CanonicalEvent {
 }
 
 export function normalizeMedicationEvent(row: MedicationLogRow): CanonicalEvent {
+  const derived = deriveMedicationIntelligence({
+    medication_name: row.medication_name,
+    side_effects: row.side_effects,
+    notes: row.notes,
+  });
+
   return {
     ...baseEvent(row, 'medication'),
     payload: {
@@ -167,6 +206,15 @@ export function normalizeMedicationEvent(row: MedicationLogRow): CanonicalEvent 
       dosage: row.dosage,
       taken_as_prescribed: row.taken_as_prescribed,
       medication_type: row.medication_type,
+      matched_medication_ids: derived.matched_medication_ids,
+      medication_families: derived.medication_families,
+      medication_gut_effects: derived.medication_gut_effects,
+      gi_risk_medication_count: derived.gi_risk_medication_count,
+      motility_slowing_medication_count: derived.motility_slowing_medication_count,
+      motility_speeding_medication_count: derived.motility_speeding_medication_count,
+      acid_suppression_medication_count: derived.acid_suppression_medication_count,
+      microbiome_disruption_medication_count: derived.microbiome_disruption_medication_count,
+      common_gut_effects: derived.common_gut_effects,
       ...(row.side_effects != null && { side_effects: row.side_effects }),
       ...(row.notes != null && { notes: row.notes }),
     },
