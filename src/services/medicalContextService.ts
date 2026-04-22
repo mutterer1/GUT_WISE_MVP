@@ -19,7 +19,64 @@ import type {
   MedicalDocumentIntakeRow,
   MedicalDocumentEvidenceSegmentRow,
   CandidateMedicalFactEvidenceRow,
+  CandidateEvidenceKind,
 } from '../types/medicalContext';
+
+const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
+
+function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind {
+  switch (category) {
+    case 'diagnosis':
+      return 'diagnosis_statement';
+    case 'medication':
+      return 'medication_list';
+    case 'surgery_procedure':
+      return 'procedure_statement';
+    default:
+      return 'summary';
+  }
+}
+
+async function computeFileSha256(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function uploadMedicalDocumentArtifact(params: {
+  userId: string;
+  file: File;
+}): Promise<{
+  storage_bucket: string;
+  storage_path: string;
+  content_sha256: string;
+}> {
+  const { userId, file } = params;
+  const contentSha256 = await computeFileSha256(file);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `${userId}/${new Date().toISOString().replace(/[:.]/g, '-')}-${safeName}`;
+
+  const { error } = await supabase.storage
+    .from(MEDICAL_DOCUMENTS_BUCKET)
+    .upload(storagePath, file, {
+      upsert: false,
+      contentType: file.type || 'application/octet-stream',
+    });
+
+  if (error) {
+    throw new Error(
+      `Failed to upload document artifact. Confirm the '${MEDICAL_DOCUMENTS_BUCKET}' storage bucket exists and is writable. ${error.message}`
+    );
+  }
+
+  return {
+    storage_bucket: MEDICAL_DOCUMENTS_BUCKET,
+    storage_path: storagePath,
+    content_sha256: contentSha256,
+  };
+}
 
 function rowToFact(row: MedicalFactRow): MedicalFact {
   const base = {
@@ -307,6 +364,7 @@ export async function createDocumentIntake(
       storage_path: input.storage_path || null,
       content_sha256: input.content_sha256 || null,
       intake_status: 'uploaded',
+      extraction_status: input.storage_path ? 'queued' : 'not_started',
     })
     .select()
     .maybeSingle();
@@ -345,7 +403,21 @@ export async function updateIntakeStatus(
 export async function seedCandidateFromIntake(
   userId: string,
   intakeId: string,
-  candidate: { category: MedicalFactCategory; detail: Record<string, unknown>; extraction_notes?: string }
+  candidate: {
+    category: MedicalFactCategory;
+    detail: Record<string, unknown>;
+    extraction_notes?: string;
+    extraction_confidence?: number | null;
+    evidence?: {
+      page_number?: number | null;
+      section_label?: string | null;
+      quoted_text?: string | null;
+      normalized_text?: string | null;
+      span_start?: number | null;
+      span_end?: number | null;
+      confidence_score?: number | null;
+    };
+  }
 ): Promise<CandidateMedicalFactRow> {
   const { data, error } = await supabase
     .from('candidate_medical_facts')
@@ -355,7 +427,7 @@ export async function seedCandidateFromIntake(
       detail: candidate.detail,
       extraction_source: 'document_extraction',
       source_document_id: intakeId,
-      extraction_confidence: null,
+      extraction_confidence: candidate.extraction_confidence ?? null,
       extraction_notes: candidate.extraction_notes || null,
       review_status: 'pending_review',
     })
@@ -364,17 +436,67 @@ export async function seedCandidateFromIntake(
 
   if (error) throw error;
 
+  const createdCandidate = data as CandidateMedicalFactRow;
+
+  const quotedText = candidate.evidence?.quoted_text?.trim() ?? '';
+  const hasEvidence =
+    quotedText.length > 0 ||
+    candidate.evidence?.page_number !== undefined ||
+    (candidate.evidence?.section_label?.trim().length ?? 0) > 0;
+
+  if (hasEvidence) {
+    const { data: segmentRow, error: segmentError } = await supabase
+      .from('medical_document_evidence_segments')
+      .insert({
+        user_id: userId,
+        document_intake_id: intakeId,
+        page_number: candidate.evidence?.page_number ?? null,
+        section_label: candidate.evidence?.section_label?.trim() || null,
+        quoted_text: quotedText || candidate.extraction_notes || '[manual evidence note]',
+        normalized_text: candidate.evidence?.normalized_text?.trim() || null,
+        span_start: candidate.evidence?.span_start ?? null,
+        span_end: candidate.evidence?.span_end ?? null,
+        extractor_label: 'manual_review',
+        confidence_score: candidate.evidence?.confidence_score ?? candidate.extraction_confidence ?? null,
+      })
+      .select()
+      .maybeSingle();
+
+    if (segmentError) throw segmentError;
+
+    const segmentId =
+      segmentRow && typeof segmentRow === 'object' && 'id' in segmentRow
+        ? String(segmentRow.id)
+        : null;
+
+    const { error: evidenceError } = await supabase
+      .from('candidate_medical_fact_evidence')
+      .insert({
+        user_id: userId,
+        candidate_medical_fact_id: createdCandidate.id,
+        document_intake_id: intakeId,
+        evidence_segment_id: segmentId,
+        evidence_kind: inferEvidenceKind(candidate.category),
+        page_number: candidate.evidence?.page_number ?? null,
+        cited_text: quotedText || null,
+        confidence_score: candidate.evidence?.confidence_score ?? candidate.extraction_confidence ?? null,
+      });
+
+    if (evidenceError) throw evidenceError;
+  }
+
   await supabase
     .from('medical_document_intakes')
     .update({
       candidate_count: (await fetchCandidatesForIntake(userId, intakeId)).length,
       intake_status: 'review_ready',
+      extraction_status: 'completed',
       updated_at: new Date().toISOString(),
     })
     .eq('id', intakeId)
     .eq('user_id', userId);
 
-  return data as CandidateMedicalFactRow;
+  return createdCandidate;
 }
 
 export async function fetchPendingCandidates(
@@ -388,7 +510,8 @@ export async function fetchPendingCandidates(
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as CandidateMedicalFactRow[];
+  const rows = (data ?? []) as CandidateMedicalFactRow[];
+  return attachEvidenceCounts(userId, rows);
 }
 
 export async function fetchCandidatesForIntake(
@@ -404,6 +527,25 @@ export async function fetchCandidatesForIntake(
 
   if (error) throw error;
   return (data ?? []) as CandidateMedicalFactRow[];
+}
+
+async function syncIntakeReviewState(userId: string, intakeId: string): Promise<void> {
+  const candidates = await fetchCandidatesForIntake(userId, intakeId);
+  const hasPendingCandidates = candidates.some(
+    (candidate) => candidate.review_status === 'pending_review'
+  );
+
+  const { error } = await supabase
+    .from('medical_document_intakes')
+    .update({
+      candidate_count: candidates.length,
+      intake_status: hasPendingCandidates ? 'review_ready' : 'completed',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', intakeId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
 }
 
 export async function fetchDocumentEvidenceSegments(
@@ -452,7 +594,38 @@ export async function fetchAllCandidates(
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as CandidateMedicalFactRow[];
+  return attachEvidenceCounts(userId, (data ?? []) as CandidateMedicalFactRow[]);
+}
+
+async function attachEvidenceCounts(
+  userId: string,
+  candidates: CandidateMedicalFactRow[]
+): Promise<CandidateMedicalFactRow[]> {
+  const candidateIds = candidates.map((candidate) => candidate.id);
+  if (candidateIds.length === 0) return candidates;
+
+  const { data, error } = await supabase
+    .from('candidate_medical_fact_evidence')
+    .select('candidate_medical_fact_id')
+    .eq('user_id', userId)
+    .in('candidate_medical_fact_id', candidateIds);
+
+  if (error) throw error;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const candidateId =
+      row && typeof row === 'object' && 'candidate_medical_fact_id' in row
+        ? String((row as { candidate_medical_fact_id: string }).candidate_medical_fact_id)
+        : null;
+    if (!candidateId) continue;
+    counts.set(candidateId, (counts.get(candidateId) ?? 0) + 1);
+  }
+
+  return candidates.map((candidate) => ({
+    ...candidate,
+    evidence_count: counts.get(candidate.id) ?? 0,
+  }));
 }
 
 export async function acceptCandidate(
@@ -509,6 +682,10 @@ export async function acceptCandidate(
 
   if (updateErr) throw updateErr;
 
+  if (row.source_document_id) {
+    await syncIntakeReviewState(userId, row.source_document_id);
+  }
+
   await syncProfileCounters(userId);
   return rowToFact(promoted);
 }
@@ -517,6 +694,15 @@ export async function rejectCandidate(
   userId: string,
   candidateId: string
 ): Promise<void> {
+  const { data: candidate, error: fetchError } = await supabase
+    .from('candidate_medical_facts')
+    .select('source_document_id')
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+
   const now = new Date().toISOString();
   const { error } = await supabase
     .from('candidate_medical_facts')
@@ -530,4 +716,13 @@ export async function rejectCandidate(
     .eq('review_status', 'pending_review');
 
   if (error) throw error;
+
+  const sourceDocumentId =
+    candidate && typeof candidate === 'object' && 'source_document_id' in candidate
+      ? (candidate as { source_document_id: string | null }).source_document_id
+      : null;
+
+  if (sourceDocumentId) {
+    await syncIntakeReviewState(userId, sourceDocumentId);
+  }
 }
