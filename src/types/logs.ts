@@ -96,6 +96,13 @@ export interface MedicationLogRow extends BaseLogEntry, NormalizedTimestampMeta 
   medication_name: string;
   dosage: string;
   medication_type: 'prescription' | 'otc' | 'supplement';
+  normalized_medication_id?: string | null;
+  dose_value?: number | null;
+  dose_unit?: string | null;
+  route?: string | null;
+  reason_for_use?: string | null;
+  regimen_status?: 'scheduled' | 'as_needed' | 'one_time' | 'unknown' | null;
+  timing_context?: string | null;
   taken_as_prescribed?: boolean;
   side_effects?: string[] | null;
   notes?: string | null;
