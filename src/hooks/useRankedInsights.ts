@@ -52,6 +52,18 @@ export interface UseRankedInsightsOptions {
   enabled?: boolean;
 }
 
+function hasAnyMedicalContext(summary: Awaited<ReturnType<typeof fetchMedicalContextSummary>>): boolean {
+  return summary !== null && (
+    summary.active_diagnoses.length > 0 ||
+    summary.suspected_conditions.length > 0 ||
+    summary.current_medications.length > 0 ||
+    summary.surgeries_procedures.length > 0 ||
+    summary.allergies_intolerances.length > 0 ||
+    summary.active_diet_guidance.length > 0 ||
+    summary.red_flag_history.length > 0
+  );
+}
+
 export function useRankedInsights(options: UseRankedInsightsOptions = {}): RankedInsightsState {
   const { lookbackDays = 90, enabled = true } = options;
   const { user } = useAuth();
@@ -127,7 +139,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         medicalContext
       );
 
-      const hasMedicalContext = medicalContext !== null && medicalContext.has_confirmed_facts;
+      const hasMedicalContext = hasAnyMedicalContext(medicalContext);
 
       const explanationBundle = buildRankedExplanationBundle(annotatedCandidates, {
         analyzed_from: pipelineResult.analyzed_from,
