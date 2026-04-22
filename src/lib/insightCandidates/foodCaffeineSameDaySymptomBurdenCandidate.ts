@@ -29,7 +29,11 @@ function hasSymptomContext(day: UserDailyFeatures): boolean {
 }
 
 function isCaffeineExposureDay(day: UserDailyFeatures): boolean {
-  return day.caffeine_beverage_count >= 1;
+  return (
+    day.caffeine_beverage_count >= 1 ||
+    day.caffeine_food_count >= 1 ||
+    (day.hydration_caffeine_mg ?? 0) >= 40
+  );
 }
 
 function isElevatedSymptomBurden(
@@ -197,6 +201,7 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
       caffeine_exposure_day_count: exposureCount,
+      caffeine_food_day_count: eligibleDays.filter((day) => day.caffeine_food_count >= 1).length,
     },
   };
 
@@ -205,7 +210,7 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     insight_key: INSIGHT_KEY,
     category: 'food',
     subtype: 'food_caffeine_same_day_symptom_burden',
-    trigger_factors: ['caffeine_beverage_count'],
+    trigger_factors: ['caffeine_beverage_count', 'caffeine_food_count', 'hydration_caffeine_mg'],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
