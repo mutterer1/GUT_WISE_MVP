@@ -1,3 +1,5 @@
+import type { HydrationBeverageCategory } from '../constants/domain';
+
 export type LogType =
   | 'bm'
   | 'food'
@@ -79,7 +81,13 @@ export interface HydrationLogRow extends BaseLogEntry, NormalizedTimestampMeta {
   user_id: string;
   amount_ml: number;
   beverage_type: string;
-  caffeine_content?: boolean;
+  beverage_category?: HydrationBeverageCategory | null;
+  caffeine_content?: boolean | null;
+  caffeine_mg?: number | null;
+  effective_hydration_ml?: number | null;
+  water_goal_contribution_ml?: number | null;
+  electrolyte_present?: boolean | null;
+  alcohol_present?: boolean | null;
   notes?: string | null;
 }
 
