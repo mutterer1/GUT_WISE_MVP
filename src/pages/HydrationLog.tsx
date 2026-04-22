@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity, Clock, Droplet, Pencil, Save } from 'lucide-react';
+import { Activity, Clock, Droplet, Pencil, Save, Zap } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -18,25 +18,67 @@ import {
   QUICK_AMOUNTS_ML,
   QUICK_AMOUNTS_OZ,
 } from '../utils/hydrationUnits';
+import {
+  BEVERAGE_TYPES,
+  type HydrationBeverageCategory,
+  type HydrationBeverageDefinition,
+} from '../constants/domain';
+import { hydrateLogWithDerivedFields } from '../utils/hydrationClassification';
 
 interface HydrationFormData {
   logged_at: string;
   beverage_type: string;
+  beverage_category: HydrationBeverageCategory;
   amount_ml: number;
   caffeine_content: boolean;
+  caffeine_mg: number;
+  effective_hydration_ml: number;
+  water_goal_contribution_ml: number;
+  electrolyte_present: boolean;
+  alcohol_present: boolean;
   notes: string;
 }
 
-const beverageTypes = [
-  { label: 'Water', value: 'Water', ml: 250 },
-  { label: 'Coffee', value: 'Coffee', ml: 240 },
-  { label: 'Tea', value: 'Tea', ml: 240 },
-  { label: 'Juice', value: 'Juice', ml: 200 },
-  { label: 'Soda', value: 'Soda', ml: 330 },
-  { label: 'Sports Drink', value: 'Sports Drink', ml: 500 },
-  { label: 'Milk', value: 'Milk', ml: 250 },
-  { label: 'Other', value: 'Other', ml: 250 },
-];
+function getBeverageDefinition(type: string): HydrationBeverageDefinition {
+  return (
+    BEVERAGE_TYPES.find((item) => item.value === type) ??
+    BEVERAGE_TYPES.find((item) => item.category === 'other') ??
+    BEVERAGE_TYPES[0]
+  );
+}
+
+function buildHydrationFormData(
+  overrides: Partial<HydrationFormData> = {}
+): Omit<HydrationFormData, 'logged_at'> {
+  const baseDefinition = getBeverageDefinition(overrides.beverage_type ?? 'Water');
+  const baseAmount = overrides.amount_ml ?? baseDefinition.ml;
+  const baseCaffeineContent =
+    overrides.caffeine_content ?? (overrides.caffeine_mg ?? baseDefinition.defaultCaffeineMg) > 0;
+
+  const derived = hydrateLogWithDerivedFields({
+    beverage_type: overrides.beverage_type ?? baseDefinition.value,
+    beverage_category: overrides.beverage_category ?? baseDefinition.category,
+    amount_ml: baseAmount,
+    caffeine_content: baseCaffeineContent,
+    caffeine_mg: overrides.caffeine_mg,
+    electrolyte_present: overrides.electrolyte_present,
+    alcohol_present: overrides.alcohol_present,
+  });
+
+  return {
+    beverage_type: derived.beverage_type,
+    beverage_category: derived.beverage_category,
+    amount_ml: derived.amount_ml,
+    caffeine_content: baseCaffeineContent,
+    caffeine_mg: derived.caffeine_mg,
+    effective_hydration_ml: overrides.effective_hydration_ml ?? derived.effective_hydration_ml,
+    water_goal_contribution_ml:
+      overrides.water_goal_contribution_ml ?? derived.water_goal_contribution_ml,
+    electrolyte_present: overrides.electrolyte_present ?? derived.electrolyte_present,
+    alcohol_present: overrides.alcohol_present ?? derived.alcohol_present,
+    notes: overrides.notes ?? '',
+  };
+}
 
 export default function HydrationLog() {
   const [unit, setUnit] = useState<HydrationUnit>(getStoredHydrationUnit);
@@ -60,32 +102,66 @@ export default function HydrationLog() {
   } = useLogCrud<HydrationFormData>({
     table: 'hydration_logs' as const,
     logType: 'hydration' as const,
-    defaultValues: {
-      beverage_type: 'Water' as const,
-      amount_ml: 250,
-      caffeine_content: false,
-      notes: '' as const,
+    defaultValues: buildHydrationFormData(),
+    buildInsertPayload: (data, userId) => {
+      const normalized = hydrateLogWithDerivedFields(data);
+      return {
+        user_id: userId,
+        logged_at: data.logged_at,
+        beverage_type: normalized.beverage_type,
+        beverage_category: normalized.beverage_category,
+        amount_ml: normalized.amount_ml,
+        caffeine_content: data.caffeine_content,
+        caffeine_mg: normalized.caffeine_mg,
+        effective_hydration_ml: normalized.effective_hydration_ml,
+        water_goal_contribution_ml: normalized.water_goal_contribution_ml,
+        electrolyte_present: normalized.electrolyte_present,
+        alcohol_present: normalized.alcohol_present,
+        notes: data.notes || null,
+      };
     },
-    buildInsertPayload: (data, userId) => ({
-      user_id: userId,
-      logged_at: data.logged_at,
-      beverage_type: data.beverage_type,
-      amount_ml: data.amount_ml,
-      caffeine_content: data.caffeine_content,
-      notes: data.notes,
-    }),
-    buildUpdatePayload: (data) => ({
-      logged_at: data.logged_at,
-      beverage_type: data.beverage_type,
-      amount_ml: data.amount_ml,
-      caffeine_content: data.caffeine_content,
-      notes: data.notes,
+    buildUpdatePayload: (data) => {
+      const normalized = hydrateLogWithDerivedFields(data);
+      return {
+        logged_at: data.logged_at,
+        beverage_type: normalized.beverage_type,
+        beverage_category: normalized.beverage_category,
+        amount_ml: normalized.amount_ml,
+        caffeine_content: data.caffeine_content,
+        caffeine_mg: normalized.caffeine_mg,
+        effective_hydration_ml: normalized.effective_hydration_ml,
+        water_goal_contribution_ml: normalized.water_goal_contribution_ml,
+        electrolyte_present: normalized.electrolyte_present,
+        alcohol_present: normalized.alcohol_present,
+        notes: data.notes || null,
+      };
+    },
+    mapHistoryToForm: (log) => ({
+      logged_at: log.logged_at,
+      ...buildHydrationFormData(log),
     }),
   });
+
+  const applyHydrationChanges = (patch: Partial<HydrationFormData>) => {
+    setFormData((prev) => {
+      const next = { ...prev, ...patch };
+      const normalized = hydrateLogWithDerivedFields(next);
+      return {
+        ...next,
+        beverage_category: normalized.beverage_category,
+        caffeine_mg: normalized.caffeine_mg,
+        effective_hydration_ml: normalized.effective_hydration_ml,
+        water_goal_contribution_ml: normalized.water_goal_contribution_ml,
+        electrolyte_present: normalized.electrolyte_present,
+        alcohol_present: normalized.alcohol_present,
+      };
+    });
+  };
 
   const displayValue = unit === 'imperial' ? mlToOz(formData.amount_ml) : formData.amount_ml;
   const unitLabel = getUnitLabel(unit);
   const quickAmounts = unit === 'imperial' ? QUICK_AMOUNTS_OZ : QUICK_AMOUNTS_ML;
+  const selectedBeverage = getBeverageDefinition(formData.beverage_type);
 
   const handleUnitToggle = (nextUnit: HydrationUnit) => {
     setUnit(nextUnit);
@@ -93,26 +169,46 @@ export default function HydrationLog() {
   };
 
   const handleBeverageTypeChange = (type: string) => {
-    const beverage = beverageTypes.find((item) => item.value === type);
-    const hasCaffeine = type === 'Coffee' || type === 'Tea' || type === 'Soda';
+    const beverage = getBeverageDefinition(type);
+    const hasCaffeine = beverage.defaultCaffeineMg > 0;
 
-    setFormData({
-      ...formData,
-      beverage_type: type,
-      amount_ml: beverage?.ml || 250,
+    applyHydrationChanges({
+      beverage_type: beverage.value,
+      beverage_category: beverage.category,
+      amount_ml: beverage.ml,
       caffeine_content: hasCaffeine,
+      caffeine_mg: beverage.defaultCaffeineMg,
+      electrolyte_present: beverage.electrolytePresent,
+      alcohol_present: beverage.alcoholPresent,
     });
   };
 
   const handleQuickAmount = (amount: number) => {
     const ml = unit === 'imperial' ? ozToMl(amount) : amount;
-    setFormData({ ...formData, amount_ml: ml });
+    applyHydrationChanges({ amount_ml: ml });
   };
 
   const handleCustomAmount = (raw: string) => {
     const parsed = parseFloat(raw) || 0;
     const ml = unit === 'imperial' ? ozToMl(parsed) : Math.round(parsed);
-    setFormData({ ...formData, amount_ml: ml });
+    applyHydrationChanges({ amount_ml: ml });
+  };
+
+  const handleCaffeineToggle = () => {
+    const nextCaffeineContent = !formData.caffeine_content;
+
+    applyHydrationChanges({
+      caffeine_content: nextCaffeineContent,
+      caffeine_mg: nextCaffeineContent ? Math.max(formData.caffeine_mg, selectedBeverage.defaultCaffeineMg, 25) : 0,
+    });
+  };
+
+  const handleCaffeineMgChange = (raw: string) => {
+    const parsed = Math.max(0, parseInt(raw, 10) || 0);
+    applyHydrationChanges({
+      caffeine_content: parsed > 0,
+      caffeine_mg: parsed,
+    });
   };
 
   const isQuickSelected = (amount: number) => {
@@ -120,10 +216,17 @@ export default function HydrationLog() {
     return formData.amount_ml === ml;
   };
 
+  const hydrationModelLabel =
+    formData.water_goal_contribution_ml > 0
+      ? 'Counts toward water goal'
+      : formData.alcohol_present
+        ? 'Tracked separately from hydration'
+        : 'Counts as total fluid, not water goal';
+
   return (
     <LogPageShell
       title="Hydration Log"
-      subtitle="Track fluid intake with enough structure to connect hydration, caffeine, and symptom response."
+      subtitle="Track fluid intake with enough structure to separate water progress, total fluids, and caffeine exposure."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -172,7 +275,7 @@ export default function HydrationLog() {
                   required
                 />
                 <p className="field-help mt-2">
-                  Log when the drink happened so hydration timing stays useful for daily review.
+                  Log when the drink happened so timing can be compared with symptoms, sleep, and bowel activity.
                 </p>
               </div>
 
@@ -185,7 +288,10 @@ export default function HydrationLog() {
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                   {formatHydrationAmount(formData.amount_ml, unit)}
-                  {formData.caffeine_content ? ' · contains caffeine' : ' · caffeine-free'}
+                  {formData.caffeine_mg > 0 ? ` · ${formData.caffeine_mg} mg caffeine` : ' · caffeine-free'}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--color-text-tertiary)]">
+                  {hydrationModelLabel}
                 </p>
               </div>
             </div>
@@ -198,8 +304,8 @@ export default function HydrationLog() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                {beverageTypes.map((type) => (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                {BEVERAGE_TYPES.map((type) => (
                   <button
                     key={type.value}
                     type="button"
@@ -221,6 +327,13 @@ export default function HydrationLog() {
                     />
                     <div className="text-sm font-medium text-[var(--color-text-primary)]">
                       {type.label}
+                    </div>
+                    <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                      {type.category === 'water'
+                        ? 'Water goal'
+                        : type.category === 'electrolyte'
+                          ? 'Electrolyte'
+                          : type.category}
                     </div>
                   </button>
                 ))}
@@ -284,27 +397,86 @@ export default function HydrationLog() {
               />
             </div>
 
-            <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
-              <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                Contains Caffeine
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, caffeine_content: !formData.caffeine_content })
-                }
-                className={[
-                  'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
-                  formData.caffeine_content ? 'bg-[var(--color-warning)]' : 'bg-white/12',
-                ].join(' ')}
-              >
-                <span
-                  className={[
-                    'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-                    formData.caffeine_content ? 'translate-x-6' : 'translate-x-1',
-                  ].join(' ')}
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+                      Contains Caffeine
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                      Track caffeine separately from hydration.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCaffeineToggle}
+                    className={[
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+                      formData.caffeine_content ? 'bg-[var(--color-warning)]' : 'bg-white/12',
+                    ].join(' ')}
+                  >
+                    <span
+                      className={[
+                        'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                        formData.caffeine_content ? 'translate-x-6' : 'translate-x-1',
+                      ].join(' ')}
+                    />
+                  </button>
+                </div>
+
+                <label htmlFor="caffeine_mg" className="field-label mb-2 block">
+                  Caffeine Amount (mg)
+                </label>
+                <input
+                  type="number"
+                  id="caffeine_mg"
+                  value={formData.caffeine_mg}
+                  onChange={(e) => handleCaffeineMgChange(e.target.value)}
+                  className="input-base w-full"
+                  min="0"
+                  step="1"
                 />
-              </button>
+              </div>
+
+              <div className="surface-panel-soft rounded-[24px] p-4 sm:p-5">
+                <div className="mb-4 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-[var(--color-accent-secondary)]" />
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                    Hydration interpretation
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <MetricChip
+                    label="Effective Hydration"
+                    value={formatHydrationAmount(formData.effective_hydration_ml, unit)}
+                  />
+                  <MetricChip
+                    label="Water Goal Credit"
+                    value={formatHydrationAmount(formData.water_goal_contribution_ml, unit)}
+                  />
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {formData.electrolyte_present && (
+                    <span className="rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-3 py-1 text-xs text-[var(--color-accent-primary)]">
+                      Electrolytes present
+                    </span>
+                  )}
+                  {formData.alcohol_present && (
+                    <span className="rounded-full border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] px-3 py-1 text-xs text-[rgba(252,165,165,0.98)]">
+                      Alcohol tracked separately
+                    </span>
+                  )}
+                  {!formData.electrolyte_present && !formData.alcohol_present && (
+                    <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs text-[var(--color-text-tertiary)]">
+                      Category: {formData.beverage_category}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
@@ -318,7 +490,7 @@ export default function HydrationLog() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="input-base min-h-[112px] w-full resize-none"
                 rows={4}
-                placeholder="Additional details..."
+                placeholder="Context, brand, timing, or anything you want to remember..."
               />
             </div>
 
@@ -356,7 +528,9 @@ export default function HydrationLog() {
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         {log.beverage_type} · {formatHydrationAmount(log.amount_ml, unit)}
-                        {log.caffeine_content ? ' · Contains Caffeine' : ''}
+                        {typeof log.caffeine_mg === 'number' && log.caffeine_mg > 0
+                          ? ` · ${log.caffeine_mg} mg caffeine`
+                          : ''}
                       </div>
                     </div>
                     <div className="flex gap-3 text-sm">
@@ -377,8 +551,29 @@ export default function HydrationLog() {
                     </div>
                   </div>
 
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <MetricChip
+                      label="Category"
+                      value={String(log.beverage_category ?? 'other')}
+                    />
+                    <MetricChip
+                      label="Effective Hydration"
+                      value={formatHydrationAmount(
+                        log.effective_hydration_ml ?? log.amount_ml,
+                        unit
+                      )}
+                    />
+                    <MetricChip
+                      label="Water Goal Credit"
+                      value={formatHydrationAmount(
+                        log.water_goal_contribution_ml ?? 0,
+                        unit
+                      )}
+                    />
+                  </div>
+
                   {log.notes && (
-                    <div className="rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       {log.notes}
                     </div>
                   )}
@@ -389,5 +584,16 @@ export default function HydrationLog() {
         </Card>
       )}
     </LogPageShell>
+  );
+}
+
+function MetricChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3">
+      <span className="text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <div className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">{value}</div>
+    </div>
   );
 }
