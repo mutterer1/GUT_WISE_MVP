@@ -16,7 +16,7 @@ export default function HydrationCorrelationChart({ data }: HydrationCorrelation
   if (!hasData) {
     return (
       <div className="flex h-64 items-center justify-center text-gray-500">
-        No hydration or stool data available for this period
+        No water, fluid, or stool data available for this period
       </div>
     );
   }
