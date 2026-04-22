@@ -17,6 +17,8 @@ import type {
   CandidateMedicalFactRow,
   CandidateReviewStatus,
   MedicalDocumentIntakeRow,
+  MedicalDocumentEvidenceSegmentRow,
+  CandidateMedicalFactEvidenceRow,
 } from '../types/medicalContext';
 
 function rowToFact(row: MedicalFactRow): MedicalFact {
@@ -283,7 +285,15 @@ export async function deactivateMedicalFact(
 
 export async function createDocumentIntake(
   userId: string,
-  input: { file_name: string; file_type: string; file_size_bytes: number; document_notes?: string }
+  input: {
+    file_name: string;
+    file_type: string;
+    file_size_bytes: number;
+    document_notes?: string;
+    storage_bucket?: string;
+    storage_path?: string;
+    content_sha256?: string;
+  }
 ): Promise<MedicalDocumentIntakeRow> {
   const { data, error } = await supabase
     .from('medical_document_intakes')
@@ -293,6 +303,9 @@ export async function createDocumentIntake(
       file_type: input.file_type,
       file_size_bytes: input.file_size_bytes,
       document_notes: input.document_notes || null,
+      storage_bucket: input.storage_bucket || null,
+      storage_path: input.storage_path || null,
+      content_sha256: input.content_sha256 || null,
       intake_status: 'uploaded',
     })
     .select()
@@ -391,6 +404,37 @@ export async function fetchCandidatesForIntake(
 
   if (error) throw error;
   return (data ?? []) as CandidateMedicalFactRow[];
+}
+
+export async function fetchDocumentEvidenceSegments(
+  userId: string,
+  intakeId: string
+): Promise<MedicalDocumentEvidenceSegmentRow[]> {
+  const { data, error } = await supabase
+    .from('medical_document_evidence_segments')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('document_intake_id', intakeId)
+    .order('page_number', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as MedicalDocumentEvidenceSegmentRow[];
+}
+
+export async function fetchCandidateEvidence(
+  userId: string,
+  candidateId: string
+): Promise<CandidateMedicalFactEvidenceRow[]> {
+  const { data, error } = await supabase
+    .from('candidate_medical_fact_evidence')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('candidate_medical_fact_id', candidateId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as CandidateMedicalFactEvidenceRow[];
 }
 
 export async function fetchAllCandidates(
