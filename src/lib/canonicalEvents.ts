@@ -13,6 +13,7 @@ import type {
   FoodLogItemIngredientRow,
   FoodLogItemRow,
   IngredientReferenceItemRow,
+  MedicationReferenceItemRow,
 } from '../types/intelligence';
 import type { CanonicalEvent, EventType } from '../types/canonicalEvents';
 import { EVENT_TYPE_TO_SOURCE_TABLE } from '../types/canonicalEvents';
@@ -105,6 +106,10 @@ interface EnrichedFoodLogItemRow extends FoodLogItemRow {
 
 export interface EnrichedFoodLogRow extends FoodLogRow {
   normalized_items?: EnrichedFoodLogItemRow[];
+}
+
+export interface EnrichedMedicationLogRow extends MedicationLogRow {
+  medication_reference?: MedicationReferenceItemRow | null;
 }
 
 function uniqueSortedStrings(values: string[]): string[] {
@@ -240,6 +245,85 @@ function deriveFoodIntelligenceFromNormalizedItems(
   };
 }
 
+function mergeMedicationIntelligence(
+  primary: ReturnType<typeof deriveMedicationIntelligence>,
+  secondary: ReturnType<typeof deriveMedicationIntelligence>
+): ReturnType<typeof deriveMedicationIntelligence> {
+  const mergedFamilies = uniqueSortedStrings([
+    ...primary.medication_families,
+    ...secondary.medication_families,
+  ]);
+  const mergedGutEffects = uniqueSortedStrings([
+    ...primary.medication_gut_effects,
+    ...secondary.medication_gut_effects,
+  ]);
+
+  return {
+    matched_medication_ids: uniqueSortedStrings([
+      ...primary.matched_medication_ids,
+      ...secondary.matched_medication_ids,
+    ]),
+    medication_families: mergedFamilies as ReturnType<
+      typeof deriveMedicationIntelligence
+    >['medication_families'],
+    medication_gut_effects: mergedGutEffects as ReturnType<
+      typeof deriveMedicationIntelligence
+    >['medication_gut_effects'],
+    gi_risk_medication_count: Math.max(
+      primary.gi_risk_medication_count,
+      secondary.gi_risk_medication_count
+    ),
+    motility_slowing_medication_count: Math.max(
+      primary.motility_slowing_medication_count,
+      secondary.motility_slowing_medication_count
+    ),
+    motility_speeding_medication_count: Math.max(
+      primary.motility_speeding_medication_count,
+      secondary.motility_speeding_medication_count
+    ),
+    acid_suppression_medication_count: Math.max(
+      primary.acid_suppression_medication_count,
+      secondary.acid_suppression_medication_count
+    ),
+    microbiome_disruption_medication_count: Math.max(
+      primary.microbiome_disruption_medication_count,
+      secondary.microbiome_disruption_medication_count
+    ),
+    common_gut_effects: uniqueSortedStrings([
+      ...primary.common_gut_effects,
+      ...secondary.common_gut_effects,
+    ]),
+  };
+}
+
+function deriveMedicationIntelligenceFromReference(
+  row: EnrichedMedicationLogRow
+): ReturnType<typeof deriveMedicationIntelligence> | null {
+  const reference = row.medication_reference;
+  if (!reference) return null;
+
+  const referenceNames = uniqueSortedStrings([
+    reference.display_name,
+    reference.generic_name,
+    ...reference.brand_names,
+  ]);
+
+  const referenceContext = uniqueSortedStrings([
+    reference.medication_class ?? '',
+    reference.medication_type ?? '',
+    reference.gut_relevance ?? '',
+    reference.route ?? '',
+    ...reference.common_gut_effects,
+    ...reference.interaction_flags,
+  ]);
+
+  return deriveMedicationIntelligence({
+    medication_name: referenceNames.join(' '),
+    side_effects: row.side_effects,
+    notes: referenceContext.join(' '),
+  });
+}
+
 export function normalizeBMEvent(row: BMLogRow): CanonicalEvent {
   return {
     ...baseEvent(row, 'bm'),
@@ -360,12 +444,16 @@ export function normalizeStressEvent(row: StressLogRow): CanonicalEvent {
   };
 }
 
-export function normalizeMedicationEvent(row: MedicationLogRow): CanonicalEvent {
-  const derived = deriveMedicationIntelligence({
+export function normalizeMedicationEvent(row: EnrichedMedicationLogRow): CanonicalEvent {
+  const fallbackDerived = deriveMedicationIntelligence({
     medication_name: row.medication_name,
     side_effects: row.side_effects,
     notes: row.notes,
   });
+  const referenceDerived = deriveMedicationIntelligenceFromReference(row);
+  const derived = referenceDerived
+    ? mergeMedicationIntelligence(referenceDerived, fallbackDerived)
+    : fallbackDerived;
 
   return {
     ...baseEvent(row, 'medication'),
@@ -374,6 +462,33 @@ export function normalizeMedicationEvent(row: MedicationLogRow): CanonicalEvent 
       dosage: row.dosage,
       taken_as_prescribed: row.taken_as_prescribed,
       medication_type: row.medication_type,
+      ...(row.normalized_medication_id != null && {
+        normalized_medication_id: row.normalized_medication_id,
+      }),
+      ...(row.dose_value != null && { dose_value: row.dose_value }),
+      ...(row.dose_unit != null && { dose_unit: row.dose_unit }),
+      ...(row.route != null && { route: row.route }),
+      ...(row.reason_for_use != null && { reason_for_use: row.reason_for_use }),
+      ...(row.regimen_status != null && { regimen_status: row.regimen_status }),
+      ...(row.timing_context != null && { timing_context: row.timing_context }),
+      ...(row.medication_reference?.display_name != null && {
+        normalized_medication_name: row.medication_reference.display_name,
+      }),
+      ...(row.medication_reference?.generic_name != null && {
+        medication_generic_name: row.medication_reference.generic_name,
+      }),
+      ...(row.medication_reference?.medication_class != null && {
+        medication_class: row.medication_reference.medication_class,
+      }),
+      ...(row.medication_reference?.rxnorm_code != null && {
+        rxnorm_code: row.medication_reference.rxnorm_code,
+      }),
+      ...(row.medication_reference?.gut_relevance != null && {
+        gut_relevance: row.medication_reference.gut_relevance,
+      }),
+      ...(row.medication_reference?.interaction_flags != null && {
+        interaction_flags: row.medication_reference.interaction_flags,
+      }),
       matched_medication_ids: derived.matched_medication_ids,
       medication_families: derived.medication_families,
       medication_gut_effects: derived.medication_gut_effects,
