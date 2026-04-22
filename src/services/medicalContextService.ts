@@ -100,7 +100,18 @@ function rowToFact(row: MedicalFactRow): MedicalFact {
   return { ...base, detail: row.detail } as MedicalFact;
 }
 
-function categorizeFacts(facts: MedicalFact[]): Omit<MedicalContextSummary, 'user_id' | 'has_confirmed_facts' | 'last_updated'> {
+function categorizeFacts(
+  facts: MedicalFact[]
+): Omit<
+  MedicalContextSummary,
+  | 'user_id'
+  | 'has_confirmed_facts'
+  | 'confirmed_document_backed_fact_count'
+  | 'confirmed_manual_fact_count'
+  | 'user_reported_fact_count'
+  | 'pending_candidates_count'
+  | 'last_updated'
+> {
   const result = {
     active_diagnoses: [] as DiagnosisFact[],
     suspected_conditions: [] as SuspectedConditionFact[],
@@ -140,6 +151,14 @@ function categorizeFacts(facts: MedicalFact[]): Omit<MedicalContextSummary, 'use
   return result;
 }
 
+function isDocumentBackedFact(fact: MedicalFact): boolean {
+  return (
+    fact.confirmation_state === 'confirmed' &&
+    fact.provenance.source === 'document_extraction' &&
+    fact.provenance.source_document_id !== null
+  );
+}
+
 export async function fetchActiveMedicalFacts(
   userId: string,
   filter?: ConfirmedFactFilter
@@ -172,14 +191,28 @@ export async function fetchMedicalContextSummary(userId: string): Promise<Medica
     active_only: true,
     confirmed_only: true,
   });
+  const pendingCandidatesCount = await fetchPendingCandidatesCount(userId);
 
   const categorized = categorizeFacts(facts);
   const lastUpdated = facts.length > 0 ? facts[0].updated_at : null;
+  const confirmedDocumentBackedFactCount = facts.filter(isDocumentBackedFact).length;
+  const confirmedManualFactCount = facts.filter(
+    (fact) =>
+      fact.confirmation_state === 'confirmed' &&
+      !isDocumentBackedFact(fact)
+  ).length;
+  const userReportedFactCount = facts.filter(
+    (fact) => fact.confirmation_state === 'user_reported'
+  ).length;
 
   return {
     user_id: userId,
     ...categorized,
     has_confirmed_facts: facts.some(f => f.confirmation_state === 'confirmed'),
+    confirmed_document_backed_fact_count: confirmedDocumentBackedFactCount,
+    confirmed_manual_fact_count: confirmedManualFactCount,
+    user_reported_fact_count: userReportedFactCount,
+    pending_candidates_count: pendingCandidatesCount,
     last_updated: lastUpdated,
   };
 }
