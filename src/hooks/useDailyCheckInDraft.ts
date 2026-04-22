@@ -32,7 +32,13 @@ function buildDefaultDraft(): DailyCheckInDraft {
       enabled: true,
       amount_ml: 250,
       beverage_type: 'Water',
+      beverage_category: 'water',
       caffeine_content: false,
+      caffeine_mg: 0,
+      effective_hydration_ml: 250,
+      water_goal_contribution_ml: 250,
+      electrolyte_present: false,
+      alcohol_present: false,
     },
     sleep: {
       enabled: false,
