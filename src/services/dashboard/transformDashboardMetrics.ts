@@ -30,7 +30,7 @@ interface SleepLogRow {
   duration_minutes: number | null;
   quality: number | null;
   felt_rested: boolean;
-  sleep_start: string;
+  logged_at: string;
 }
 
 interface StressLogRow {
