@@ -42,7 +42,10 @@ export function average(values: number[]): number | null {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
-export function proportionTrue(days: UserDailyFeatures[], predicate: (d: UserDailyFeatures) => boolean): number | null {
+export function proportionTrue(
+  days: UserDailyFeatures[],
+  predicate: (d: UserDailyFeatures) => boolean
+): number | null {
   if (days.length === 0) return null;
   const count = days.filter(predicate).length;
   return Math.round((count / days.length) * 1000) / 1000;
@@ -113,12 +116,21 @@ function computeSleepBaseline(days: UserDailyFeatures[]): SleepBaseline {
 }
 
 function computeHydrationBaseline(days: UserDailyFeatures[]): HydrationBaseline {
-  const totals = days.map((d) => d.hydration_total_ml);
+  const effectiveTotals = days.map((d) => d.hydration_total_ml);
+  const rawTotals = days.map((d) => d.hydration_raw_total_ml ?? d.hydration_total_ml);
+  const waterGoalTotals = days.map((d) => d.hydration_water_goal_ml ?? 0);
+  const caffeineTotals = days.map((d) => d.hydration_caffeine_mg ?? 0);
 
   return {
-    median_total_ml: median(totals),
-    low_hydration_threshold: percentile(totals, 25),
-    high_hydration_threshold: percentile(totals, 75),
+    median_total_ml: median(effectiveTotals),
+    low_hydration_threshold: percentile(effectiveTotals, 25),
+    high_hydration_threshold: percentile(effectiveTotals, 75),
+    median_raw_total_ml: median(rawTotals),
+    median_water_goal_ml: median(waterGoalTotals),
+    low_water_goal_threshold: percentile(waterGoalTotals, 25),
+    high_water_goal_threshold: percentile(waterGoalTotals, 75),
+    median_caffeine_mg: median(caffeineTotals),
+    high_caffeine_threshold: percentile(caffeineTotals, 75),
   };
 }
 
@@ -207,9 +219,7 @@ function computeCycleBaseline(days: UserDailyFeatures[]): CycleBaseline {
     menstrual_phase_bm_count_median: mOk
       ? median(menstrualDays.map((d) => d.bm_count))
       : null,
-    luteal_phase_bm_count_median: lOk
-      ? median(lutealDays.map((d) => d.bm_count))
-      : null,
+    luteal_phase_bm_count_median: lOk ? median(lutealDays.map((d) => d.bm_count)) : null,
     menstrual_phase_loose_stool_rate: mOk
       ? proportionTrue(menstrualDays, (d) => d.loose_stool_count > 0)
       : null,
