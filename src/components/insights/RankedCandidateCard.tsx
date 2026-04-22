@@ -88,6 +88,8 @@ const subtypeLabels: Record<string, string> = {
 
   food_caffeine_same_day_symptom_burden: 'Caffeine intake linked to same-day symptoms',
   caffeine_same_day_symptom_burden: 'Caffeine intake linked to same-day symptoms',
+  food_gut_trigger_load_same_day_symptom_burden:
+    'Known ingredient triggers associated with same-day symptoms',
   food_late_meal_next_day_bm_shift: 'Late eating associated with next-day bowel changes',
   late_meal_next_day_bm_shift: 'Late eating associated with next-day bowel changes',
   food_meal_regularity_symptom_burden: 'Irregular meal timing linked to worse symptoms',
@@ -106,8 +108,8 @@ const subtypeLabels: Record<string, string> = {
   exercise_low_movement_symptom_burden: 'Low activity associated with higher symptom load',
   low_movement_symptom_burden: 'Low activity associated with higher symptom load',
 
-  medication_any_bm_shift: 'Medication timing linked to bowel changes',
-  medication_any_symptom_burden: 'Medication timing associated with symptom patterns',
+  medication_any_bm_shift: 'GI-relevant medication timing linked to bowel changes',
+  medication_any_symptom_burden: 'GI-relevant medication timing associated with symptom patterns',
 
   multifactor_stress_sleep_hydration_risk: 'Combined stress, poor sleep, and low hydration',
   compound_risk_day: 'Combined stress, poor sleep, and low hydration',
