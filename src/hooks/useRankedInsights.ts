@@ -60,7 +60,8 @@ function hasAnyMedicalContext(summary: Awaited<ReturnType<typeof fetchMedicalCon
     summary.surgeries_procedures.length > 0 ||
     summary.allergies_intolerances.length > 0 ||
     summary.active_diet_guidance.length > 0 ||
-    summary.red_flag_history.length > 0
+    summary.red_flag_history.length > 0 ||
+    summary.pending_candidates_count > 0
   );
 }
 
@@ -157,6 +158,7 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
             c.priority_tier,
             c.medical_context_modifier_applied ? '1' : '0',
             c.medical_context_score_delta.toFixed(4),
+            c.medical_context_annotations.join('~'),
           ].join(':')
         )
         .join('|');
