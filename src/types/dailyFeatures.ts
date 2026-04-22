@@ -22,7 +22,19 @@ export interface UserDailyFeatures {
   symptom_types: string[];
 
   meal_count: number;
+  food_item_names: string[];
   food_tag_set: string[];
+  ingredient_signals: string[];
+  gut_trigger_load: number;
+  high_fodmap_food_count: number;
+  dairy_food_count: number;
+  gluten_food_count: number;
+  artificial_sweetener_food_count: number;
+  high_fat_food_count: number;
+  spicy_food_count: number;
+  caffeine_food_count: number;
+  alcohol_food_count: number;
+  fiber_dense_food_count: number;
   late_meal: boolean;
 
   hydration_total_ml: number;
@@ -43,6 +55,13 @@ export interface UserDailyFeatures {
 
   medication_event_count: number;
   medications_taken: string[];
+  medication_families: string[];
+  medication_gut_effects: string[];
+  gi_risk_medication_count: number;
+  motility_slowing_medication_count: number;
+  motility_speeding_medication_count: number;
+  acid_suppression_medication_count: number;
+  microbiome_disruption_medication_count: number;
 
   cycle_entry_count: number;
   cycle_day: number | null;
