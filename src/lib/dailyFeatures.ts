@@ -158,19 +158,62 @@ function aggregateSymptoms(events: CanonicalEvent[]) {
 }
 
 function aggregateFood(events: CanonicalEvent[]) {
+  const allFoodItemNames: string[] = [];
   const allTags: string[] = [];
+  const allIngredientSignals: string[] = [];
+  let gutTriggerLoad = 0;
+  let highFodmapCount = 0;
+  let dairyCount = 0;
+  let glutenCount = 0;
+  let artificialSweetenerCount = 0;
+  let highFatCount = 0;
+  let spicyCount = 0;
+  let caffeineFoodCount = 0;
+  let alcoholFoodCount = 0;
+  let fiberDenseCount = 0;
   let lateMeal = false;
 
   for (const e of events) {
+    const foodItemNames =
+      payloadStrArray(e.payload, 'food_item_names').length > 0
+        ? payloadStrArray(e.payload, 'food_item_names')
+        : payloadStrArray(e.payload, 'food_items');
     const tags = payloadStrArray(e.payload, 'tags');
+    const ingredientSignals = payloadStrArray(e.payload, 'ingredient_signals');
+
+    allFoodItemNames.push(...foodItemNames);
     allTags.push(...tags);
+    allIngredientSignals.push(...ingredientSignals);
+
+    gutTriggerLoad += payloadNum(e.payload, 'gut_trigger_load') ?? 0;
+    highFodmapCount += payloadNum(e.payload, 'high_fodmap_food_count') ?? 0;
+    dairyCount += payloadNum(e.payload, 'dairy_food_count') ?? 0;
+    glutenCount += payloadNum(e.payload, 'gluten_food_count') ?? 0;
+    artificialSweetenerCount += payloadNum(e.payload, 'artificial_sweetener_food_count') ?? 0;
+    highFatCount += payloadNum(e.payload, 'high_fat_food_count') ?? 0;
+    spicyCount += payloadNum(e.payload, 'spicy_food_count') ?? 0;
+    caffeineFoodCount += payloadNum(e.payload, 'caffeine_food_count') ?? 0;
+    alcoholFoodCount += payloadNum(e.payload, 'alcohol_food_count') ?? 0;
+    fiberDenseCount += payloadNum(e.payload, 'fiber_dense_food_count') ?? 0;
 
     if (e.local_hour >= 20) lateMeal = true;
   }
 
   return {
     meal_count: events.length,
+    food_item_names: uniqueSorted(allFoodItemNames),
     food_tag_set: uniqueSorted(allTags),
+    ingredient_signals: uniqueSorted(allIngredientSignals),
+    gut_trigger_load: gutTriggerLoad,
+    high_fodmap_food_count: highFodmapCount,
+    dairy_food_count: dairyCount,
+    gluten_food_count: glutenCount,
+    artificial_sweetener_food_count: artificialSweetenerCount,
+    high_fat_food_count: highFatCount,
+    spicy_food_count: spicyCount,
+    caffeine_food_count: caffeineFoodCount,
+    alcohol_food_count: alcoholFoodCount,
+    fiber_dense_food_count: fiberDenseCount,
     late_meal: lateMeal,
   };
 }
@@ -257,15 +300,41 @@ function aggregateStress(events: CanonicalEvent[]) {
 
 function aggregateMedication(events: CanonicalEvent[]) {
   const names: string[] = [];
+  const families: string[] = [];
+  const gutEffects: string[] = [];
+  let giRiskMedicationCount = 0;
+  let motilitySlowingMedicationCount = 0;
+  let motilitySpeedingMedicationCount = 0;
+  let acidSuppressionMedicationCount = 0;
+  let microbiomeDisruptionMedicationCount = 0;
 
   for (const e of events) {
     const name = payloadStr(e.payload, 'medication_name');
     if (name) names.push(name);
+
+    families.push(...payloadStrArray(e.payload, 'medication_families'));
+    gutEffects.push(...payloadStrArray(e.payload, 'medication_gut_effects'));
+    giRiskMedicationCount += payloadNum(e.payload, 'gi_risk_medication_count') ?? 0;
+    motilitySlowingMedicationCount +=
+      payloadNum(e.payload, 'motility_slowing_medication_count') ?? 0;
+    motilitySpeedingMedicationCount +=
+      payloadNum(e.payload, 'motility_speeding_medication_count') ?? 0;
+    acidSuppressionMedicationCount +=
+      payloadNum(e.payload, 'acid_suppression_medication_count') ?? 0;
+    microbiomeDisruptionMedicationCount +=
+      payloadNum(e.payload, 'microbiome_disruption_medication_count') ?? 0;
   }
 
   return {
     medication_event_count: events.length,
     medications_taken: uniqueSorted(names),
+    medication_families: uniqueSorted(families),
+    medication_gut_effects: uniqueSorted(gutEffects),
+    gi_risk_medication_count: giRiskMedicationCount,
+    motility_slowing_medication_count: motilitySlowingMedicationCount,
+    motility_speeding_medication_count: motilitySpeedingMedicationCount,
+    acid_suppression_medication_count: acidSuppressionMedicationCount,
+    microbiome_disruption_medication_count: microbiomeDisruptionMedicationCount,
   };
 }
 
@@ -487,7 +556,15 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       local_hour: 12,
       timezone: 'America/New_York',
       source_table: 'food_logs',
-      payload: { meal_type: 'lunch', food_items: ['salad', 'chicken'], tags: ['high-fiber'] },
+      payload: {
+        meal_type: 'lunch',
+        food_items: ['salad', 'chicken'],
+        food_item_names: ['salad', 'chicken'],
+        tags: ['high-fiber'],
+        ingredient_signals: ['fiber_dense'],
+        gut_trigger_load: 1,
+        fiber_dense_food_count: 1,
+      },
       completeness_score: 0.7,
     },
     {
@@ -499,7 +576,15 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       local_hour: 21,
       timezone: 'America/New_York',
       source_table: 'food_logs',
-      payload: { meal_type: 'dinner', food_items: ['pasta'], tags: ['gluten'] },
+      payload: {
+        meal_type: 'dinner',
+        food_items: ['pasta'],
+        food_item_names: ['pasta'],
+        tags: ['gluten'],
+        ingredient_signals: ['gluten'],
+        gut_trigger_load: 1,
+        gluten_food_count: 1,
+      },
       completeness_score: 0.6,
     },
     {
@@ -575,7 +660,13 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       local_hour: 8,
       timezone: 'America/New_York',
       source_table: 'medication_logs',
-      payload: { medication_name: 'Probiotic' },
+      payload: {
+        medication_name: 'Probiotic',
+        medication_families: ['probiotic'],
+        medication_gut_effects: ['microbiome_disruption'],
+        gi_risk_medication_count: 1,
+        microbiome_disruption_medication_count: 1,
+      },
       completeness_score: 1.0,
     },
     {
