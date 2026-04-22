@@ -21,6 +21,7 @@ import { analyzeFlareRecoveryPatternCandidate } from './flareRecoveryPatternCand
 import { analyzeFoodMealRegularitySymptomBurdenCandidate } from './foodMealRegularitySymptomBurdenCandidate';
 import { analyzeStressHighDaySymptomBurdenCandidate } from './stressHighDaySymptomBurdenCandidate';
 import { analyzeHydrationLowSameDaySymptomBurdenCandidate } from './hydrationLowSameDaySymptomBurdenCandidate';
+import { analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate } from './foodGutTriggerLoadSameDaySymptomBurdenCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -33,6 +34,7 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeHydrationStoolConsistencyCandidate,
   analyzeFoodLateMealNextDayBmShiftCandidate,
   analyzeFoodCaffeineSameDaySymptomBurdenCandidate,
+  analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate,
   analyzeBmUrgencyRollingElevationCandidate,
   analyzeSymptomTypePersistenceCandidate,
   analyzeExerciseMovementBmRegularityCandidate,
