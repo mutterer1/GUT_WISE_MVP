@@ -16,6 +16,8 @@ interface UseLogCrudConfig<T extends { logged_at: string; id?: string }> {
   defaultValues: Omit<T, 'logged_at' | 'id'>;
   buildInsertPayload: (formData: T, userId: string) => Record<string, unknown>;
   buildUpdatePayload: (formData: T) => Record<string, unknown>;
+  onAfterCreate?: (params: { entryId: string; userId: string; formData: T }) => Promise<void>;
+  onAfterUpdate?: (params: { entryId: string; userId: string; formData: T }) => Promise<void>;
   mapHistoryToForm?: (log: T & { id: string }) => T;
   historyLimit?: number;
 }
@@ -71,6 +73,8 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     defaultValues,
     buildInsertPayload,
     buildUpdatePayload,
+    onAfterCreate,
+    onAfterUpdate,
     mapHistoryToForm,
     historyLimit = 50,
   } = config;
@@ -136,19 +140,58 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id')
+        .maybeSingle();
 
       if (updateError) throw updateError;
+
+      if (onAfterUpdate) {
+        await onAfterUpdate({
+          entryId: editingId,
+          userId: user.id,
+          formData: dataWithTimestamp,
+        });
+      }
 
       runSaveSideEffects('update', editingId);
       return { mode: 'update' };
     }
 
-    const { error: insertError } = await supabase
+    const { data: insertedRow, error: insertError } = await supabase
       .from(table)
-      .insert(buildInsertPayload(dataWithTimestamp, user.id));
+      .insert(buildInsertPayload(dataWithTimestamp, user.id))
+      .select('id')
+      .maybeSingle();
 
     if (insertError) throw insertError;
+
+    const insertedId =
+      insertedRow && typeof insertedRow === 'object' && 'id' in insertedRow
+        ? String(insertedRow.id)
+        : null;
+
+    if (!insertedId) {
+      throw new Error('Saved entry but did not receive an id back from Supabase');
+    }
+
+    try {
+      if (onAfterCreate) {
+        await onAfterCreate({
+          entryId: insertedId,
+          userId: user.id,
+          formData: dataWithTimestamp,
+        });
+      }
+    } catch (afterCreateError) {
+      await supabase
+        .from(table)
+        .delete()
+        .eq('id', insertedId)
+        .eq('user_id', user.id);
+
+      throw afterCreateError;
+    }
 
     runSaveSideEffects('create');
     return { mode: 'create' };
@@ -159,6 +202,8 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     table,
     buildUpdatePayload,
     buildInsertPayload,
+    onAfterCreate,
+    onAfterUpdate,
     runSaveSideEffects,
   ]);
 
