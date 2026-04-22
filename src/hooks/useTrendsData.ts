@@ -26,6 +26,9 @@ export interface SymptomTrend {
 export interface HydrationCorrelation {
   date: string;
   totalHydration: number;
+  effectiveHydration: number;
+  totalFluids: number;
+  caffeineMg: number;
   avgBristolScale: number | null;
 }
 
@@ -67,7 +70,9 @@ export function useTrendsData(timeRange: TimeRange) {
         startDate.setDate(startDate.getDate() - timeRange.days);
         const startDateStr = startDate.toISOString();
 
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) throw new Error('No authenticated user');
 
         const [bmLogs, symptomLogs, hydrationLogs, sleepLogs, stressLogs] = await Promise.all([
@@ -85,7 +90,9 @@ export function useTrendsData(timeRange: TimeRange) {
             .order('logged_at', { ascending: true }),
           supabase
             .from('hydration_logs')
-            .select('*')
+            .select(
+              'logged_at, amount_ml, effective_hydration_ml, water_goal_contribution_ml, caffeine_mg'
+            )
             .eq('user_id', user.id)
             .gte('logged_at', startDateStr)
             .order('logged_at', { ascending: true }),
@@ -93,8 +100,8 @@ export function useTrendsData(timeRange: TimeRange) {
             .from('sleep_logs')
             .select('*')
             .eq('user_id', user.id)
-            .gte('sleep_start', startDateStr)
-            .order('sleep_start', { ascending: true }),
+            .gte('logged_at', startDateStr)
+            .order('logged_at', { ascending: true }),
           supabase
             .from('stress_logs')
             .select('*')
@@ -158,7 +165,7 @@ function calculateBMFrequency(logs: any[], days: number): BMFrequencyData[] {
     dateMap.set(date.toISOString().split('T')[0], 0);
   }
 
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     dateMap.set(date, (dateMap.get(date) || 0) + 1);
   });
@@ -171,7 +178,7 @@ function calculateBMFrequency(logs: any[], days: number): BMFrequencyData[] {
 function calculateBristolDistribution(logs: any[]): BristolDistribution[] {
   const bristolCount = new Map<number, number>();
 
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const type = log.bristol_type;
     if (type) {
       bristolCount.set(type, (bristolCount.get(type) || 0) + 1);
@@ -196,7 +203,7 @@ function calculateBristolDistribution(logs: any[]): BristolDistribution[] {
 function calculateSymptomTrends(logs: any[]): SymptomTrend[] {
   const symptomDateMap = new Map<string, Map<string, number[]>>();
 
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     if (!symptomDateMap.has(date)) {
       symptomDateMap.set(date, new Map());
@@ -224,23 +231,50 @@ function calculateHydrationCorrelation(
   bmLogs: any[],
   days: number
 ): HydrationCorrelation[] {
-  const dateMap = new Map<string, { hydration: number; bristolScales: number[] }>();
+  const dateMap = new Map<
+    string,
+    {
+      waterGoal: number;
+      effective: number;
+      fluids: number;
+      caffeineMg: number;
+      bristolScales: number[];
+    }
+  >();
 
   for (let i = 0; i < days; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    dateMap.set(date.toISOString().split('T')[0], { hydration: 0, bristolScales: [] });
+    dateMap.set(date.toISOString().split('T')[0], {
+      waterGoal: 0,
+      effective: 0,
+      fluids: 0,
+      caffeineMg: 0,
+      bristolScales: [],
+    });
   }
 
-  hydrationLogs.forEach(log => {
+  hydrationLogs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     if (existing) {
-      existing.hydration += log.amount_ml;
+      const amountMl = typeof log.amount_ml === 'number' ? log.amount_ml : 0;
+      const effectiveMl =
+        typeof log.effective_hydration_ml === 'number' ? log.effective_hydration_ml : amountMl;
+      const waterGoalMl =
+        typeof log.water_goal_contribution_ml === 'number'
+          ? log.water_goal_contribution_ml
+          : 0;
+      const caffeineMg = typeof log.caffeine_mg === 'number' ? log.caffeine_mg : 0;
+
+      existing.fluids += amountMl;
+      existing.effective += effectiveMl;
+      existing.waterGoal += waterGoalMl;
+      existing.caffeineMg += caffeineMg;
     }
   });
 
-  bmLogs.forEach(log => {
+  bmLogs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     const bristolScale = log.bristol_type;
@@ -250,12 +284,16 @@ function calculateHydrationCorrelation(
   });
 
   return Array.from(dateMap.entries())
-    .map(([date, data]) => ({
+    .map(([date, day]) => ({
       date,
-      totalHydration: data.hydration,
-      avgBristolScale: data.bristolScales.length > 0
-        ? data.bristolScales.reduce((a, b) => a + b, 0) / data.bristolScales.length
-        : null,
+      totalHydration: day.waterGoal,
+      effectiveHydration: day.effective,
+      totalFluids: day.fluids,
+      caffeineMg: day.caffeineMg,
+      avgBristolScale:
+        day.bristolScales.length > 0
+          ? day.bristolScales.reduce((a, b) => a + b, 0) / day.bristolScales.length
+          : null,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -265,16 +303,23 @@ function calculateSleepSymptomCorrelation(
   symptomLogs: any[],
   days: number
 ): SleepSymptomCorrelation[] {
-  const dateMap = new Map<string, { sleepHours: number | null; sleepQuality: number | null; symptoms: number[] }>();
+  const dateMap = new Map<
+    string,
+    { sleepHours: number | null; sleepQuality: number | null; symptoms: number[] }
+  >();
 
   for (let i = 0; i < days; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    dateMap.set(date.toISOString().split('T')[0], { sleepHours: null, sleepQuality: null, symptoms: [] });
+    dateMap.set(date.toISOString().split('T')[0], {
+      sleepHours: null,
+      sleepQuality: null,
+      symptoms: [],
+    });
   }
 
-  sleepLogs.forEach(log => {
-    const date = new Date(log.sleep_start).toISOString().split('T')[0];
+  sleepLogs.forEach((log) => {
+    const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     if (existing) {
       existing.sleepHours = log.duration_minutes ? log.duration_minutes / 60 : null;
@@ -282,7 +327,7 @@ function calculateSleepSymptomCorrelation(
     }
   });
 
-  symptomLogs.forEach(log => {
+  symptomLogs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     if (existing) {
@@ -291,13 +336,14 @@ function calculateSleepSymptomCorrelation(
   });
 
   return Array.from(dateMap.entries())
-    .map(([date, data]) => ({
+    .map(([date, day]) => ({
       date,
-      sleepHours: data.sleepHours,
-      sleepQuality: data.sleepQuality,
-      avgSymptomSeverity: data.symptoms.length > 0
-        ? data.symptoms.reduce((a, b) => a + b, 0) / data.symptoms.length
-        : null,
+      sleepHours: day.sleepHours,
+      sleepQuality: day.sleepQuality,
+      avgSymptomSeverity:
+        day.symptoms.length > 0
+          ? day.symptoms.reduce((a, b) => a + b, 0) / day.symptoms.length
+          : null,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -307,15 +353,22 @@ function calculateStressUrgencyCorrelation(
   bmLogs: any[],
   days: number
 ): StressUrgencyCorrelation[] {
-  const dateMap = new Map<string, { stressLevels: number[]; urgencyLevels: number[]; urgencyCount: number }>();
+  const dateMap = new Map<
+    string,
+    { stressLevels: number[]; urgencyLevels: number[]; urgencyCount: number }
+  >();
 
   for (let i = 0; i < days; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    dateMap.set(date.toISOString().split('T')[0], { stressLevels: [], urgencyLevels: [], urgencyCount: 0 });
+    dateMap.set(date.toISOString().split('T')[0], {
+      stressLevels: [],
+      urgencyLevels: [],
+      urgencyCount: 0,
+    });
   }
 
-  stressLogs.forEach(log => {
+  stressLogs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     if (existing) {
@@ -323,7 +376,7 @@ function calculateStressUrgencyCorrelation(
     }
   });
 
-  bmLogs.forEach(log => {
+  bmLogs.forEach((log) => {
     const date = new Date(log.logged_at).toISOString().split('T')[0];
     const existing = dateMap.get(date);
     const urgency = log.urgency;
@@ -336,15 +389,17 @@ function calculateStressUrgencyCorrelation(
   });
 
   return Array.from(dateMap.entries())
-    .map(([date, data]) => ({
+    .map(([date, day]) => ({
       date,
-      avgStressLevel: data.stressLevels.length > 0
-        ? data.stressLevels.reduce((a, b) => a + b, 0) / data.stressLevels.length
-        : null,
-      avgUrgency: data.urgencyLevels.length > 0
-        ? data.urgencyLevels.reduce((a, b) => a + b, 0) / data.urgencyLevels.length
-        : null,
-      urgencyEpisodes: data.urgencyCount,
+      avgStressLevel:
+        day.stressLevels.length > 0
+          ? day.stressLevels.reduce((a, b) => a + b, 0) / day.stressLevels.length
+          : null,
+      avgUrgency:
+        day.urgencyLevels.length > 0
+          ? day.urgencyLevels.reduce((a, b) => a + b, 0) / day.urgencyLevels.length
+          : null,
+      urgencyEpisodes: day.urgencyCount,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
