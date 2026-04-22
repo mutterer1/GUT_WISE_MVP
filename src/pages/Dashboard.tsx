@@ -150,7 +150,7 @@ export default function Dashboard() {
 
   const hydrationPercentage =
     metrics.todayHydration.target_ml > 0
-      ? (metrics.todayHydration.total_ml / metrics.todayHydration.target_ml) * 100
+      ? (metrics.todayHydration.water_goal_ml / metrics.todayHydration.target_ml) * 100
       : 0;
 
   return (
@@ -195,7 +195,7 @@ export default function Dashboard() {
                 bmCount={metrics.todayBMCount}
                 mealsCount={metrics.todayFood.meals}
                 snacksCount={metrics.todayFood.snacks}
-                hydrationMl={metrics.todayHydration.total_ml}
+                hydrationMl={metrics.todayHydration.water_goal_ml}
                 sleepHours={sleepHours}
                 symptomsCount={metrics.todaySymptoms.length}
                 loading={loading}
@@ -259,7 +259,7 @@ export default function Dashboard() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="surface-panel-quiet rounded-2xl p-4">
-                    <p className="metric-label">Hydration progress</p>
+                    <p className="metric-label">Water goal</p>
                     <p className="metric-value mt-2">{Math.round(hydrationPercentage)}%</p>
                   </div>
 
@@ -270,8 +270,8 @@ export default function Dashboard() {
                 </div>
 
                 <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-[var(--color-text-tertiary)]">
-                  GutWise can frame better insights when today includes both body signals and
-                  context signals.
+                  Water goal progress now reflects water-credit intake, while other beverages stay
+                  available as context.
                 </div>
               </div>
             </Card>
@@ -306,7 +306,7 @@ export default function Dashboard() {
                     onClick={() => navigate(action.path)}
                     className="group rounded-[24px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.06)] p-5 text-center transition-smooth hover:border-[rgba(84,160,255,0.32)] hover:bg-[rgba(84,160,255,0.1)]"
                   >
-                    <div className="flex h-full min-h-[204px] flex-col items-center justify-center">
+                    <div className="flex min-h-[204px] h-full flex-col items-center justify-center">
                       <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.14)] text-[var(--color-accent-primary)] transition-smooth group-hover:scale-[1.04]">
                         <Icon className="h-5 w-5" />
                       </div>
@@ -337,7 +337,7 @@ export default function Dashboard() {
                     onClick={() => navigate(action.path)}
                     className="group rounded-[20px] border border-white/8 bg-white/[0.03] px-3 py-5 text-center transition-smooth hover:border-white/14 hover:bg-white/[0.05]"
                   >
-                    <div className="flex h-full min-h-[128px] flex-col items-center justify-center">
+                    <div className="flex min-h-[128px] h-full flex-col items-center justify-center">
                       <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/[0.05] text-[var(--color-text-tertiary)] transition-smooth group-hover:text-[var(--color-text-secondary)]">
                         <Icon className="h-4 w-4" />
                       </div>
@@ -376,9 +376,13 @@ export default function Dashboard() {
               <SymptomSnapshotWidget symptoms={metrics.todaySymptoms} loading={loading} />
 
               <HydrationWidget
-                totalMl={metrics.todayHydration.total_ml}
+                totalFluidsMl={metrics.todayHydration.total_fluids_ml}
+                effectiveHydrationMl={metrics.todayHydration.effective_hydration_ml}
+                waterGoalMl={metrics.todayHydration.water_goal_ml}
                 targetMl={metrics.todayHydration.target_ml}
                 entries={metrics.todayHydration.entries}
+                caffeinatedEntries={metrics.todayHydration.caffeinated_entries}
+                alcoholEntries={metrics.todayHydration.alcohol_entries}
                 loading={loading}
               />
 
