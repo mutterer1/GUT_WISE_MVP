@@ -63,10 +63,10 @@ export async function fetchDashboardMetrics(userId: string): Promise<DashboardMe
 
     supabase
       .from('sleep_logs')
-      .select('duration_minutes, quality, felt_rested, sleep_start')
+      .select('duration_minutes, quality, felt_rested, logged_at')
       .eq('user_id', userId)
-      .gte('sleep_start', todayISO)
-      .order('sleep_start', { ascending: false })
+      .gte('logged_at', todayISO)
+      .order('logged_at', { ascending: false })
       .limit(1),
 
     supabase
