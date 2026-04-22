@@ -155,6 +155,10 @@ export interface MedicalContextSummary {
   active_diet_guidance: DietGuidanceFact[];
   red_flag_history: RedFlagHistoryFact[];
   has_confirmed_facts: boolean;
+  confirmed_document_backed_fact_count: number;
+  confirmed_manual_fact_count: number;
+  user_reported_fact_count: number;
+  pending_candidates_count: number;
   last_updated: string | null;
 }
 
