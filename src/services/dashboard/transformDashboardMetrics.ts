@@ -11,7 +11,11 @@ interface SymptomLogRow {
 }
 
 interface HydrationLogRow {
-  amount_ml: number;
+  amount_ml: number | null;
+  effective_hydration_ml: number | null;
+  water_goal_contribution_ml: number | null;
+  caffeine_mg: number | null;
+  alcohol_present: boolean | null;
 }
 
 interface MedicationLogRow {
@@ -49,6 +53,10 @@ export interface RawDashboardQueryResults {
 
 const MEAL_TYPES = new Set(['breakfast', 'lunch', 'dinner']);
 
+function sumNullable(values: Array<number | null | undefined>): number {
+  return values.reduce((sum, value) => sum + (value ?? 0), 0);
+}
+
 export function calculateAverageBristol(logs: BMLogRow[]): number | null {
   if (logs.length === 0) return null;
   const sum = logs.reduce((acc, log) => acc + log.bristol_type, 0);
@@ -60,9 +68,13 @@ export function calculateHydrationSummary(
   targetMl = DEFAULT_HYDRATION_TARGET_ML
 ): DashboardMetrics['todayHydration'] {
   return {
-    total_ml: logs.reduce((sum, log) => sum + log.amount_ml, 0),
+    total_fluids_ml: sumNullable(logs.map((log) => log.amount_ml)),
+    effective_hydration_ml: sumNullable(logs.map((log) => log.effective_hydration_ml)),
+    water_goal_ml: sumNullable(logs.map((log) => log.water_goal_contribution_ml)),
     target_ml: targetMl,
     entries: logs.length,
+    caffeinated_entries: logs.filter((log) => (log.caffeine_mg ?? 0) > 0).length,
+    alcohol_entries: logs.filter((log) => Boolean(log.alcohol_present)).length,
   };
 }
 
