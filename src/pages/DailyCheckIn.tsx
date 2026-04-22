@@ -9,6 +9,7 @@ import {
   Pill,
   Save,
   Sparkles,
+  Zap,
   Waves,
   AlertCircle,
   Utensils,
@@ -23,6 +24,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDailyCheckInDraft } from '../hooks/useDailyCheckInDraft';
 import { supabase } from '../lib/supabase';
 import type { DailyCheckInDraft } from '../types/dailyCheckIn';
+import { BEVERAGE_TYPES } from '../constants/domain';
+import { hydrateLogWithDerivedFields } from '../utils/hydrationClassification';
 
 type SectionKey =
   | 'bowelMovement'
@@ -59,6 +62,24 @@ function splitTags(value: string): string[] {
     .filter(Boolean);
 }
 
+function buildHydrationDraft(
+  hydration: DailyCheckInDraft['hydration'],
+  patch: Partial<DailyCheckInDraft['hydration']> = {}
+): DailyCheckInDraft['hydration'] {
+  const next = { ...hydration, ...patch };
+  const normalized = hydrateLogWithDerivedFields(next);
+
+  return {
+    ...next,
+    beverage_category: normalized.beverage_category,
+    caffeine_mg: normalized.caffeine_mg,
+    effective_hydration_ml: normalized.effective_hydration_ml,
+    water_goal_contribution_ml: normalized.water_goal_contribution_ml,
+    electrolyte_present: normalized.electrolyte_present,
+    alcohol_present: normalized.alcohol_present,
+  };
+}
+
 export default function DailyCheckIn() {
   const { user } = useAuth();
   const { draft, updateDraft, resetDraft } = useDailyCheckInDraft(user?.id);
@@ -71,6 +92,9 @@ export default function DailyCheckIn() {
     () => sectionMeta.filter((section) => draft[section.key].enabled),
     [draft]
   );
+
+  const hydrationDefinition =
+    BEVERAGE_TYPES.find((item) => item.value === draft.hydration.beverage_type) ?? BEVERAGE_TYPES[0];
 
   const completedCount = useMemo(() => {
     return sectionMeta.filter((section) => {
@@ -91,7 +115,10 @@ export default function DailyCheckIn() {
         case 'exercise':
           return draft.exercise.exercise_type.trim().length > 0;
         case 'medication':
-          return draft.medication.medication_name.trim().length > 0 && draft.medication.dosage.trim().length > 0;
+          return (
+            draft.medication.medication_name.trim().length > 0 &&
+            draft.medication.dosage.trim().length > 0
+          );
         case 'menstrualCycle':
           return draft.menstrualCycle.cycle_start_date.length > 0;
         default:
@@ -111,90 +138,121 @@ export default function DailyCheckIn() {
         case 'bowelMovement':
           if (!draft.bowelMovement.enabled) break;
           writes.push(
-            supabase.from('bm_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              bristol_type: draft.bowelMovement.bristol_type,
-              urgency: draft.bowelMovement.urgency,
-              pain_level: draft.bowelMovement.pain_level,
-              blood_present: draft.bowelMovement.blood_present,
-              mucus_present: draft.bowelMovement.mucus_present,
-              notes: draft.bowelMovement.notes || null,
-            }).then((r) => r)
+            supabase
+              .from('bm_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                bristol_type: draft.bowelMovement.bristol_type,
+                urgency: draft.bowelMovement.urgency,
+                pain_level: draft.bowelMovement.pain_level,
+                blood_present: draft.bowelMovement.blood_present,
+                mucus_present: draft.bowelMovement.mucus_present,
+                notes: draft.bowelMovement.notes || null,
+              })
+              .then((r) => r)
           );
           break;
         case 'symptoms':
           if (!draft.symptoms.enabled || !draft.symptoms.symptom_type.trim()) break;
           writes.push(
-            supabase.from('symptom_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              symptom_type: draft.symptoms.symptom_type.trim(),
-              severity: draft.symptoms.severity,
-              duration_minutes: draft.symptoms.duration_minutes,
-              notes: draft.symptoms.notes || null,
-            }).then((r) => r)
+            supabase
+              .from('symptom_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                symptom_type: draft.symptoms.symptom_type.trim(),
+                severity: draft.symptoms.severity,
+                duration_minutes: draft.symptoms.duration_minutes,
+                notes: draft.symptoms.notes || null,
+              })
+              .then((r) => r)
           );
           break;
         case 'food':
           if (!draft.food.enabled || !draft.food.foods.trim()) break;
           writes.push(
-            supabase.from('food_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              meal_type: draft.food.meal_type,
-              food_items: splitTags(draft.food.foods).map((name) => ({ name })),
-              tags: splitTags(draft.food.tags),
-              notes: draft.food.notes || null,
-            }).then((r) => r)
+            supabase
+              .from('food_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                meal_type: draft.food.meal_type,
+                food_items: splitTags(draft.food.foods).map((name) => ({ name })),
+                tags: splitTags(draft.food.tags),
+                notes: draft.food.notes || null,
+              })
+              .then((r) => r)
           );
           break;
         case 'hydration':
           if (!draft.hydration.enabled || draft.hydration.amount_ml <= 0) break;
-          writes.push(
-            supabase.from('hydration_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              amount_ml: draft.hydration.amount_ml,
-              beverage_type: draft.hydration.beverage_type,
-              caffeine_content: draft.hydration.caffeine_content,
-            }).then((r) => r)
-          );
+          {
+            const normalizedHydration = hydrateLogWithDerivedFields(draft.hydration);
+            writes.push(
+              supabase
+                .from('hydration_logs')
+                .insert({
+                  user_id: user.id,
+                  logged_at: draft.logged_at,
+                  amount_ml: normalizedHydration.amount_ml,
+                  beverage_type: normalizedHydration.beverage_type,
+                  beverage_category: normalizedHydration.beverage_category,
+                  caffeine_content: draft.hydration.caffeine_content,
+                  caffeine_mg: normalizedHydration.caffeine_mg,
+                  effective_hydration_ml: normalizedHydration.effective_hydration_ml,
+                  water_goal_contribution_ml:
+                    normalizedHydration.water_goal_contribution_ml,
+                  electrolyte_present: normalizedHydration.electrolyte_present,
+                  alcohol_present: normalizedHydration.alcohol_present,
+                })
+                .then((r) => r)
+            );
+          }
           break;
         case 'sleep':
           if (!draft.sleep.enabled || !draft.sleep.sleep_start || !draft.sleep.sleep_end) break;
           writes.push(
-            supabase.from('sleep_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              sleep_start: draft.sleep.sleep_start,
-              sleep_end: draft.sleep.sleep_end,
-              quality: draft.sleep.quality,
-              felt_rested: draft.sleep.felt_rested,
-            }).then((r) => r)
+            supabase
+              .from('sleep_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                sleep_start: draft.sleep.sleep_start,
+                sleep_end: draft.sleep.sleep_end,
+                quality: draft.sleep.quality,
+                felt_rested: draft.sleep.felt_rested,
+              })
+              .then((r) => r)
           );
           break;
         case 'stress':
           if (!draft.stress.enabled) break;
           writes.push(
-            supabase.from('stress_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              stress_level: draft.stress.stress_level,
-              notes: draft.stress.notes || null,
-            }).then((r) => r)
+            supabase
+              .from('stress_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                stress_level: draft.stress.stress_level,
+                notes: draft.stress.notes || null,
+              })
+              .then((r) => r)
           );
           break;
         case 'exercise':
           if (!draft.exercise.enabled || !draft.exercise.exercise_type.trim()) break;
           writes.push(
-            supabase.from('exercise_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              exercise_type: draft.exercise.exercise_type.trim(),
-              duration_minutes: draft.exercise.duration_minutes,
-              intensity_level: draft.exercise.intensity_level,
-            }).then((r) => r)
+            supabase
+              .from('exercise_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                exercise_type: draft.exercise.exercise_type.trim(),
+                duration_minutes: draft.exercise.duration_minutes,
+                intensity_level: draft.exercise.intensity_level,
+              })
+              .then((r) => r)
           );
           break;
         case 'medication':
@@ -206,26 +264,32 @@ export default function DailyCheckIn() {
             break;
           }
           writes.push(
-            supabase.from('medication_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              medication_name: draft.medication.medication_name.trim(),
-              dosage: draft.medication.dosage.trim(),
-              medication_type: draft.medication.medication_type,
-            }).then((r) => r)
+            supabase
+              .from('medication_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                medication_name: draft.medication.medication_name.trim(),
+                dosage: draft.medication.dosage.trim(),
+                medication_type: draft.medication.medication_type,
+              })
+              .then((r) => r)
           );
           break;
         case 'menstrualCycle':
           if (!draft.menstrualCycle.enabled || !draft.menstrualCycle.cycle_start_date) break;
           writes.push(
-            supabase.from('menstrual_cycle_logs').insert({
-              user_id: user.id,
-              logged_at: draft.logged_at,
-              cycle_start_date: draft.menstrualCycle.cycle_start_date,
-              cycle_day: draft.menstrualCycle.cycle_day,
-              flow_intensity: draft.menstrualCycle.flow_intensity,
-              pain_level: draft.menstrualCycle.pain_level,
-            }).then((r) => r)
+            supabase
+              .from('menstrual_cycle_logs')
+              .insert({
+                user_id: user.id,
+                logged_at: draft.logged_at,
+                cycle_start_date: draft.menstrualCycle.cycle_start_date,
+                cycle_day: draft.menstrualCycle.cycle_day,
+                flow_intensity: draft.menstrualCycle.flow_intensity,
+                pain_level: draft.menstrualCycle.pain_level,
+              })
+              .then((r) => r)
           );
           break;
       }
@@ -249,7 +313,9 @@ export default function DailyCheckIn() {
       setError(null);
       setMessage(null);
       await saveSections(sectionMeta.map((section) => section.key));
-      setMessage('Daily check-in saved. GutWise can use these entries the next time it looks for patterns.');
+      setMessage(
+        'Daily check-in saved. GutWise can use these entries the next time it looks for patterns.'
+      );
       resetDraft();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save your check-in.');
@@ -655,34 +721,116 @@ export default function DailyCheckIn() {
 
               <Card>
                 {renderSectionHeader('hydration')}
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <NumberField
                     label="Amount (mL)"
                     value={draft.hydration.amount_ml}
                     onChange={(value) =>
-                      updateDraft('hydration', { ...draft.hydration, amount_ml: value })
+                      updateDraft(
+                        'hydration',
+                        buildHydrationDraft(draft.hydration, { amount_ml: value })
+                      )
                     }
                     min={1}
                   />
-                  <Field
-                    label="Beverage"
-                    value={draft.hydration.beverage_type}
+                  <div>
+                    <label className="mb-2 block text-body-sm font-medium text-neutral-muted dark:text-dark-muted">
+                      Beverage
+                    </label>
+                    <select
+                      value={draft.hydration.beverage_type}
+                      onChange={(e) => {
+                        const selected = BEVERAGE_TYPES.find((item) => item.value === e.target.value);
+                        updateDraft(
+                          'hydration',
+                          buildHydrationDraft(draft.hydration, {
+                            beverage_type: e.target.value,
+                            beverage_category:
+                              selected?.category ?? draft.hydration.beverage_category,
+                            caffeine_content: (selected?.defaultCaffeineMg ?? 0) > 0,
+                            caffeine_mg: selected?.defaultCaffeineMg ?? 0,
+                            electrolyte_present: selected?.electrolytePresent ?? false,
+                            alcohol_present: selected?.alcoholPresent ?? false,
+                          })
+                        );
+                      }}
+                      className="w-full rounded-xl border border-neutral-border bg-neutral-surface px-4 py-2.5 text-body-sm text-neutral-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
+                    >
+                      {BEVERAGE_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <NumberField
+                    label="Caffeine (mg)"
+                    value={draft.hydration.caffeine_mg ?? 0}
                     onChange={(value) =>
-                      updateDraft('hydration', { ...draft.hydration, beverage_type: value })
+                      updateDraft(
+                        'hydration',
+                        buildHydrationDraft(draft.hydration, {
+                          caffeine_mg: value,
+                          caffeine_content: value > 0,
+                        })
+                      )
                     }
-                    placeholder="Water"
+                    min={0}
                   />
                   <div className="flex items-end">
                     <ToggleChip
                       label="Contains caffeine"
                       active={draft.hydration.caffeine_content}
                       onToggle={() =>
-                        updateDraft('hydration', {
-                          ...draft.hydration,
-                          caffeine_content: !draft.hydration.caffeine_content,
-                        })
+                        updateDraft(
+                          'hydration',
+                          buildHydrationDraft(draft.hydration, {
+                            caffeine_content: !draft.hydration.caffeine_content,
+                            caffeine_mg: draft.hydration.caffeine_content
+                              ? 0
+                              : Math.max(
+                                  draft.hydration.caffeine_mg ?? 0,
+                                  hydrationDefinition.defaultCaffeineMg || 25
+                                ),
+                          })
+                        )
                       }
                     />
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  <MetricPanel
+                    label="Category"
+                    value={draft.hydration.beverage_category ?? 'other'}
+                    helper="Normalized beverage class"
+                  />
+                  <MetricPanel
+                    label="Effective Hydration"
+                    value={`${draft.hydration.effective_hydration_ml ?? 0} mL`}
+                    helper="Counts toward total fluid modeling"
+                  />
+                  <MetricPanel
+                    label="Water Goal Credit"
+                    value={`${draft.hydration.water_goal_contribution_ml ?? 0} mL`}
+                    helper="Counts toward strict water target"
+                  />
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {draft.hydration.electrolyte_present && (
+                    <span className="inline-flex items-center rounded-full border border-brand-500/20 bg-brand-500/8 px-3 py-1 text-xs font-medium text-brand-600 dark:text-brand-300">
+                      Electrolytes present
+                    </span>
+                  )}
+                  {draft.hydration.alcohol_present && (
+                    <span className="inline-flex items-center rounded-full border border-signal-500/30 bg-signal-500/10 px-3 py-1 text-xs font-medium text-signal-700 dark:text-signal-300">
+                      Alcohol tracked separately
+                    </span>
+                  )}
+                  <div className="inline-flex items-center gap-1 rounded-full border border-discovery-500/20 bg-discovery-500/8 px-3 py-1 text-xs font-medium text-discovery-600 dark:text-discovery-300">
+                    <Zap className="h-3.5 w-3.5" />
+                    {(draft.hydration.water_goal_contribution_ml ?? 0) > 0
+                      ? 'Counts toward water goal'
+                      : 'Counts as fluid context'}
                   </div>
                 </div>
                 <SectionActions
@@ -739,7 +887,10 @@ export default function DailyCheckIn() {
                     />
                   </div>
                 </div>
-                <SectionActions saving={savingSection === 'sleep'} onSave={() => handleSaveSection('sleep')} />
+                <SectionActions
+                  saving={savingSection === 'sleep'}
+                  onSave={() => handleSaveSection('sleep')}
+                />
               </Card>
 
               <Card>
@@ -780,7 +931,10 @@ export default function DailyCheckIn() {
                     />
                   </div>
                 </div>
-                <SectionActions saving={savingSection === 'stress'} onSave={() => handleSaveSection('stress')} />
+                <SectionActions
+                  saving={savingSection === 'stress'}
+                  onSave={() => handleSaveSection('stress')}
+                />
               </Card>
 
               <Card>
@@ -825,7 +979,10 @@ export default function DailyCheckIn() {
                     </div>
                   </div>
                 </div>
-                <SectionActions saving={savingSection === 'exercise'} onSave={() => handleSaveSection('exercise')} />
+                <SectionActions
+                  saving={savingSection === 'exercise'}
+                  onSave={() => handleSaveSection('exercise')}
+                />
               </Card>
 
               <Card>
@@ -868,7 +1025,10 @@ export default function DailyCheckIn() {
                     </select>
                   </div>
                 </div>
-                <SectionActions saving={savingSection === 'medication'} onSave={() => handleSaveSection('medication')} />
+                <SectionActions
+                  saving={savingSection === 'medication'}
+                  onSave={() => handleSaveSection('medication')}
+                />
               </Card>
 
               <Card>
@@ -1006,6 +1166,28 @@ export default function DailyCheckIn() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+function MetricPanel({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+}) {
+  return (
+    <div className="rounded-xl border border-neutral-border bg-neutral-bg px-4 py-3 dark:border-dark-border dark:bg-dark-bg">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-neutral-muted dark:text-dark-muted">
+        {label}
+      </div>
+      <div className="mt-2 text-body-md font-semibold text-neutral-text dark:text-dark-text">
+        {value}
+      </div>
+      <div className="mt-1 text-xs text-neutral-muted dark:text-dark-muted">{helper}</div>
+    </div>
   );
 }
 
