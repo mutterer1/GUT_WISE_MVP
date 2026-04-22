@@ -36,7 +36,7 @@ export default function Trends() {
         totalBMs: 0,
         idealBristolCount: 0,
         avgSymptomSeverity: null as number | null,
-        hydrationEntries: 0,
+        waterGoalDays: 0,
       };
     }
 
@@ -86,15 +86,15 @@ export default function Trends() {
           })()
         : null;
 
-    const hydrationEntries = Array.isArray(data.hydrationCorrelation)
-      ? data.hydrationCorrelation.length
+    const waterGoalDays = Array.isArray(data.hydrationCorrelation)
+      ? data.hydrationCorrelation.filter((item) => item.totalHydration > 0).length
       : 0;
 
     return {
       totalBMs,
       idealBristolCount,
       avgSymptomSeverity,
-      hydrationEntries,
+      waterGoalDays,
     };
   }, [data]);
 
@@ -137,7 +137,7 @@ export default function Trends() {
               <span className="badge-secondary mb-3 inline-flex">Trend Analysis</span>
               <h1 className="page-title">Trends & Analytics</h1>
               <p className="page-subtitle mt-2">
-                Visualize how bowel activity, symptoms, hydration, sleep, and stress move together
+                Visualize how bowel activity, symptoms, water intake, sleep, and stress move together
                 over time.
               </p>
             </div>
@@ -241,9 +241,9 @@ export default function Trends() {
 
               <SummaryCard
                 icon={<Droplet className="h-5 w-5 text-[var(--color-accent-primary)]" />}
-                label="Hydration Data Points"
-                value={String(summaryStats.hydrationEntries)}
-                helper="Used in hydration analysis"
+                label="Water-Goal Days"
+                value={String(summaryStats.waterGoalDays)}
+                helper="Days with water-goal credit"
               />
             </div>
 
@@ -254,7 +254,7 @@ export default function Trends() {
                 </h3>
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   Focus on repeated patterns rather than one-off spikes. The most useful signals
-                  usually show up when food, hydration, stress, sleep, and symptoms are logged
+                  usually show up when food, water, stress, sleep, and symptoms are logged
                   consistently over time.
                 </p>
               </div>
@@ -296,7 +296,7 @@ export default function Trends() {
 
                 <div className="space-y-2">
                   <p className="text-sm text-[var(--color-text-secondary)]">
-                    Compare symptom spikes with sleep, hydration, and stress patterns to spot
+                    Compare symptom spikes with sleep, water-goal progress, and stress patterns to spot
                     repeated contributors.
                   </p>
                   <p className="text-sm text-[var(--color-text-secondary)]">
