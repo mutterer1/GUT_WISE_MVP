@@ -136,6 +136,7 @@ export default function FoodLog() {
         userId,
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
+        tags: savedFormData.tags,
       });
     },
     onAfterUpdate: async ({ entryId, userId, formData: savedFormData }) => {
@@ -143,6 +144,7 @@ export default function FoodLog() {
         userId,
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
+        tags: savedFormData.tags,
       });
     },
   });
