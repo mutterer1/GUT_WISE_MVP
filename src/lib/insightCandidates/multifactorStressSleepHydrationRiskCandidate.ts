@@ -121,7 +121,12 @@ export function analyzeMultifactorStressSleepHydrationRiskCandidate(
     return null;
   }
 
-  if (baselines.hydration.low_hydration_threshold === null) return null;
+  if (
+    baselines.hydration.low_hydration_threshold === null &&
+    baselines.hydration.low_water_goal_threshold === null
+  ) {
+    return null;
+  }
 
   const eligibleDays = features
     .filter(hasTripleDomainData)
@@ -233,6 +238,8 @@ export function analyzeMultifactorStressSleepHydrationRiskCandidate(
     supportingLogTypes
   );
 
+  const exposedDays = eligibleDays.filter((day) => isCompoundRiskDay(day, baselines));
+
   const evidence: CandidateEvidence = {
     support_count: supportCount,
     exposure_count: exposureCount,
@@ -254,10 +261,27 @@ export function analyzeMultifactorStressSleepHydrationRiskCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: uncertaintyStatement,
     evidence_gaps: evidenceGaps,
+    notes: [
+      'Compound-risk days require high stress, poor sleep, and low effective hydration together.',
+      'Hydration remains the effective-hydration signal first, with water-goal totals preserved as supporting context.',
+    ],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
+      average_exposed_effective_hydration_ml:
+        exposureCount > 0
+          ? Math.round(
+              exposedDays.reduce((sum, day) => sum + day.hydration_total_ml, 0) / exposureCount
+            )
+          : 0,
+      average_exposed_water_goal_ml:
+        exposureCount > 0
+          ? Math.round(
+              exposedDays.reduce((sum, day) => sum + (day.hydration_water_goal_ml ?? 0), 0) /
+                exposureCount
+            )
+          : 0,
     },
   };
 
@@ -272,6 +296,7 @@ export function analyzeMultifactorStressSleepHydrationRiskCandidate(
       'sleep_duration_minutes',
       'sleep_quality',
       'hydration_total_ml',
+      'hydration_water_goal_ml',
     ],
     target_outcomes: ['symptom_burden_score', 'urgency_event_count'],
     status,
