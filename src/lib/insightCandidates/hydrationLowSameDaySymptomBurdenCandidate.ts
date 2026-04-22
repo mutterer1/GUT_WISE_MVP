@@ -53,7 +53,12 @@ export function analyzeHydrationLowSameDaySymptomBurdenCandidate(
   baselines: UserBaselineSet
 ): InsightCandidate | null {
   if (features.length === 0) return null;
-  if (baselines.hydration.low_hydration_threshold === null) return null;
+  if (
+    baselines.hydration.low_hydration_threshold === null &&
+    baselines.hydration.low_water_goal_threshold === null
+  ) {
+    return null;
+  }
 
   if (
     baselines.symptoms.high_burden_threshold === null &&
@@ -194,11 +199,30 @@ export function analyzeHydrationLowSameDaySymptomBurdenCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
     evidence_gaps: evidenceGaps,
-    notes: ['Same-day comparison of low-hydration days against better-hydrated days.'],
+    notes: [
+      'Same-day comparison of lower effective-hydration days against better-hydrated days.',
+      'Effective hydration remains the primary threshold variable; water-goal totals are carried as supporting context.',
+    ],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
+      average_exposed_effective_hydration_ml:
+        exposureCount > 0
+          ? Math.round(
+              eligibleDays
+                .filter((day) => isLowHydrationDay(day, baselines))
+                .reduce((sum, day) => sum + day.hydration_total_ml, 0) / exposureCount
+            )
+          : 0,
+      average_exposed_water_goal_ml:
+        exposureCount > 0
+          ? Math.round(
+              eligibleDays
+                .filter((day) => isLowHydrationDay(day, baselines))
+                .reduce((sum, day) => sum + (day.hydration_water_goal_ml ?? 0), 0) / exposureCount
+            )
+          : 0,
     },
   };
 
@@ -207,7 +231,7 @@ export function analyzeHydrationLowSameDaySymptomBurdenCandidate(
     insight_key: INSIGHT_KEY,
     category: 'hydration',
     subtype: 'hydration_low_same_day_symptom_burden',
-    trigger_factors: ['hydration_total_ml'],
+    trigger_factors: ['hydration_total_ml', 'hydration_water_goal_ml'],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
