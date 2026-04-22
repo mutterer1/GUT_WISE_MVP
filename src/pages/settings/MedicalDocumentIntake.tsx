@@ -32,6 +32,7 @@ import {
   seedCandidateFromIntake,
   acceptCandidate,
   rejectCandidate,
+  uploadMedicalDocumentArtifact,
 } from '../../services/medicalContextService';
 
 type ViewMode = 'overview' | 'seed';
@@ -41,6 +42,9 @@ interface SeedForm {
   category: MedicalFactCategory;
   detail: Record<string, unknown>;
   notes: string;
+  evidenceQuote: string;
+  evidencePage: string;
+  evidenceSection: string;
 }
 
 const INTAKE_STATUS_META: Record<
@@ -168,10 +172,17 @@ export default function MedicalDocumentIntake() {
 
     try {
       setSaving(true);
+      const uploadedArtifact = await uploadMedicalDocumentArtifact({
+        userId: user.id,
+        file,
+      });
       await createDocumentIntake(user.id, {
         file_name: file.name,
         file_type: file.type,
         file_size_bytes: file.size,
+        storage_bucket: uploadedArtifact.storage_bucket,
+        storage_path: uploadedArtifact.storage_path,
+        content_sha256: uploadedArtifact.content_sha256,
       });
       await loadData();
     } catch (err) {
@@ -193,6 +204,12 @@ export default function MedicalDocumentIntake() {
         category: seedForm.category,
         detail: seedForm.detail,
         extraction_notes: seedForm.notes || undefined,
+        evidence: {
+          quoted_text: seedForm.evidenceQuote || null,
+          page_number: seedForm.evidencePage ? Number(seedForm.evidencePage) : null,
+          section_label: seedForm.evidenceSection || null,
+          confidence_score: 0.95,
+        },
       });
       setSeedForm(null);
       setViewMode('overview');
@@ -385,6 +402,48 @@ export default function MedicalDocumentIntake() {
                     onChange={(e) => setSeedForm({ ...seedForm, notes: e.target.value })}
                     placeholder="Example: page 2, discharge summary, medication list"
                     className={fieldClassName}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
+                  <div>
+                    <label className={labelClassName}>Evidence Page</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={seedForm.evidencePage}
+                      onChange={(e) =>
+                        setSeedForm({ ...seedForm, evidencePage: e.target.value })
+                      }
+                      placeholder="e.g. 2"
+                      className={fieldClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClassName}>Section Label</label>
+                    <input
+                      type="text"
+                      value={seedForm.evidenceSection}
+                      onChange={(e) =>
+                        setSeedForm({ ...seedForm, evidenceSection: e.target.value })
+                      }
+                      placeholder="e.g. Assessment, Medication List, Impression"
+                      className={fieldClassName}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClassName}>Quoted Evidence</label>
+                  <textarea
+                    value={seedForm.evidenceQuote}
+                    onChange={(e) =>
+                      setSeedForm({ ...seedForm, evidenceQuote: e.target.value })
+                    }
+                    rows={5}
+                    placeholder="Paste the exact supporting excerpt from the document when available."
+                    className={`${fieldClassName} min-h-[132px] resize-none`}
                   />
                 </div>
               </div>
@@ -660,6 +719,9 @@ export default function MedicalDocumentIntake() {
                                   category: defaultCategory,
                                   detail: buildDefaultDetail(defaultCategory),
                                   notes: '',
+                                  evidenceQuote: '',
+                                  evidencePage: '',
+                                  evidenceSection: '',
                                 });
                                 setViewMode('seed');
                               }}
