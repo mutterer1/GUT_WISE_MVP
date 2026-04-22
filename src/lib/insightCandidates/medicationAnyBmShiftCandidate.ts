@@ -21,8 +21,36 @@ const INSIGHT_KEY = 'medication_any_same_day_bm_shift';
 const MIN_ELIGIBLE_DAYS = 5;
 const MIN_EXPOSURE_DAYS = 2;
 
+const GI_RELEVANT_MEDICATION_FAMILIES = new Set([
+  'laxative',
+  'antidiarrheal',
+  'opioid',
+  'metformin',
+  'magnesium',
+  'iron',
+  'fiber_supplement',
+  'antibiotic',
+  'ppi',
+  'h2_blocker',
+  'nsaid',
+  'ssri',
+  'gi_antiinflammatory',
+]);
+
 export function isMedicationDay(day: UserDailyFeatures): boolean {
   return day.medication_event_count > 0;
+}
+
+export function isGiRelevantMedicationDay(day: UserDailyFeatures): boolean {
+  if (day.gi_risk_medication_count > 0) return true;
+  if (day.motility_slowing_medication_count > 0) return true;
+  if (day.motility_speeding_medication_count > 0) return true;
+  if (day.acid_suppression_medication_count > 0) return true;
+  if (day.microbiome_disruption_medication_count > 0) return true;
+
+  return day.medication_families.some((family) =>
+    GI_RELEVANT_MEDICATION_FAMILIES.has(family)
+  );
 }
 
 export function isBmShiftDay(
@@ -102,7 +130,7 @@ export function analyzeMedicationAnyBmShiftCandidate(
   const baselineDates: string[] = [];
 
   for (const day of eligibleDays) {
-    const medDay = isMedicationDay(day);
+    const medDay = isGiRelevantMedicationDay(day);
     const bmShift = isBmShiftDay(day, baselines);
 
     if (medDay) {
@@ -218,10 +246,14 @@ export function analyzeMedicationAnyBmShiftCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: uncertaintyStatement,
     evidence_gaps: evidenceGaps,
+    notes: [
+      'Exposure days are limited to GI-relevant medication signals derived from matched medication families and gut-effect heuristics.',
+    ],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_shift_count: nonExposedShiftCount,
+      gi_risk_medication_day_count: exposureCount,
     },
   };
 
@@ -230,7 +262,12 @@ export function analyzeMedicationAnyBmShiftCandidate(
     insight_key: INSIGHT_KEY,
     category: 'medication',
     subtype: 'medication_any_bm_shift',
-    trigger_factors: ['medication_event_count', 'medications_taken'],
+    trigger_factors: [
+      'gi_risk_medication_count',
+      'medication_families',
+      'motility_slowing_medication_count',
+      'motility_speeding_medication_count',
+    ],
     target_outcomes: ['bm_count'],
     status,
     confidence_score: confidence,
