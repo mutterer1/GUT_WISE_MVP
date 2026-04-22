@@ -1,3 +1,5 @@
+import type { HydrationBeverageCategory } from '../constants/domain';
+
 export interface DailyCheckInSectionState {
   enabled: boolean;
 }
@@ -27,7 +29,13 @@ export interface DailyCheckInDraft {
   hydration: DailyCheckInSectionState & {
     amount_ml: number;
     beverage_type: string;
+    beverage_category?: HydrationBeverageCategory;
     caffeine_content: boolean;
+    caffeine_mg?: number;
+    effective_hydration_ml?: number;
+    water_goal_contribution_ml?: number;
+    electrolyte_present?: boolean;
+    alcohol_present?: boolean;
   };
   sleep: DailyCheckInSectionState & {
     sleep_start: string;
