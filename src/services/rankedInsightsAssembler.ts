@@ -2,6 +2,11 @@ import { supabase } from '../lib/supabase';
 import type { CanonicalEvent } from '../types/canonicalEvents';
 import type { UserDailyFeatures } from '../types/dailyFeatures';
 import type { UserBaselineSet } from '../types/baselines';
+import type {
+  FoodLogItemIngredientRow,
+  FoodLogItemRow,
+  IngredientReferenceItemRow,
+} from '../types/intelligence';
 import {
   normalizeBMEvent,
   normalizeSymptomEvent,
@@ -12,6 +17,7 @@ import {
   normalizeMedicationEvent,
   normalizeMenstrualCycleEvent,
   normalizeExerciseEvent,
+  type EnrichedFoodLogRow,
 } from '../lib/canonicalEvents';
 import { buildDailyFeatures } from '../lib/dailyFeatures';
 import { computeUserBaselines } from '../lib/baselines';
@@ -20,6 +26,14 @@ export interface AssembledInsightInputs {
   dailyFeatures: UserDailyFeatures[];
   baselines: UserBaselineSet;
 }
+
+type EnrichedFoodIngredientRow = FoodLogItemIngredientRow & {
+  ingredient_reference?: IngredientReferenceItemRow | null;
+};
+
+type EnrichedFoodItemRow = FoodLogItemRow & {
+  normalized_ingredients?: EnrichedFoodIngredientRow[];
+};
 
 function lookbackDateISO(days: number): string {
   const d = new Date();
@@ -43,6 +57,100 @@ async function fetchTable<T>(
   return (data ?? []) as T[];
 }
 
+async function fetchRowsByIds<T>(
+  table: string,
+  column: string,
+  ids: string[]
+): Promise<T[]> {
+  const uniqueIds = [...new Set(ids.filter((id) => id.length > 0))];
+  if (uniqueIds.length === 0) return [];
+
+  const { data, error } = await supabase.from(table).select('*').in(column, uniqueIds);
+
+  if (error) throw new Error(`Failed to fetch ${table}: ${error.message}`);
+  return (data ?? []) as T[];
+}
+
+async function fetchEnrichedFoodRows(
+  userId: string,
+  since: string
+): Promise<EnrichedFoodLogRow[]> {
+  const foodRows = await fetchTable<EnrichedFoodLogRow>('food_logs', userId, since);
+  const foodLogIds = foodRows
+    .map((row) => row.id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  if (foodLogIds.length === 0) {
+    return foodRows;
+  }
+
+  const foodLogItems = await fetchRowsByIds<FoodLogItemRow>(
+    'food_log_items',
+    'food_log_id',
+    foodLogIds
+  );
+
+  const foodLogItemIds = foodLogItems
+    .map((row) => row.id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const ingredientRows = await fetchRowsByIds<FoodLogItemIngredientRow>(
+    'food_log_item_ingredients',
+    'food_log_item_id',
+    foodLogItemIds
+  );
+
+  const ingredientReferenceIds = ingredientRows
+    .map((row) => row.ingredient_reference_id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const ingredientReferences = await fetchRowsByIds<IngredientReferenceItemRow>(
+    'ingredient_reference_items',
+    'id',
+    ingredientReferenceIds
+  );
+
+  const ingredientReferenceById = new Map(
+    ingredientReferences.map((row) => [row.id, row])
+  );
+
+  const ingredientsByFoodLogItemId = new Map<
+    string,
+    EnrichedFoodIngredientRow[]
+  >();
+
+  for (const ingredientRow of ingredientRows) {
+    const current = ingredientsByFoodLogItemId.get(ingredientRow.food_log_item_id) ?? [];
+    current.push({
+      ...ingredientRow,
+      ingredient_reference: ingredientRow.ingredient_reference_id
+        ? ingredientReferenceById.get(ingredientRow.ingredient_reference_id) ?? null
+        : null,
+    });
+    ingredientsByFoodLogItemId.set(ingredientRow.food_log_item_id, current);
+  }
+
+  const foodItemsByFoodLogId = new Map<string, EnrichedFoodItemRow[]>();
+
+  for (const foodLogItem of [...foodLogItems].sort((a, b) => {
+    const orderA = a.consumed_order ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.consumed_order ?? Number.MAX_SAFE_INTEGER;
+    return orderA - orderB;
+  })) {
+    const current = foodItemsByFoodLogId.get(foodLogItem.food_log_id) ?? [];
+    current.push({
+      ...foodLogItem,
+      normalized_ingredients: ingredientsByFoodLogItemId.get(foodLogItem.id) ?? [],
+    });
+    foodItemsByFoodLogId.set(foodLogItem.food_log_id, current);
+  }
+
+  return foodRows.map((row) => ({
+    ...row,
+    normalized_items: row.id ? foodItemsByFoodLogId.get(row.id) ?? [] : [],
+  }));
+}
+
 export async function assembleRankedInsightInputs(
   userId: string,
   lookbackDays = 90
@@ -53,7 +161,7 @@ export async function assembleRankedInsightInputs(
     await Promise.all([
       fetchTable<Parameters<typeof normalizeBMEvent>[0]>('bm_logs', userId, since),
       fetchTable<Parameters<typeof normalizeSymptomEvent>[0]>('symptom_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeFoodEvent>[0]>('food_logs', userId, since),
+      fetchEnrichedFoodRows(userId, since),
       fetchTable<Parameters<typeof normalizeHydrationEvent>[0]>('hydration_logs', userId, since),
       fetchTable<Parameters<typeof normalizeSleepEvent>[0]>('sleep_logs', userId, since),
       fetchTable<Parameters<typeof normalizeStressEvent>[0]>('stress_logs', userId, since),
