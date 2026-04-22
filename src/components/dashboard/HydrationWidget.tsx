@@ -78,6 +78,7 @@ export default function HydrationWidget({
             </p>
           </div>
         </div>
+
         <div
           className={`flex h-11 w-11 items-center justify-center rounded-xl ${
             isComplete
