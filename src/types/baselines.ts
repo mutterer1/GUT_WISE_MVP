@@ -9,6 +9,12 @@ export interface HydrationBaseline {
   median_total_ml: number | null;
   low_hydration_threshold: number | null;
   high_hydration_threshold: number | null;
+  median_raw_total_ml?: number | null;
+  median_water_goal_ml?: number | null;
+  low_water_goal_threshold?: number | null;
+  high_water_goal_threshold?: number | null;
+  median_caffeine_mg?: number | null;
+  high_caffeine_threshold?: number | null;
 }
 
 export interface StressBaseline {
