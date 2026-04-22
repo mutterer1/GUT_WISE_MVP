@@ -30,6 +30,9 @@ function makeDay(
     late_meal: false,
     hydration_total_ml: 2000,
     hydration_event_count: 4,
+    hydration_raw_total_ml: 2300,
+    hydration_water_goal_ml: 1600,
+    hydration_caffeine_mg: 95,
     caffeine_beverage_count: 1,
     alcohol_beverage_count: 0,
     sleep_entry_count: 1,
@@ -68,6 +71,12 @@ function makeDemoBaselines(): UserBaselineSet {
       median_total_ml: 2000,
       low_hydration_threshold: 1500,
       high_hydration_threshold: 2500,
+      median_raw_total_ml: 2300,
+      median_water_goal_ml: 1600,
+      low_water_goal_threshold: 1000,
+      high_water_goal_threshold: 2000,
+      median_caffeine_mg: 95,
+      high_caffeine_threshold: 140,
     },
     stress: {
       median_avg: 3,
@@ -114,37 +123,69 @@ function makeDemoBaselines(): UserBaselineSet {
 
 export function hydrationStoolConsistencyDemo() {
   const features: UserDailyFeatures[] = [
-    // Day 1: low hydration (1200ml < 1500ml threshold)
-    makeDay('2026-03-22', { hydration_total_ml: 1200 }),
-    // Day 2: harder stool next day (bristol 2 < median 4, plus hard_stool_count)
+    makeDay('2026-03-22', {
+      hydration_total_ml: 1200,
+      hydration_raw_total_ml: 1700,
+      hydration_water_goal_ml: 700,
+      hydration_caffeine_mg: 95,
+    }),
     makeDay('2026-03-23', { avg_bristol: 2, hard_stool_count: 1 }),
-    // Day 3: normal hydration
-    makeDay('2026-03-24', { hydration_total_ml: 2100 }),
-    // Day 4: normal stool
+
+    makeDay('2026-03-24', {
+      hydration_total_ml: 2100,
+      hydration_raw_total_ml: 2400,
+      hydration_water_goal_ml: 1800,
+      hydration_caffeine_mg: 60,
+    }),
     makeDay('2026-03-25', { avg_bristol: 4, hard_stool_count: 0 }),
-    // Day 5: low hydration
-    makeDay('2026-03-26', { hydration_total_ml: 1100 }),
-    // Day 6: harder stool
+
+    makeDay('2026-03-26', {
+      hydration_total_ml: 1100,
+      hydration_raw_total_ml: 1600,
+      hydration_water_goal_ml: 600,
+      hydration_caffeine_mg: 120,
+    }),
     makeDay('2026-03-27', { avg_bristol: 3, hard_stool_count: 1 }),
-    // Day 7: normal hydration
-    makeDay('2026-03-28', { hydration_total_ml: 1900 }),
-    // Day 8: normal stool
+
+    makeDay('2026-03-28', {
+      hydration_total_ml: 1900,
+      hydration_raw_total_ml: 2200,
+      hydration_water_goal_ml: 1500,
+      hydration_caffeine_mg: 40,
+    }),
     makeDay('2026-03-29', { avg_bristol: 4, hard_stool_count: 0 }),
-    // Day 9: low hydration
-    makeDay('2026-03-30', { hydration_total_ml: 1000 }),
-    // Day 10: harder stool
+
+    makeDay('2026-03-30', {
+      hydration_total_ml: 1000,
+      hydration_raw_total_ml: 1500,
+      hydration_water_goal_ml: 500,
+      hydration_caffeine_mg: 130,
+    }),
     makeDay('2026-03-31', { avg_bristol: 2, hard_stool_count: 2 }),
-    // Day 11: normal hydration
-    makeDay('2026-04-01', { hydration_total_ml: 2200 }),
-    // Day 12: normal stool
+
+    makeDay('2026-04-01', {
+      hydration_total_ml: 2200,
+      hydration_raw_total_ml: 2200,
+      hydration_water_goal_ml: 2100,
+      hydration_caffeine_mg: 0,
+      caffeine_beverage_count: 0,
+    }),
     makeDay('2026-04-02', { avg_bristol: 5, hard_stool_count: 0 }),
-    // Day 13: low hydration
-    makeDay('2026-04-03', { hydration_total_ml: 1400 }),
-    // Day 14: harder stool
+
+    makeDay('2026-04-03', {
+      hydration_total_ml: 1400,
+      hydration_raw_total_ml: 1900,
+      hydration_water_goal_ml: 900,
+      hydration_caffeine_mg: 80,
+    }),
     makeDay('2026-04-04', { avg_bristol: 3, hard_stool_count: 1 }),
-    // Day 15: normal hydration
-    makeDay('2026-04-05', { hydration_total_ml: 2000 }),
-    // Day 16: normal stool (no next day, won't be paired)
+
+    makeDay('2026-04-05', {
+      hydration_total_ml: 2000,
+      hydration_raw_total_ml: 2350,
+      hydration_water_goal_ml: 1700,
+      hydration_caffeine_mg: 95,
+    }),
     makeDay('2026-04-06', { avg_bristol: 4, hard_stool_count: 0 }),
   ];
 
