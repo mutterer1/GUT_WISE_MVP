@@ -9,10 +9,17 @@ import type {
   MenstrualCycleLogRow,
   ExerciseLogRow,
 } from '../types/logs';
+import type {
+  FoodLogItemIngredientRow,
+  FoodLogItemRow,
+  IngredientReferenceItemRow,
+} from '../types/intelligence';
 import type { CanonicalEvent, EventType } from '../types/canonicalEvents';
 import { EVENT_TYPE_TO_SOURCE_TABLE } from '../types/canonicalEvents';
 import { deriveFoodIntelligence } from './foodIntelligence';
 import { deriveMedicationIntelligence } from './medicationIntelligence';
+import type { DerivedFoodIntelligence } from './foodIntelligence';
+import type { IngredientSignalKey } from '../data/ingredientCatalog';
 
 function deriveLocalDate(occurredAt: string): string {
   const iso = occurredAt.split('T')[0];
@@ -76,6 +83,163 @@ function baseEvent(
   };
 }
 
+const FOOD_SIGNAL_KEYS: IngredientSignalKey[] = [
+  'high_fodmap',
+  'dairy',
+  'gluten',
+  'artificial_sweetener',
+  'high_fat',
+  'spicy',
+  'caffeine_food',
+  'alcohol',
+  'fiber_dense',
+];
+
+interface EnrichedFoodLogItemIngredientRow extends FoodLogItemIngredientRow {
+  ingredient_reference?: IngredientReferenceItemRow | null;
+}
+
+interface EnrichedFoodLogItemRow extends FoodLogItemRow {
+  normalized_ingredients?: EnrichedFoodLogItemIngredientRow[];
+}
+
+export interface EnrichedFoodLogRow extends FoodLogRow {
+  normalized_items?: EnrichedFoodLogItemRow[];
+}
+
+function uniqueSortedStrings(values: string[]): string[] {
+  return [...new Set(values.filter((value) => value.length > 0))].sort();
+}
+
+function isIngredientSignalKey(value: string): value is IngredientSignalKey {
+  return FOOD_SIGNAL_KEYS.includes(value as IngredientSignalKey);
+}
+
+function mergeFoodIntelligence(
+  primary: DerivedFoodIntelligence,
+  secondary: DerivedFoodIntelligence
+): DerivedFoodIntelligence {
+  return {
+    food_item_names: uniqueSortedStrings([
+      ...primary.food_item_names,
+      ...secondary.food_item_names,
+    ]),
+    matched_ingredient_ids: uniqueSortedStrings([
+      ...primary.matched_ingredient_ids,
+      ...secondary.matched_ingredient_ids,
+    ]),
+    ingredient_signals: uniqueSortedStrings([
+      ...primary.ingredient_signals,
+      ...secondary.ingredient_signals,
+    ]) as IngredientSignalKey[],
+    gut_trigger_load: uniqueSortedStrings([
+      ...primary.ingredient_signals,
+      ...secondary.ingredient_signals,
+    ]).length,
+    high_fodmap_food_count: Math.max(
+      primary.high_fodmap_food_count,
+      secondary.high_fodmap_food_count
+    ),
+    dairy_food_count: Math.max(primary.dairy_food_count, secondary.dairy_food_count),
+    gluten_food_count: Math.max(primary.gluten_food_count, secondary.gluten_food_count),
+    artificial_sweetener_food_count: Math.max(
+      primary.artificial_sweetener_food_count,
+      secondary.artificial_sweetener_food_count
+    ),
+    high_fat_food_count: Math.max(primary.high_fat_food_count, secondary.high_fat_food_count),
+    spicy_food_count: Math.max(primary.spicy_food_count, secondary.spicy_food_count),
+    caffeine_food_count: Math.max(
+      primary.caffeine_food_count,
+      secondary.caffeine_food_count
+    ),
+    alcohol_food_count: Math.max(primary.alcohol_food_count, secondary.alcohol_food_count),
+    fiber_dense_food_count: Math.max(
+      primary.fiber_dense_food_count,
+      secondary.fiber_dense_food_count
+    ),
+    common_gut_effects: uniqueSortedStrings([
+      ...primary.common_gut_effects,
+      ...secondary.common_gut_effects,
+    ]),
+  };
+}
+
+function deriveFoodIntelligenceFromNormalizedItems(
+  row: EnrichedFoodLogRow
+): DerivedFoodIntelligence | null {
+  const normalizedItems = row.normalized_items ?? [];
+  if (normalizedItems.length === 0) return null;
+
+  const signalCounts: Record<IngredientSignalKey, number> = {
+    high_fodmap: 0,
+    dairy: 0,
+    gluten: 0,
+    artificial_sweetener: 0,
+    high_fat: 0,
+    spicy: 0,
+    caffeine_food: 0,
+    alcohol: 0,
+    fiber_dense: 0,
+  };
+
+  const foodItemNames: string[] = [];
+  const matchedIngredientIds = new Set<string>();
+  const ingredientSignals = new Set<IngredientSignalKey>();
+  const commonGutEffects = new Set<string>();
+
+  for (const item of normalizedItems) {
+    if (item.display_name.trim().length > 0) {
+      foodItemNames.push(item.display_name.trim());
+    }
+
+    const itemSignals = new Set<IngredientSignalKey>();
+
+    for (const ingredient of item.normalized_ingredients ?? []) {
+      if (ingredient.ingredient_reference_id) {
+        matchedIngredientIds.add(ingredient.ingredient_reference_id);
+      }
+
+      for (const effect of ingredient.ingredient_reference?.typical_gut_reactions ?? []) {
+        if (effect.trim().length > 0) {
+          commonGutEffects.add(effect.trim());
+        }
+      }
+
+      const sourceSignals =
+        ingredient.gut_signals_override.length > 0
+          ? ingredient.gut_signals_override
+          : ingredient.ingredient_reference?.default_signals ?? [];
+
+      for (const signal of sourceSignals) {
+        if (!isIngredientSignalKey(signal)) continue;
+        itemSignals.add(signal);
+        ingredientSignals.add(signal);
+      }
+    }
+
+    for (const signal of itemSignals) {
+      signalCounts[signal] += 1;
+    }
+  }
+
+  return {
+    food_item_names: uniqueSortedStrings(foodItemNames),
+    matched_ingredient_ids: [...matchedIngredientIds].sort(),
+    ingredient_signals: [...ingredientSignals].sort(),
+    gut_trigger_load: ingredientSignals.size,
+    high_fodmap_food_count: signalCounts.high_fodmap,
+    dairy_food_count: signalCounts.dairy,
+    gluten_food_count: signalCounts.gluten,
+    artificial_sweetener_food_count: signalCounts.artificial_sweetener,
+    high_fat_food_count: signalCounts.high_fat,
+    spicy_food_count: signalCounts.spicy,
+    caffeine_food_count: signalCounts.caffeine_food,
+    alcohol_food_count: signalCounts.alcohol,
+    fiber_dense_food_count: signalCounts.fiber_dense,
+    common_gut_effects: [...commonGutEffects].sort(),
+  };
+}
+
 export function normalizeBMEvent(row: BMLogRow): CanonicalEvent {
   return {
     ...baseEvent(row, 'bm'),
@@ -107,11 +271,15 @@ export function normalizeSymptomEvent(row: SymptomLogRow): CanonicalEvent {
   };
 }
 
-export function normalizeFoodEvent(row: FoodLogRow): CanonicalEvent {
-  const derived = deriveFoodIntelligence({
+export function normalizeFoodEvent(row: EnrichedFoodLogRow): CanonicalEvent {
+  const fallbackDerived = deriveFoodIntelligence({
     food_items: row.food_items,
     tags: row.tags,
   });
+  const normalizedDerived = deriveFoodIntelligenceFromNormalizedItems(row);
+  const derived = normalizedDerived
+    ? mergeFoodIntelligence(normalizedDerived, fallbackDerived)
+    : fallbackDerived;
 
   return {
     ...baseEvent(row, 'food'),
