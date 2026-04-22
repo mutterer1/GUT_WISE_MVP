@@ -1,0 +1,126 @@
+export type IngredientFodmapLevel = 'low' | 'moderate' | 'high' | 'unknown';
+
+export interface IngredientReferenceItemRow {
+  id: string;
+  canonical_name: string;
+  display_name: string;
+  ingredient_category: string | null;
+  fodmap_level: IngredientFodmapLevel | null;
+  common_aliases: string[];
+  default_signals: string[];
+  typical_gut_reactions: string[];
+  evidence_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FoodReferenceItemRow {
+  id: string;
+  canonical_name: string;
+  display_name: string;
+  brand_name: string | null;
+  food_category: string | null;
+  default_serving_amount: number | null;
+  default_serving_unit: string | null;
+  common_aliases: string[];
+  default_signals: string[];
+  source_label: string;
+  evidence_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FoodReferenceIngredientRow {
+  id: string;
+  food_reference_id: string;
+  ingredient_reference_id: string;
+  grams_per_default_serving: number | null;
+  ingredient_fraction: number | null;
+  prominence_rank: number | null;
+  is_primary: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FoodItemSourceMethod =
+  | 'manual_entry'
+  | 'autocomplete_match'
+  | 'import_candidate'
+  | 'derived_from_note';
+
+export interface FoodLogItemRow {
+  id: string;
+  user_id: string;
+  food_log_id: string;
+  display_name: string;
+  normalized_food_id: string | null;
+  quantity_value: number | null;
+  quantity_unit: string | null;
+  preparation_method: string | null;
+  brand_name: string | null;
+  restaurant_name: string | null;
+  consumed_order: number | null;
+  source_method: FoodItemSourceMethod;
+  confidence_score: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FoodIngredientSourceMethod =
+  | 'manual_entry'
+  | 'catalog_match'
+  | 'document_extraction'
+  | 'llm_inference';
+
+export interface FoodLogItemIngredientRow {
+  id: string;
+  user_id: string;
+  food_log_item_id: string;
+  ingredient_reference_id: string | null;
+  ingredient_name_text: string;
+  quantity_estimate: number | null;
+  quantity_unit: string | null;
+  source_method: FoodIngredientSourceMethod;
+  confidence_score: number | null;
+  gut_signals_override: string[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MedicationReferenceType =
+  | 'prescription'
+  | 'otc'
+  | 'supplement'
+  | 'unknown';
+
+export type MedicationGutRelevance =
+  | 'primary'
+  | 'secondary'
+  | 'indirect'
+  | 'unknown';
+
+export interface MedicationReferenceItemRow {
+  id: string;
+  generic_name: string;
+  display_name: string;
+  brand_names: string[];
+  rxnorm_code: string | null;
+  medication_class: string | null;
+  route: string | null;
+  medication_type: MedicationReferenceType | null;
+  gut_relevance: MedicationGutRelevance | null;
+  common_gut_effects: string[];
+  interaction_flags: string[];
+  evidence_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MedicationRegimenStatus =
+  | 'scheduled'
+  | 'as_needed'
+  | 'one_time'
+  | 'unknown';
