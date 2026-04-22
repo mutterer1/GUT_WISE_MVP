@@ -5,13 +5,19 @@ import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
+import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
 import { formatDateTime } from '../utils/dateFormatters';
+import type { MedicationRegimenStatus } from '../types/intelligence';
 
 interface MedicationFormData {
   logged_at: string;
   medication_name: string;
   dosage: string;
   medication_type: 'prescription' | 'otc' | 'supplement';
+  route: string;
+  reason_for_use: string;
+  regimen_status: MedicationRegimenStatus;
+  timing_context: string;
   taken_as_prescribed: boolean;
   side_effects: string[];
   notes: string;
@@ -27,6 +33,34 @@ const commonSideEffects = [
   'Fatigue',
   'None',
 ];
+
+const routeOptions = ['oral', 'topical', 'nasal', 'inhaled', 'injection', 'rectal'] as const;
+
+const regimenOptions: Array<{ value: MedicationRegimenStatus; label: string }> = [
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'as_needed', label: 'As Needed' },
+  { value: 'one_time', label: 'One-Time' },
+  { value: 'unknown', label: 'Unknown' },
+];
+
+const timingOptions = [
+  { value: 'morning', label: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+  { value: 'bedtime', label: 'Bedtime' },
+  { value: 'before_meal', label: 'Before Meal' },
+  { value: 'with_food', label: 'With Food' },
+  { value: 'after_meal', label: 'After Meal' },
+] as const;
+
+function normalizeOptionalText(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function formatSnakeCase(value: string): string {
+  return value.replace(/_/g, ' ');
+}
 
 export default function MedicationLog() {
   const {
@@ -52,29 +86,68 @@ export default function MedicationLog() {
       medication_name: '' as const,
       dosage: '' as const,
       medication_type: 'prescription' as const,
+      route: '' as const,
+      reason_for_use: '' as const,
+      regimen_status: 'unknown' as const,
+      timing_context: '' as const,
       taken_as_prescribed: true,
       side_effects: [] as string[],
       notes: '' as const,
     },
+    mapHistoryToForm: (log) => ({
+      logged_at: log.logged_at,
+      medication_name: log.medication_name ?? '',
+      dosage: log.dosage ?? '',
+      medication_type: log.medication_type ?? 'prescription',
+      route: log.route ?? '',
+      reason_for_use: log.reason_for_use ?? '',
+      regimen_status: log.regimen_status ?? 'unknown',
+      timing_context: log.timing_context ?? '',
+      taken_as_prescribed: log.taken_as_prescribed ?? true,
+      side_effects: log.side_effects ?? [],
+      notes: log.notes ?? '',
+    }),
     buildInsertPayload: (data, userId) => ({
       user_id: userId,
       logged_at: data.logged_at,
       medication_name: data.medication_name,
       dosage: data.dosage,
       medication_type: data.medication_type,
+      route: normalizeOptionalText(data.route),
+      reason_for_use: normalizeOptionalText(data.reason_for_use),
+      regimen_status: data.regimen_status,
+      timing_context: normalizeOptionalText(data.timing_context),
       taken_as_prescribed: data.taken_as_prescribed,
       side_effects: data.side_effects,
-      notes: data.notes,
+      notes: normalizeOptionalText(data.notes),
     }),
     buildUpdatePayload: (data) => ({
       logged_at: data.logged_at,
       medication_name: data.medication_name,
       dosage: data.dosage,
       medication_type: data.medication_type,
+      route: normalizeOptionalText(data.route),
+      reason_for_use: normalizeOptionalText(data.reason_for_use),
+      regimen_status: data.regimen_status,
+      timing_context: normalizeOptionalText(data.timing_context),
       taken_as_prescribed: data.taken_as_prescribed,
       side_effects: data.side_effects,
-      notes: data.notes,
+      notes: normalizeOptionalText(data.notes),
     }),
+    onAfterCreate: async ({ entryId, userId, formData: savedFormData }) => {
+      await syncMedicationNormalizationForLog({
+        medicationLogId: entryId,
+        userId,
+        formData: savedFormData,
+      });
+    },
+    onAfterUpdate: async ({ entryId, userId, formData: savedFormData }) => {
+      await syncMedicationNormalizationForLog({
+        medicationLogId: entryId,
+        userId,
+        formData: savedFormData,
+      });
+    },
   });
 
   const toggleSideEffect = (effect: string) => {
@@ -96,7 +169,7 @@ export default function MedicationLog() {
   return (
     <LogPageShell
       title="Medication Log"
-      subtitle="Track adherence, dosage, and side effects so medication context stays visible inside your daily pattern read."
+      subtitle="Track adherence, dosage, route, and context so medication patterns are usable inside your insight layer."
       message={message}
       toastVisible={toastVisible}
       onDismissToast={dismissToast}
@@ -157,8 +230,11 @@ export default function MedicationLog() {
                   {formData.medication_name || 'Medication name'}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  {formData.dosage || 'Dosage pending'} ·{' '}
-                  {formData.taken_as_prescribed ? 'taken as prescribed' : 'taken off plan'}
+                  {formData.dosage || 'Dosage pending'} |{' '}
+                  {formData.regimen_status === 'unknown'
+                    ? 'regimen not set'
+                    : formatSnakeCase(formData.regimen_status)}{' '}
+                  | {formData.taken_as_prescribed ? 'taken as prescribed' : 'taken off plan'}
                 </p>
               </div>
             </div>
@@ -218,6 +294,119 @@ export default function MedicationLog() {
                     </div>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <div className="mb-4">
+                  <label className="field-label">Route</label>
+                  <p className="field-help mt-1">
+                    Leave this blank if you want GutWise to fall back to a known route from the
+                    medication reference table.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {routeOptions.map((route) => (
+                    <button
+                      key={route}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          route: formData.route === route ? '' : route,
+                        })
+                      }
+                      className={[
+                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.route === route
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {route.charAt(0).toUpperCase() + route.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <div className="mb-4">
+                  <label className="field-label">Regimen Status</label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {regimenOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          regimen_status: option.value,
+                        })
+                      }
+                      className={[
+                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.regimen_status === option.value
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <label htmlFor="reason_for_use" className="field-label mb-2 block">
+                  Reason for Use
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="reason_for_use"
+                  value={formData.reason_for_use}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reason_for_use: e.target.value })
+                  }
+                  placeholder="e.g. reflux flare, maintenance, headache"
+                  className="input-base w-full"
+                />
+              </div>
+
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <div className="mb-4">
+                  <label className="field-label">Timing Context</label>
+                  <p className="field-help mt-1">
+                    Capture when the dose happened relative to the day or meals.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {timingOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          timing_context:
+                            formData.timing_context === option.value ? '' : option.value,
+                        })
+                      }
+                      className={[
+                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.timing_context === option.value
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -287,7 +476,7 @@ export default function MedicationLog() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="input-base min-h-[112px] w-full resize-none"
                 rows={4}
-                placeholder="Reason for taking, effectiveness, etc..."
+                placeholder="Effectiveness, side effects, or context not captured above..."
               />
             </div>
 
@@ -324,7 +513,7 @@ export default function MedicationLog() {
                         {formatDateTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                        {log.medication_name} · {log.dosage}
+                        {log.medication_name} | {log.dosage}
                       </div>
                     </div>
                     <div className="flex gap-3 text-sm">
@@ -349,10 +538,34 @@ export default function MedicationLog() {
                     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium capitalize text-[var(--color-text-secondary)]">
                       {log.medication_type}
                     </span>
+                    {log.regimen_status && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium capitalize text-[var(--color-text-secondary)]">
+                        {formatSnakeCase(log.regimen_status)}
+                      </span>
+                    )}
+                    {log.route && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium capitalize text-[var(--color-text-secondary)]">
+                        {log.route}
+                      </span>
+                    )}
+                    {log.timing_context && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium capitalize text-[var(--color-text-secondary)]">
+                        {formatSnakeCase(log.timing_context)}
+                      </span>
+                    )}
                     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium text-[var(--color-text-secondary)]">
                       {log.taken_as_prescribed ? 'Taken as prescribed' : 'Off plan'}
                     </span>
                   </div>
+
+                  {log.reason_for_use && (
+                    <div className="mb-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                        Reason
+                      </span>
+                      {log.reason_for_use}
+                    </div>
+                  )}
 
                   {log.side_effects && log.side_effects.length > 0 && (
                     <div className="mb-4">
@@ -364,7 +577,7 @@ export default function MedicationLog() {
                           <span
                             key={idx}
                             className={[
-                              'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border',
+                              'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
                               effect === 'None'
                                 ? 'border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
                                 : 'border-[rgba(255,120,120,0.22)] bg-[rgba(255,120,120,0.10)] text-[var(--color-danger)]',
