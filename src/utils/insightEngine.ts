@@ -11,7 +11,12 @@ export interface InsightEvidence {
 export interface Insight {
   id: string;
   user_id: string;
-  insight_type: 'sleep_symptom' | 'stress_urgency' | 'hydration_consistency' | 'food_symptom' | 'temporal_pattern';
+  insight_type:
+    | 'sleep_symptom'
+    | 'stress_urgency'
+    | 'hydration_consistency'
+    | 'food_symptom'
+    | 'temporal_pattern';
   summary: string;
   evidence: InsightEvidence;
   confidence_level: 'low' | 'medium' | 'high';
@@ -48,7 +53,20 @@ interface BMLog {
 
 interface HydrationLog {
   logged_at: string;
-  amount_ml: number;
+  amount_ml: number | null;
+  effective_hydration_ml: number | null;
+  water_goal_contribution_ml: number | null;
+  caffeine_mg: number | null;
+}
+
+interface DailyHydrationTotals {
+  date: string;
+  total_fluids_ml: number;
+  effective_hydration_ml: number;
+  water_goal_ml: number;
+  caffeine_mg: number;
+  first_logged_at: string;
+  last_logged_at: string;
 }
 
 interface FoodLog {
@@ -57,7 +75,8 @@ interface FoodLog {
   tags?: string[];
 }
 
-const DISCLAIMER = "This insight is for tracking purposes only and is not medical advice. Consult healthcare providers for persistent concerns.";
+const DISCLAIMER =
+  'This insight is for tracking purposes only and is not medical advice. Consult healthcare providers for persistent concerns.';
 
 function getDateOnly(dateStr: string): string {
   return dateStr.split('T')[0];
@@ -69,11 +88,52 @@ function addHours(dateStr: string, hours: number): Date {
   return date;
 }
 
-function isWithinTimeWindow(targetDate: string, referenceDate: string, minHours: number, maxHours: number): boolean {
+function isWithinTimeWindow(
+  targetDate: string,
+  referenceDate: string,
+  minHours: number,
+  maxHours: number
+): boolean {
   const target = new Date(targetDate);
   const minTime = addHours(referenceDate, minHours);
   const maxTime = addHours(referenceDate, maxHours);
   return target >= minTime && target <= maxTime;
+}
+
+function aggregateHydrationByDay(logs: HydrationLog[]): DailyHydrationTotals[] {
+  const byDate = new Map<string, DailyHydrationTotals>();
+
+  for (const log of logs) {
+    const date = getDateOnly(log.logged_at);
+    const existing = byDate.get(date);
+
+    if (existing) {
+      existing.total_fluids_ml += log.amount_ml ?? 0;
+      existing.effective_hydration_ml += log.effective_hydration_ml ?? log.amount_ml ?? 0;
+      existing.water_goal_ml += log.water_goal_contribution_ml ?? 0;
+      existing.caffeine_mg += log.caffeine_mg ?? 0;
+
+      if (log.logged_at < existing.first_logged_at) {
+        existing.first_logged_at = log.logged_at;
+      }
+
+      if (log.logged_at > existing.last_logged_at) {
+        existing.last_logged_at = log.logged_at;
+      }
+    } else {
+      byDate.set(date, {
+        date,
+        total_fluids_ml: log.amount_ml ?? 0,
+        effective_hydration_ml: log.effective_hydration_ml ?? log.amount_ml ?? 0,
+        water_goal_ml: log.water_goal_contribution_ml ?? 0,
+        caffeine_mg: log.caffeine_mg ?? 0,
+        first_logged_at: log.logged_at,
+        last_logged_at: log.logged_at,
+      });
+    }
+  }
+
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function analyzeSleepSymptomCorrelation(userId: string): Promise<Insight | null> {
@@ -111,8 +171,9 @@ export async function analyzeSleepSymptomCorrelation(userId: string): Promise<In
   const symptomTypes: Record<string, number> = {};
 
   poorSleepNights.forEach((sleepLog: SleepLog) => {
-    const followingSymptoms = symptomLogs.filter((symptom: SymptomLog) =>
-      isWithinTimeWindow(symptom.logged_at, sleepLog.logged_at, 24, 48) && symptom.severity >= 6
+    const followingSymptoms = symptomLogs.filter(
+      (symptom: SymptomLog) =>
+        isWithinTimeWindow(symptom.logged_at, sleepLog.logged_at, 24, 48) && symptom.severity >= 6
     );
 
     if (followingSymptoms.length > 0) {
@@ -142,7 +203,7 @@ export async function analyzeSleepSymptomCorrelation(userId: string): Promise<In
     frequency: `${correlationCount} out of ${poorSleepNights.length} nights with poor sleep were followed by symptoms`,
     correlation: `${rate.toFixed(0)}% correlation rate`,
     dates: evidenceDates,
-    statistics: { symptomTypes, totalPoorSleepNights: poorSleepNights.length }
+    statistics: { symptomTypes, totalPoorSleepNights: poorSleepNights.length },
   };
 
   return {
@@ -157,7 +218,7 @@ export async function analyzeSleepSymptomCorrelation(userId: string): Promise<In
     last_detected_at: poorSleepNights[poorSleepNights.length - 1].logged_at,
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 
@@ -224,7 +285,7 @@ export async function analyzeStressUrgencyPattern(userId: string): Promise<Insig
     frequency: `${correlationCount} out of ${highStressEvents.length} high-stress periods were followed by urgency`,
     correlation: `${rate.toFixed(0)}% correlation rate`,
     dates: evidenceDates,
-    statistics: { urgencyCount, totalHighStressEvents: highStressEvents.length }
+    statistics: { urgencyCount, totalHighStressEvents: highStressEvents.length },
   };
 
   return {
@@ -239,7 +300,7 @@ export async function analyzeStressUrgencyPattern(userId: string): Promise<Insig
     last_detected_at: highStressEvents[highStressEvents.length - 1].logged_at,
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 
@@ -249,7 +310,7 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
 
   const { data: hydrationLogs } = await supabase
     .from('hydration_logs')
-    .select('logged_at, amount_ml')
+    .select('logged_at, amount_ml, effective_hydration_ml, water_goal_contribution_ml, caffeine_mg')
     .eq('user_id', userId)
     .gte('logged_at', thirtyDaysAgo.toISOString())
     .order('logged_at', { ascending: true });
@@ -265,9 +326,12 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
     return null;
   }
 
-  const lowHydrationDays = hydrationLogs.filter(
-    (log: HydrationLog) => log.amount_ml < 1500
-  );
+  const dailyHydration = aggregateHydrationByDay(hydrationLogs as HydrationLog[]);
+  if (dailyHydration.length < 3) {
+    return null;
+  }
+
+  const lowHydrationDays = dailyHydration.filter((day) => day.effective_hydration_ml < 1500);
 
   if (lowHydrationDays.length < 2) {
     return null;
@@ -275,15 +339,24 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
 
   let correlationCount = 0;
   const evidenceDates: string[] = [];
+  const supportingExamples: string[] = [];
 
-  lowHydrationDays.forEach((hydrationLog: HydrationLog) => {
-    const followingBMs = bmLogs.filter((bm: any) =>
-      isWithinTimeWindow(bm.logged_at, hydrationLog.logged_at, 12, 24) && bm.bristol_type <= 2
+  lowHydrationDays.forEach((hydrationDay) => {
+    const currentDate = new Date(`${hydrationDay.date}T00:00:00`);
+    const nextDate = new Date(currentDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const nextDayDate = nextDate.toISOString().split('T')[0];
+
+    const nextDayHarderStools = (bmLogs as BMLog[]).filter(
+      (bm) => getDateOnly(bm.logged_at) === nextDayDate && bm.bristol_type <= 2
     );
 
-    if (followingBMs.length > 0) {
+    if (nextDayHarderStools.length > 0) {
       correlationCount++;
-      evidenceDates.push(getDateOnly(hydrationLog.logged_at));
+      evidenceDates.push(hydrationDay.date);
+      supportingExamples.push(
+        `${hydrationDay.date}: effective hydration ${hydrationDay.effective_hydration_ml}ml, water goal ${hydrationDay.water_goal_ml}ml`
+      );
     }
   });
 
@@ -298,13 +371,28 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
   else if (correlationCount >= 4) confidenceLevel = 'medium';
   else confidenceLevel = 'low';
 
-  const summary = `Low hydration days appear correlated with harder stool consistency within 12-24 hours. ${DISCLAIMER}`;
+  const avgEffectiveHydration =
+    Math.round(
+      lowHydrationDays.reduce((sum, day) => sum + day.effective_hydration_ml, 0) /
+        lowHydrationDays.length
+    ) || 0;
+  const avgWaterGoal =
+    Math.round(
+      lowHydrationDays.reduce((sum, day) => sum + day.water_goal_ml, 0) / lowHydrationDays.length
+    ) || 0;
+
+  const summary = `Lower effective hydration days appear correlated with harder stool consistency on the following day. ${DISCLAIMER}`;
 
   const evidence: InsightEvidence = {
     frequency: `${correlationCount} out of ${lowHydrationDays.length} low-hydration days were followed by harder stools`,
     correlation: `${rate.toFixed(0)}% correlation rate`,
     dates: evidenceDates,
-    statistics: { totalLowHydrationDays: lowHydrationDays.length }
+    examples: supportingExamples.slice(0, 5),
+    statistics: {
+      totalLowHydrationDays: lowHydrationDays.length,
+      averageEffectiveHydrationMl: avgEffectiveHydration,
+      averageWaterGoalMl: avgWaterGoal,
+    },
   };
 
   return {
@@ -315,11 +403,11 @@ export async function analyzeHydrationConsistencyPattern(userId: string): Promis
     evidence,
     confidence_level: confidenceLevel,
     occurrence_count: correlationCount,
-    first_detected_at: lowHydrationDays[0].logged_at,
-    last_detected_at: lowHydrationDays[lowHydrationDays.length - 1].logged_at,
+    first_detected_at: lowHydrationDays[0].first_logged_at,
+    last_detected_at: lowHydrationDays[lowHydrationDays.length - 1].last_logged_at,
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 }
 
@@ -345,14 +433,18 @@ export async function analyzeFoodSymptomPattern(userId: string): Promise<Insight
     return [];
   }
 
-  const tagCorrelations: Record<string, { count: number; dates: string[]; symptoms: Record<string, number> }> = {};
+  const tagCorrelations: Record<
+    string,
+    { count: number; dates: string[]; symptoms: Record<string, number> }
+  > = {};
 
   foodLogs.forEach((food: FoodLog) => {
     const tags = food.tags || [];
 
     tags.forEach((tag: string) => {
-      const followingSymptoms = symptomLogs.filter((symptom: SymptomLog) =>
-        isWithinTimeWindow(symptom.logged_at, food.logged_at, 2, 8) && symptom.severity >= 5
+      const followingSymptoms = symptomLogs.filter(
+        (symptom: SymptomLog) =>
+          isWithinTimeWindow(symptom.logged_at, food.logged_at, 2, 8) && symptom.severity >= 5
       );
 
       if (followingSymptoms.length > 0) {
@@ -362,7 +454,8 @@ export async function analyzeFoodSymptomPattern(userId: string): Promise<Insight
         tagCorrelations[tag].count++;
         tagCorrelations[tag].dates.push(getDateOnly(food.logged_at));
         followingSymptoms.forEach((s: SymptomLog) => {
-          tagCorrelations[tag].symptoms[s.symptom_type] = (tagCorrelations[tag].symptoms[s.symptom_type] || 0) + 1;
+          tagCorrelations[tag].symptoms[s.symptom_type] =
+            (tagCorrelations[tag].symptoms[s.symptom_type] || 0) + 1;
         });
       }
     });
@@ -384,7 +477,7 @@ export async function analyzeFoodSymptomPattern(userId: string): Promise<Insight
       const evidence: InsightEvidence = {
         frequency: `${data.count} occurrences observed`,
         dates: data.dates.slice(0, 5),
-        statistics: { symptomTypes: data.symptoms, tag }
+        statistics: { symptomTypes: data.symptoms, tag },
       };
 
       insights.push({
@@ -399,7 +492,7 @@ export async function analyzeFoodSymptomPattern(userId: string): Promise<Insight
         last_detected_at: data.dates[data.dates.length - 1],
         is_active: true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       });
     }
   });
@@ -451,11 +544,11 @@ export async function analyzeTemporalPattern(userId: string): Promise<Insight[]>
     const [day, count] = sortedWeekdays[0];
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    const summary = `You have a consistent pattern of bowel movements on ${dayNames[parseInt(day)]}s. ${DISCLAIMER}`;
+    const summary = `You have a consistent pattern of bowel movements on ${dayNames[parseInt(day, 10)]}s. ${DISCLAIMER}`;
 
     const evidence: InsightEvidence = {
-      frequency: `${count} occurrences on ${dayNames[parseInt(day)]}s`,
-      statistics: { weekdayPatterns, dayName: dayNames[parseInt(day)] }
+      frequency: `${count} occurrences on ${dayNames[parseInt(day, 10)]}s`,
+      statistics: { weekdayPatterns, dayName: dayNames[parseInt(day, 10)] },
     };
 
     insights.push({
@@ -470,7 +563,7 @@ export async function analyzeTemporalPattern(userId: string): Promise<Insight[]>
       last_detected_at: bmLogs[bmLogs.length - 1].logged_at,
       is_active: true,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     });
   }
 
@@ -480,14 +573,14 @@ export async function analyzeTemporalPattern(userId: string): Promise<Insight[]>
 
   if (sortedHours.length > 0 && sortedHours[0][1] >= 3) {
     const [hour, count] = sortedHours[0];
-    const hourInt = parseInt(hour);
+    const hourInt = parseInt(hour, 10);
     const timeOfDay = hourInt < 12 ? 'morning' : hourInt < 17 ? 'afternoon' : 'evening';
 
     const summary = `You have a consistent time-of-day pattern with most bowel movements occurring in the ${timeOfDay}. ${DISCLAIMER}`;
 
     const evidence: InsightEvidence = {
       frequency: `${count} occurrences around ${hourInt}:00`,
-      statistics: { hourPatterns, peakHour: hourInt }
+      statistics: { hourPatterns, peakHour: hourInt },
     };
 
     insights.push({
@@ -502,7 +595,7 @@ export async function analyzeTemporalPattern(userId: string): Promise<Insight[]>
       last_detected_at: bmLogs[bmLogs.length - 1].logged_at,
       is_active: true,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     });
   }
 
@@ -548,14 +641,12 @@ export async function saveInsights(insights: Insight[]): Promise<void> {
           last_detected_at: insight.last_detected_at,
           confidence_level: insight.confidence_level,
           evidence: insight.evidence,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id);
     } else {
       const { id, ...insertData } = insight;
-      await supabase
-        .from('user_insights')
-        .insert(insertData);
+      await supabase.from('user_insights').insert(insertData);
     }
   }
 }
