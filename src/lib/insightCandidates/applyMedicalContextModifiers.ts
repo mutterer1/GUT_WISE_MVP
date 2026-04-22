@@ -1,9 +1,15 @@
-import type { PrioritizedInsightCandidate, MedicalContextAnnotatedCandidate, CandidateCategory, PriorityTier } from '../../types/insightCandidates';
+import type {
+  PrioritizedInsightCandidate,
+  MedicalContextAnnotatedCandidate,
+  CandidateCategory,
+  PriorityTier,
+} from '../../types/insightCandidates';
 import type {
   MedicalContextSummary,
   DiagnosisFact,
   AllergyIntoleranceFact,
   MedicationFact,
+  ConfirmationState,
 } from '../../types/medicalContext';
 
 const MAX_SCORE_DELTA = 10;
@@ -13,6 +19,24 @@ type Modifier = {
   annotation: string;
   scoreDelta: number;
 };
+
+function factLabel(confirmationState: ConfirmationState): string {
+  if (confirmationState === 'confirmed') return 'confirmed';
+  if (confirmationState === 'user_reported') return 'reported';
+  return 'candidate';
+}
+
+function hasAnyActiveMedicalContext(summary: MedicalContextSummary): boolean {
+  return (
+    summary.active_diagnoses.length > 0 ||
+    summary.suspected_conditions.length > 0 ||
+    summary.current_medications.length > 0 ||
+    summary.surgeries_procedures.length > 0 ||
+    summary.allergies_intolerances.length > 0 ||
+    summary.active_diet_guidance.length > 0 ||
+    summary.red_flag_history.length > 0
+  );
+}
 
 function recomputeTier(score: number): PriorityTier {
   if (score >= 60) return 'high';
@@ -24,18 +48,24 @@ function applyDiagnosisModifiers(
   c: PrioritizedInsightCandidate,
   diagnoses: DiagnosisFact[]
 ): Modifier[] {
-  const GI_PRIMARY_CATEGORIES: CandidateCategory[] = ['stress', 'food', 'hydration', 'multifactor', 'recovery'];
+  const GI_PRIMARY_CATEGORIES: CandidateCategory[] = [
+    'stress',
+    'food',
+    'hydration',
+    'multifactor',
+    'recovery',
+  ];
   if (!GI_PRIMARY_CATEGORIES.includes(c.category)) return [];
 
-  const primaryDiagnoses = diagnoses.filter(
-    (d) => d.detail.gi_relevance === 'primary'
-  );
+  const primaryDiagnoses = diagnoses.filter((d) => d.detail.gi_relevance === 'primary');
   if (primaryDiagnoses.length === 0) return [];
 
-  return primaryDiagnoses.map((d) => ({
-    annotation: `Relevant to your confirmed diagnosis: ${d.detail.condition_name}`,
-    scoreDelta: 3,
-  })).slice(0, 1);
+  return primaryDiagnoses
+    .map((d) => ({
+      annotation: `Relevant to your ${factLabel(d.confirmation_state)} diagnosis context: ${d.detail.condition_name}`,
+      scoreDelta: 3,
+    }))
+    .slice(0, 1);
 }
 
 function applyAllergyModifiers(
@@ -50,10 +80,12 @@ function applyAllergyModifiers(
   );
   if (giAllergies.length === 0) return [];
 
-  return giAllergies.map((a) => ({
-    annotation: `Potentially relevant to your known ${a.detail.substance} ${a.detail.reaction_type} (GI symptoms on record)`,
-    scoreDelta: 5,
-  })).slice(0, 1);
+  return giAllergies
+    .map((a) => ({
+      annotation: `Potentially relevant to your ${factLabel(a.confirmation_state)} ${a.detail.substance} ${a.detail.reaction_type} with GI symptoms on record`,
+      scoreDelta: 5,
+    }))
+    .slice(0, 1);
 }
 
 function applyMedicationModifiers(
@@ -62,15 +94,15 @@ function applyMedicationModifiers(
 ): Modifier[] {
   if (c.category !== 'medication') return [];
 
-  const giMedications = medications.filter(
-    (m) => m.detail.gi_side_effects_known && m.detail.is_current
-  );
+  const giMedications = medications.filter((m) => m.detail.gi_side_effects_known && m.detail.is_current);
   if (giMedications.length === 0) return [];
 
-  return giMedications.map((m) => ({
-    annotation: `${m.detail.medication_name} is flagged as having known GI side effects`,
-    scoreDelta: 3,
-  })).slice(0, 2);
+  return giMedications
+    .map((m) => ({
+      annotation: `${m.detail.medication_name} is in your ${factLabel(m.confirmation_state)} medication context and is flagged as having known GI side effects`,
+      scoreDelta: 3,
+    }))
+    .slice(0, 2);
 }
 
 function applyRedFlagModifiers(
@@ -80,10 +112,13 @@ function applyRedFlagModifiers(
   if (!hasRedFlags) return [];
   if (c.priority_tier === 'low') return [];
 
-  return [{
-    annotation: 'You have a red flag history on file — discuss any significant symptom changes with your care team',
-    scoreDelta: 0,
-  }];
+  return [
+    {
+      annotation:
+        'You have a red flag history on file - discuss any significant symptom changes with your care team',
+      scoreDelta: 0,
+    },
+  ];
 }
 
 function applyDietGuidanceModifiers(
@@ -97,10 +132,12 @@ function applyDietGuidanceModifiers(
   );
   if (activeGuidance.length === 0) return [];
 
-  return [{
-    annotation: 'You have active dietary guidance on file that may be relevant to this pattern',
-    scoreDelta: 0,
-  }];
+  return [
+    {
+      annotation: 'You have active dietary guidance on file that may be relevant to this pattern',
+      scoreDelta: 0,
+    },
+  ];
 }
 
 function annotateOne(
@@ -142,7 +179,7 @@ export function applyMedicalContextModifiers(
   candidates: PrioritizedInsightCandidate[],
   summary: MedicalContextSummary | null
 ): MedicalContextAnnotatedCandidate[] {
-  if (!summary || !summary.has_confirmed_facts) {
+  if (!summary || !hasAnyActiveMedicalContext(summary)) {
     return candidates.map((c) => ({
       ...c,
       medical_context_annotations: [],
