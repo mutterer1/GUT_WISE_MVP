@@ -6,6 +6,7 @@ import type {
   FoodLogItemIngredientRow,
   FoodLogItemRow,
   IngredientReferenceItemRow,
+  MedicationReferenceItemRow,
 } from '../types/intelligence';
 import {
   normalizeBMEvent,
@@ -18,6 +19,7 @@ import {
   normalizeMenstrualCycleEvent,
   normalizeExerciseEvent,
   type EnrichedFoodLogRow,
+  type EnrichedMedicationLogRow,
 } from '../lib/canonicalEvents';
 import { buildDailyFeatures } from '../lib/dailyFeatures';
 import { computeUserBaselines } from '../lib/baselines';
@@ -34,6 +36,8 @@ type EnrichedFoodIngredientRow = FoodLogItemIngredientRow & {
 type EnrichedFoodItemRow = FoodLogItemRow & {
   normalized_ingredients?: EnrichedFoodIngredientRow[];
 };
+
+type EnrichedMedicationRow = EnrichedMedicationLogRow;
 
 function lookbackDateISO(days: number): string {
   const d = new Date();
@@ -151,6 +155,42 @@ async function fetchEnrichedFoodRows(
   }));
 }
 
+async function fetchEnrichedMedicationRows(
+  userId: string,
+  since: string
+): Promise<EnrichedMedicationRow[]> {
+  const medicationRows = await fetchTable<EnrichedMedicationRow>(
+    'medication_logs',
+    userId,
+    since
+  );
+
+  const normalizedMedicationIds = medicationRows
+    .map((row) => row.normalized_medication_id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  if (normalizedMedicationIds.length === 0) {
+    return medicationRows;
+  }
+
+  const medicationReferences = await fetchRowsByIds<MedicationReferenceItemRow>(
+    'medication_reference_items',
+    'id',
+    normalizedMedicationIds
+  );
+
+  const medicationReferenceById = new Map(
+    medicationReferences.map((row) => [row.id, row])
+  );
+
+  return medicationRows.map((row) => ({
+    ...row,
+    medication_reference: row.normalized_medication_id
+      ? medicationReferenceById.get(row.normalized_medication_id) ?? null
+      : null,
+  }));
+}
+
 export async function assembleRankedInsightInputs(
   userId: string,
   lookbackDays = 90
@@ -165,7 +205,7 @@ export async function assembleRankedInsightInputs(
       fetchTable<Parameters<typeof normalizeHydrationEvent>[0]>('hydration_logs', userId, since),
       fetchTable<Parameters<typeof normalizeSleepEvent>[0]>('sleep_logs', userId, since),
       fetchTable<Parameters<typeof normalizeStressEvent>[0]>('stress_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeMedicationEvent>[0]>('medication_logs', userId, since),
+      fetchEnrichedMedicationRows(userId, since),
       fetchTable<Parameters<typeof normalizeMenstrualCycleEvent>[0]>('menstrual_cycle_logs', userId, since),
       fetchTable<Parameters<typeof normalizeExerciseEvent>[0]>('exercise_logs', userId, since),
     ]);
