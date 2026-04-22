@@ -40,16 +40,151 @@ export const COMMON_SIDE_EFFECTS = [
   'None',
 ];
 
-export const BEVERAGE_TYPES = [
-  { label: 'Water', value: 'Water', ml: 250 },
-  { label: 'Coffee', value: 'Coffee', ml: 240 },
-  { label: 'Tea', value: 'Tea', ml: 240 },
-  { label: 'Juice', value: 'Juice', ml: 200 },
-  { label: 'Soda', value: 'Soda', ml: 330 },
-  { label: 'Sports Drink', value: 'Sports Drink', ml: 500 },
-  { label: 'Milk', value: 'Milk', ml: 250 },
-  { label: 'Other', value: 'Other', ml: 250 },
+export type HydrationBeverageCategory =
+  | 'water'
+  | 'electrolyte'
+  | 'coffee'
+  | 'tea'
+  | 'juice'
+  | 'soda'
+  | 'milk'
+  | 'alcohol'
+  | 'other';
+
+export interface HydrationBeverageDefinition {
+  label: string;
+  value: string;
+  ml: number;
+  category: HydrationBeverageCategory;
+  defaultCaffeineMg: number;
+  effectiveHydrationRatio: number;
+  waterGoalContributionRatio: number;
+  electrolytePresent: boolean;
+  alcoholPresent: boolean;
+}
+
+export const HYDRATION_BEVERAGE_CATEGORIES: HydrationBeverageCategory[] = [
+  'water',
+  'electrolyte',
+  'coffee',
+  'tea',
+  'juice',
+  'soda',
+  'milk',
+  'alcohol',
+  'other',
 ];
+
+export const BEVERAGE_TYPES: HydrationBeverageDefinition[] = [
+  {
+    label: 'Water',
+    value: 'Water',
+    ml: 250,
+    category: 'water',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 1,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Coffee',
+    value: 'Coffee',
+    ml: 240,
+    category: 'coffee',
+    defaultCaffeineMg: 95,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Tea',
+    value: 'Tea',
+    ml: 240,
+    category: 'tea',
+    defaultCaffeineMg: 40,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Juice',
+    value: 'Juice',
+    ml: 200,
+    category: 'juice',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Soda',
+    value: 'Soda',
+    ml: 330,
+    category: 'soda',
+    defaultCaffeineMg: 35,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Sports Drink',
+    value: 'Sports Drink',
+    ml: 500,
+    category: 'electrolyte',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: true,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Milk',
+    value: 'Milk',
+    ml: 250,
+    category: 'milk',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+  {
+    label: 'Alcohol',
+    value: 'Alcohol',
+    ml: 150,
+    category: 'alcohol',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 0,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: true,
+  },
+  {
+    label: 'Other',
+    value: 'Other',
+    ml: 250,
+    category: 'other',
+    defaultCaffeineMg: 0,
+    effectiveHydrationRatio: 1,
+    waterGoalContributionRatio: 0,
+    electrolytePresent: false,
+    alcoholPresent: false,
+  },
+];
+
+export const HYDRATION_BEVERAGE_LOOKUP = BEVERAGE_TYPES.reduce<
+  Record<string, HydrationBeverageDefinition>
+>((acc, beverage) => {
+  acc[beverage.value.toLowerCase()] = beverage;
+  acc[beverage.label.toLowerCase()] = beverage;
+  acc[beverage.category] = beverage;
+  return acc;
+}, {});
 
 export const MEAL_TYPES = [
   { value: 'breakfast', label: 'Breakfast' },
