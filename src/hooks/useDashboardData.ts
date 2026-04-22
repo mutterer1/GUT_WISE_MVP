@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchDashboardMetrics } from '../services/dashboard/fetchDashboardMetrics';
+import { saveEventManager, SaveEvent } from '../services/saveEventManager';
 import { DashboardMetrics, DEFAULT_HYDRATION_TARGET_ML } from '../types/dashboard';
 
 export type { DashboardMetrics } from '../types/dashboard';
@@ -63,6 +64,28 @@ export function useDashboardData() {
     }
 
     refresh();
+  }, [user?.id, refresh]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const refreshableLogTypes = new Set<SaveEvent['logType']>([
+      'bm',
+      'food',
+      'symptoms',
+      'sleep',
+      'stress',
+      'hydration',
+      'medication',
+    ]);
+
+    const unsubscribe = saveEventManager.subscribe((event) => {
+      if (refreshableLogTypes.has(event.logType)) {
+        refresh();
+      }
+    });
+
+    return unsubscribe;
   }, [user?.id, refresh]);
 
   return { metrics, loading, error, refresh };
