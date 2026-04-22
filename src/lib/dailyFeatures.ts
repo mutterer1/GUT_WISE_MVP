@@ -26,9 +26,7 @@ function uniqueSorted(values: string[]): string[] {
 
 function lastEventByOccurredAt(events: CanonicalEvent[]): CanonicalEvent | null {
   if (events.length === 0) return null;
-  return events.reduce((latest, e) =>
-    e.occurred_at > latest.occurred_at ? e : latest
-  );
+  return events.reduce((latest, e) => (e.occurred_at > latest.occurred_at ? e : latest));
 }
 
 function payloadNum(payload: Record<string, unknown>, key: string): number | null {
@@ -54,16 +52,38 @@ function payloadStrArray(payload: Record<string, unknown>, key: string): string[
 }
 
 const CAFFEINE_KEYWORDS = [
-  'coffee', 'espresso', 'latte', 'cappuccino', 'americano', 'mocha',
-  'tea', 'green tea', 'black tea', 'matcha',
-  'energy drink', 'energy', 'cola', 'soda',
+  'coffee',
+  'espresso',
+  'latte',
+  'cappuccino',
+  'americano',
+  'mocha',
+  'tea',
+  'green tea',
+  'black tea',
+  'matcha',
+  'energy drink',
+  'energy',
+  'cola',
+  'soda',
   'caffeine',
 ];
 
 const ALCOHOL_KEYWORDS = [
-  'beer', 'wine', 'spirits', 'cocktail', 'alcohol',
-  'whiskey', 'vodka', 'rum', 'gin', 'tequila',
-  'champagne', 'cider', 'sake', 'mead',
+  'beer',
+  'wine',
+  'spirits',
+  'cocktail',
+  'alcohol',
+  'whiskey',
+  'vodka',
+  'rum',
+  'gin',
+  'tequila',
+  'champagne',
+  'cider',
+  'sake',
+  'mead',
 ];
 
 function matchesKeywords(value: string, keywords: string[]): boolean {
@@ -156,24 +176,55 @@ function aggregateFood(events: CanonicalEvent[]) {
 }
 
 function aggregateHydration(events: CanonicalEvent[]) {
-  let totalMl = 0;
+  let effectiveMl = 0;
+  let rawMl = 0;
+  let waterGoalMl = 0;
+  let totalCaffeineMg = 0;
   let caffeineCount = 0;
   let alcoholCount = 0;
 
   for (const e of events) {
-    const ml = payloadNum(e.payload, 'amount_ml');
-    if (ml !== null) totalMl += ml;
+    const ml = payloadNum(e.payload, 'amount_ml') ?? 0;
+    const explicitEffectiveMl = payloadNum(e.payload, 'effective_hydration_ml');
+    const explicitWaterGoalMl = payloadNum(e.payload, 'water_goal_contribution_ml');
+    const explicitCaffeineMg = payloadNum(e.payload, 'caffeine_mg');
+    const beverageType = payloadStr(e.payload, 'beverage_type') ?? '';
+    const beverageCategory = payloadStr(e.payload, 'beverage_category');
+    const alcoholPresent = payloadBool(e.payload, 'alcohol_present');
+    const caffeineContent = payloadBool(e.payload, 'caffeine_content');
 
-    const bevType = payloadStr(e.payload, 'beverage_type');
-    if (bevType) {
-      if (matchesKeywords(bevType, CAFFEINE_KEYWORDS)) caffeineCount++;
-      if (matchesKeywords(bevType, ALCOHOL_KEYWORDS)) alcoholCount++;
-    }
+    const isAlcohol =
+      alcoholPresent ||
+      beverageCategory === 'alcohol' ||
+      matchesKeywords(beverageType, ALCOHOL_KEYWORDS);
+
+    const isWater = beverageCategory === 'water' || beverageType.toLowerCase() === 'water';
+
+    const isCaffeinated =
+      (explicitCaffeineMg ?? 0) > 0 ||
+      caffeineContent ||
+      beverageCategory === 'coffee' ||
+      beverageCategory === 'tea' ||
+      beverageCategory === 'soda' ||
+      matchesKeywords(beverageType, CAFFEINE_KEYWORDS);
+
+    rawMl += ml;
+    effectiveMl += explicitEffectiveMl ?? (isAlcohol ? 0 : ml);
+    waterGoalMl += explicitWaterGoalMl ?? (isWater ? ml : 0);
+
+    const caffeineMg = explicitCaffeineMg ?? (isCaffeinated ? 25 : 0);
+    totalCaffeineMg += caffeineMg;
+
+    if (isCaffeinated) caffeineCount++;
+    if (isAlcohol) alcoholCount++;
   }
 
   return {
-    hydration_total_ml: totalMl,
+    hydration_total_ml: effectiveMl,
     hydration_event_count: events.length,
+    hydration_raw_total_ml: rawMl,
+    hydration_water_goal_ml: waterGoalMl,
+    hydration_caffeine_mg: totalCaffeineMg,
     caffeine_beverage_count: caffeineCount,
     alcohol_beverage_count: alcoholCount,
   };
@@ -460,7 +511,15 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       local_hour: 8,
       timezone: 'America/New_York',
       source_table: 'hydration_logs',
-      payload: { amount_ml: 500, beverage_type: 'water' },
+      payload: {
+        amount_ml: 500,
+        beverage_type: 'water',
+        beverage_category: 'water',
+        effective_hydration_ml: 500,
+        water_goal_contribution_ml: 500,
+        caffeine_mg: 0,
+        alcohol_present: false,
+      },
       completeness_score: 1.0,
     },
     {
@@ -472,7 +531,15 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       local_hour: 10,
       timezone: 'America/New_York',
       source_table: 'hydration_logs',
-      payload: { amount_ml: 350, beverage_type: 'coffee' },
+      payload: {
+        amount_ml: 350,
+        beverage_type: 'coffee',
+        beverage_category: 'coffee',
+        effective_hydration_ml: 350,
+        water_goal_contribution_ml: 0,
+        caffeine_mg: 95,
+        alcohol_present: false,
+      },
       completeness_score: 1.0,
     },
     {
