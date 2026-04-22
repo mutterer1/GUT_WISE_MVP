@@ -7,9 +7,13 @@ export interface DashboardMetrics {
     logged_at: string;
   }>;
   todayHydration: {
-    total_ml: number;
+    total_fluids_ml: number;
+    effective_hydration_ml: number;
+    water_goal_ml: number;
     target_ml: number;
     entries: number;
+    caffeinated_entries: number;
+    alcohol_entries: number;
   };
   recentMedications: Array<{
     id: string;
