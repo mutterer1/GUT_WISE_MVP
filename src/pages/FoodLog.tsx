@@ -18,6 +18,7 @@ import LogModeTabs from '../components/LogModeTabs';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { type FoodSuggestion } from '../data/foodSuggestions';
+import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface FoodItem {
@@ -130,6 +131,20 @@ export default function FoodLog() {
       tags: data.tags,
       notes: data.notes || null,
     }),
+    onAfterCreate: async ({ entryId, userId, formData: savedFormData }) => {
+      await replaceFoodLogItemsForLog({
+        userId,
+        foodLogId: entryId,
+        foodItems: savedFormData.food_items,
+      });
+    },
+    onAfterUpdate: async ({ entryId, userId, formData: savedFormData }) => {
+      await replaceFoodLogItemsForLog({
+        userId,
+        foodLogId: entryId,
+        foodItems: savedFormData.food_items,
+      });
+    },
   });
 
   useEffect(() => {
