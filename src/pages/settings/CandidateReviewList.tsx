@@ -155,6 +155,10 @@ export default function CandidateReviewList({
                       <span>{config.label}</span>
                       <span>{statusMeta.tone}</span>
                       <span>Source: {formatSource(candidate.extraction_source)}</span>
+                      <span>
+                        Evidence: {candidate.evidence_count ?? 0}{' '}
+                        {(candidate.evidence_count ?? 0) === 1 ? 'link' : 'links'}
+                      </span>
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -268,6 +272,14 @@ export default function CandidateReviewList({
                           <div className="flex items-start gap-3">
                             <Link2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                             <span>Source path: {formatSource(candidate.extraction_source)}</span>
+                          </div>
+
+                          <div className="flex items-start gap-3">
+                            <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                            <span>
+                              Attached evidence: {candidate.evidence_count ?? 0}{' '}
+                              {(candidate.evidence_count ?? 0) === 1 ? 'item' : 'items'}
+                            </span>
                           </div>
 
                           {candidate.reviewed_at && (
