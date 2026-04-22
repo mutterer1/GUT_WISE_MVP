@@ -27,6 +27,9 @@ export interface UserDailyFeatures {
 
   hydration_total_ml: number;
   hydration_event_count: number;
+  hydration_raw_total_ml?: number;
+  hydration_water_goal_ml?: number;
+  hydration_caffeine_mg?: number;
   caffeine_beverage_count: number;
   alcohol_beverage_count: number;
 
