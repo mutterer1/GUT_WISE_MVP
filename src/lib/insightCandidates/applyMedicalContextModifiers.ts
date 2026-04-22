@@ -20,10 +20,37 @@ type Modifier = {
   scoreDelta: number;
 };
 
-function factLabel(confirmationState: ConfirmationState): string {
-  if (confirmationState === 'confirmed') return 'confirmed';
-  if (confirmationState === 'user_reported') return 'reported';
+function factEvidenceLabel(
+  fact: { confirmation_state: ConfirmationState; provenance?: { source: string; source_document_id: string | null } }
+): string {
+  if (
+    fact.confirmation_state === 'confirmed' &&
+    fact.provenance?.source === 'document_extraction' &&
+    fact.provenance.source_document_id
+  ) {
+    return 'document-backed confirmed';
+  }
+
+  if (fact.confirmation_state === 'confirmed') return 'confirmed';
+  if (fact.confirmation_state === 'user_reported') return 'user-reported';
   return 'candidate';
+}
+
+function factTrustDelta(
+  fact: { confirmation_state: ConfirmationState; provenance?: { source: string; source_document_id: string | null } },
+  deltas: { documentBacked: number; confirmed: number; userReported: number }
+): number {
+  if (
+    fact.confirmation_state === 'confirmed' &&
+    fact.provenance?.source === 'document_extraction' &&
+    fact.provenance.source_document_id
+  ) {
+    return deltas.documentBacked;
+  }
+
+  if (fact.confirmation_state === 'confirmed') return deltas.confirmed;
+  if (fact.confirmation_state === 'user_reported') return deltas.userReported;
+  return 0;
 }
 
 function hasAnyActiveMedicalContext(summary: MedicalContextSummary): boolean {
@@ -34,7 +61,8 @@ function hasAnyActiveMedicalContext(summary: MedicalContextSummary): boolean {
     summary.surgeries_procedures.length > 0 ||
     summary.allergies_intolerances.length > 0 ||
     summary.active_diet_guidance.length > 0 ||
-    summary.red_flag_history.length > 0
+    summary.red_flag_history.length > 0 ||
+    summary.pending_candidates_count > 0
   );
 }
 
@@ -62,8 +90,12 @@ function applyDiagnosisModifiers(
 
   return primaryDiagnoses
     .map((d) => ({
-      annotation: `Relevant to your ${factLabel(d.confirmation_state)} diagnosis context: ${d.detail.condition_name}`,
-      scoreDelta: 3,
+      annotation: `Relevant to your ${factEvidenceLabel(d)} diagnosis context: ${d.detail.condition_name}`,
+      scoreDelta: factTrustDelta(d, {
+        documentBacked: 4,
+        confirmed: 3,
+        userReported: 1,
+      }),
     }))
     .slice(0, 1);
 }
@@ -82,8 +114,12 @@ function applyAllergyModifiers(
 
   return giAllergies
     .map((a) => ({
-      annotation: `Potentially relevant to your ${factLabel(a.confirmation_state)} ${a.detail.substance} ${a.detail.reaction_type} with GI symptoms on record`,
-      scoreDelta: 5,
+      annotation: `Potentially relevant to your ${factEvidenceLabel(a)} ${a.detail.substance} ${a.detail.reaction_type} with GI symptoms on record`,
+      scoreDelta: factTrustDelta(a, {
+        documentBacked: 6,
+        confirmed: 4,
+        userReported: 2,
+      }),
     }))
     .slice(0, 1);
 }
@@ -99,24 +135,33 @@ function applyMedicationModifiers(
 
   return giMedications
     .map((m) => ({
-      annotation: `${m.detail.medication_name} is in your ${factLabel(m.confirmation_state)} medication context and is flagged as having known GI side effects`,
-      scoreDelta: 3,
+      annotation: `${m.detail.medication_name} is in your ${factEvidenceLabel(m)} medication context and is flagged as having known GI side effects`,
+      scoreDelta: factTrustDelta(m, {
+        documentBacked: 4,
+        confirmed: 3,
+        userReported: 1,
+      }),
     }))
     .slice(0, 2);
 }
 
 function applyRedFlagModifiers(
   c: PrioritizedInsightCandidate,
-  hasRedFlags: boolean
+  redFlags: MedicalContextSummary['red_flag_history']
 ): Modifier[] {
-  if (!hasRedFlags) return [];
+  if (redFlags.length === 0) return [];
   if (c.priority_tier === 'low') return [];
+
+  const topRedFlag = redFlags[0];
 
   return [
     {
-      annotation:
-        'You have a red flag history on file - discuss any significant symptom changes with your care team',
-      scoreDelta: 0,
+      annotation: `You have ${factEvidenceLabel(topRedFlag)} red-flag history on file - discuss significant symptom changes with your care team`,
+      scoreDelta: factTrustDelta(topRedFlag, {
+        documentBacked: 2,
+        confirmed: 1,
+        userReported: 0,
+      }),
     },
   ];
 }
@@ -134,7 +179,27 @@ function applyDietGuidanceModifiers(
 
   return [
     {
-      annotation: 'You have active dietary guidance on file that may be relevant to this pattern',
+      annotation: `You have ${factEvidenceLabel(activeGuidance[0])} dietary guidance on file that may be relevant to this pattern`,
+      scoreDelta: factTrustDelta(activeGuidance[0], {
+        documentBacked: 2,
+        confirmed: 1,
+        userReported: 0,
+      }),
+    },
+  ];
+}
+
+function applyPendingCandidateModifiers(
+  summary: MedicalContextSummary
+): Modifier[] {
+  if (summary.pending_candidates_count <= 0) return [];
+
+  return [
+    {
+      annotation:
+        summary.pending_candidates_count === 1
+          ? 'You have 1 pending medical-context review item, so this ranking may change as more evidence is confirmed'
+          : `You have ${summary.pending_candidates_count} pending medical-context review items, so this ranking may change as more evidence is confirmed`,
       scoreDelta: 0,
     },
   ];
@@ -148,8 +213,9 @@ function annotateOne(
     ...applyDiagnosisModifiers(c, summary.active_diagnoses),
     ...applyAllergyModifiers(c, summary.allergies_intolerances),
     ...applyMedicationModifiers(c, summary.current_medications),
-    ...applyRedFlagModifiers(c, summary.red_flag_history.length > 0),
+    ...applyRedFlagModifiers(c, summary.red_flag_history),
     ...applyDietGuidanceModifiers(c, summary),
+    ...applyPendingCandidateModifiers(summary),
   ];
 
   if (modifiers.length === 0) {
