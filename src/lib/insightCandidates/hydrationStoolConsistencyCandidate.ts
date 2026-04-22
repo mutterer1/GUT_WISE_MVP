@@ -25,9 +25,18 @@ export function isLowHydrationDay(
   day: UserDailyFeatures,
   baselines: UserBaselineSet
 ): boolean {
-  const threshold = baselines.hydration.low_hydration_threshold;
-  if (threshold === null) return false;
-  return day.hydration_total_ml < threshold;
+  const effectiveThreshold = baselines.hydration.low_hydration_threshold;
+  const waterGoalThreshold = baselines.hydration.low_water_goal_threshold ?? null;
+
+  if (effectiveThreshold !== null) {
+    return day.hydration_total_ml < effectiveThreshold;
+  }
+
+  if (waterGoalThreshold !== null) {
+    return (day.hydration_water_goal_ml ?? 0) < waterGoalThreshold;
+  }
+
+  return false;
 }
 
 export function isHarderStoolNextDay(
@@ -82,7 +91,12 @@ export function analyzeHydrationStoolConsistencyCandidate(
   baselines: UserBaselineSet
 ): InsightCandidate | null {
   if (features.length < 2) return null;
-  if (baselines.hydration.low_hydration_threshold === null) return null;
+  if (
+    baselines.hydration.low_hydration_threshold === null &&
+    baselines.hydration.low_water_goal_threshold === null
+  ) {
+    return null;
+  }
   if (baselines.bowel_movement.median_bristol === null) return null;
 
   const sorted = [...features].sort((a, b) => a.date.localeCompare(b.date));
@@ -218,12 +232,35 @@ export function analyzeHydrationStoolConsistencyCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
     evidence_gaps: evidenceGaps,
-    notes: ['Paired-day analysis comparing lower-hydration days against the following day.'],
+    notes: [
+      'Paired-day analysis using effective hydration as the primary exposure measure.',
+      'Water-goal totals remain available for interpretation but do not replace effective hydration in this rule.',
+    ],
     statistics: {
       eligible_pair_count: eligiblePairs.length,
       non_exposed_count: nonExposedCount,
       non_exposed_harder_count: nonExposedHarderCount,
       total_pair_count: pairs.length,
+      average_exposed_effective_hydration_ml:
+        exposureCount > 0
+          ? Math.round(
+              eligiblePairs
+                .filter((pair) => isLowHydrationDay(pair.hydrationDay, baselines))
+                .reduce((sum, pair) => sum + pair.hydrationDay.hydration_total_ml, 0) /
+                exposureCount
+            )
+          : 0,
+      average_exposed_water_goal_ml:
+        exposureCount > 0
+          ? Math.round(
+              eligiblePairs
+                .filter((pair) => isLowHydrationDay(pair.hydrationDay, baselines))
+                .reduce(
+                  (sum, pair) => sum + (pair.hydrationDay.hydration_water_goal_ml ?? 0),
+                  0
+                ) / exposureCount
+            )
+          : 0,
     },
   };
 
@@ -232,7 +269,7 @@ export function analyzeHydrationStoolConsistencyCandidate(
     insight_key: INSIGHT_KEY,
     category: 'hydration',
     subtype: 'hydration_stool_consistency',
-    trigger_factors: ['hydration_total_ml'],
+    trigger_factors: ['hydration_total_ml', 'hydration_water_goal_ml'],
     target_outcomes: ['avg_bristol', 'hard_stool_count'],
     status,
     confidence_score: confidence,
