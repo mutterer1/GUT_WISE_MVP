@@ -183,6 +183,13 @@ export type ExtractionSource =
   | 'clinician_shared'
   | 'inference';
 
+export type DocumentExtractionStatus =
+  | 'not_started'
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
 export type CandidateReviewStatus =
   | 'pending_review'
   | 'accepted'
@@ -201,6 +208,7 @@ export interface CandidateMedicalFactRow {
   review_status: CandidateReviewStatus;
   reviewed_at: string | null;
   promoted_fact_id: string | null;
+  evidence_count?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -226,6 +234,52 @@ export interface MedicalDocumentIntakeRow {
   intake_status: IntakeStatus;
   document_notes: string | null;
   candidate_count: number;
+  storage_bucket?: string | null;
+  storage_path?: string | null;
+  content_sha256?: string | null;
+  extraction_status?: DocumentExtractionStatus;
+  extraction_error?: string | null;
+  extracted_text?: string | null;
+  extracted_at?: string | null;
+  page_count?: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CandidateEvidenceKind =
+  | 'quote'
+  | 'summary'
+  | 'lab_value'
+  | 'medication_list'
+  | 'diagnosis_statement'
+  | 'procedure_statement';
+
+export interface MedicalDocumentEvidenceSegmentRow {
+  id: string;
+  user_id: string;
+  document_intake_id: string;
+  page_number: number | null;
+  section_label: string | null;
+  quoted_text: string;
+  normalized_text: string | null;
+  span_start: number | null;
+  span_end: number | null;
+  extractor_label: string | null;
+  confidence_score: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CandidateMedicalFactEvidenceRow {
+  id: string;
+  user_id: string;
+  candidate_medical_fact_id: string;
+  document_intake_id: string;
+  evidence_segment_id: string | null;
+  evidence_kind: CandidateEvidenceKind;
+  page_number: number | null;
+  cited_text: string | null;
+  confidence_score: number | null;
   created_at: string;
   updated_at: string;
 }
