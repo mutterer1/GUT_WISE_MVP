@@ -43,7 +43,9 @@ export async function fetchDashboardMetrics(userId: string): Promise<DashboardMe
 
     supabase
       .from('hydration_logs')
-      .select('amount_ml')
+      .select(
+        'amount_ml, effective_hydration_ml, water_goal_contribution_ml, caffeine_mg, alcohol_present'
+      )
       .eq('user_id', userId)
       .gte('logged_at', todayISO),
 
