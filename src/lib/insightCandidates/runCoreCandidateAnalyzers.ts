@@ -22,6 +22,12 @@ import { analyzeFoodMealRegularitySymptomBurdenCandidate } from './foodMealRegul
 import { analyzeStressHighDaySymptomBurdenCandidate } from './stressHighDaySymptomBurdenCandidate';
 import { analyzeHydrationLowSameDaySymptomBurdenCandidate } from './hydrationLowSameDaySymptomBurdenCandidate';
 import { analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate } from './foodGutTriggerLoadSameDaySymptomBurdenCandidate';
+import { analyzeFoodDairySameDayBloatingBurdenCandidate } from './foodDairySameDayBloatingBurdenCandidate';
+import { analyzeFoodHighFodmapSameDayBloatingBurdenCandidate } from './foodHighFodmapSameDayBloatingBurdenCandidate';
+import { analyzeFoodArtificialSweetenerSameDayLooseStoolCandidate } from './foodArtificialSweetenerSameDayLooseStoolCandidate';
+import { analyzeFoodSpicySameDayUrgencyCandidate } from './foodSpicySameDayUrgencyCandidate';
+import { analyzeFoodHighFatSameDaySymptomBurdenCandidate } from './foodHighFatSameDaySymptomBurdenCandidate';
+import { analyzeFoodGlutenSameDayBowelPatternShiftCandidate } from './foodGlutenSameDayBowelPatternShiftCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -34,6 +40,12 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeHydrationStoolConsistencyCandidate,
   analyzeFoodLateMealNextDayBmShiftCandidate,
   analyzeFoodCaffeineSameDaySymptomBurdenCandidate,
+  analyzeFoodDairySameDayBloatingBurdenCandidate,
+  analyzeFoodHighFodmapSameDayBloatingBurdenCandidate,
+  analyzeFoodArtificialSweetenerSameDayLooseStoolCandidate,
+  analyzeFoodSpicySameDayUrgencyCandidate,
+  analyzeFoodHighFatSameDaySymptomBurdenCandidate,
+  analyzeFoodGlutenSameDayBowelPatternShiftCandidate,
   analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate,
   analyzeBmUrgencyRollingElevationCandidate,
   analyzeSymptomTypePersistenceCandidate,
