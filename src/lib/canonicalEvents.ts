@@ -10,8 +10,10 @@ import type {
   ExerciseLogRow,
 } from '../types/logs';
 import type {
+  FoodNutritionSnapshot,
   FoodLogItemIngredientRow,
   FoodLogItemRow,
+  FoodReferenceItemRow,
   IngredientReferenceItemRow,
   MedicationReferenceItemRow,
 } from '../types/intelligence';
@@ -101,6 +103,7 @@ interface EnrichedFoodLogItemIngredientRow extends FoodLogItemIngredientRow {
 }
 
 interface EnrichedFoodLogItemRow extends FoodLogItemRow {
+  food_reference?: FoodReferenceItemRow | null;
   normalized_ingredients?: EnrichedFoodLogItemIngredientRow[];
 }
 
@@ -116,8 +119,55 @@ function uniqueSortedStrings(values: string[]): string[] {
   return [...new Set(values.filter((value) => value.length > 0))].sort();
 }
 
+interface LoggedFoodItemValue {
+  name: string;
+  estimated_calories: number | null;
+}
+
+interface DerivedFoodNutrition {
+  matched_food_reference_ids: string[];
+  nutrition: FoodNutritionSnapshot;
+  covered_item_count: number;
+  missing_item_count: number;
+  source_labels: string[];
+}
+
 function isIngredientSignalKey(value: string): value is IngredientSignalKey {
   return FOOD_SIGNAL_KEYS.includes(value as IngredientSignalKey);
+}
+
+function readLoggedFoodItems(foodItems: unknown): LoggedFoodItemValue[] {
+  if (!Array.isArray(foodItems)) return [];
+
+  const results: LoggedFoodItemValue[] = [];
+
+  for (const item of foodItems) {
+    if (typeof item === 'string' && item.trim().length > 0) {
+      results.push({
+        name: item.trim(),
+        estimated_calories: null,
+      });
+      continue;
+    }
+
+    if (typeof item === 'object' && item !== null) {
+      const maybeName = 'name' in item ? item.name : null;
+      const maybeEstimatedCalories =
+        'estimated_calories' in item ? item.estimated_calories : null;
+
+      if (typeof maybeName === 'string' && maybeName.trim().length > 0) {
+        results.push({
+          name: maybeName.trim(),
+          estimated_calories:
+            typeof maybeEstimatedCalories === 'number' && Number.isFinite(maybeEstimatedCalories)
+              ? maybeEstimatedCalories
+              : null,
+        });
+      }
+    }
+  }
+
+  return results;
 }
 
 function mergeFoodIntelligence(
@@ -245,6 +295,137 @@ function deriveFoodIntelligenceFromNormalizedItems(
   };
 }
 
+function hasReferenceNutrition(reference: FoodReferenceItemRow): boolean {
+  return [
+    reference.calories_kcal,
+    reference.protein_g,
+    reference.fat_g,
+    reference.carbs_g,
+    reference.fiber_g,
+    reference.sugar_g,
+    reference.sodium_mg,
+  ].some((value) => typeof value === 'number' && Number.isFinite(value));
+}
+
+function deriveFoodNutritionFromNormalizedItems(
+  row: EnrichedFoodLogRow
+): DerivedFoodNutrition | null {
+  const normalizedItems = row.normalized_items ?? [];
+  if (normalizedItems.length === 0) return null;
+
+  let calories = 0;
+  let protein = 0;
+  let fat = 0;
+  let carbs = 0;
+  let fiber = 0;
+  let sugar = 0;
+  let sodium = 0;
+  let coveredItemCount = 0;
+  let missingItemCount = 0;
+  const confidenceValues: number[] = [];
+  const matchedFoodReferenceIds = new Set<string>();
+  const sourceLabels = new Set<string>();
+
+  for (const item of normalizedItems) {
+    const reference = item.food_reference;
+
+    if (item.normalized_food_id) {
+      matchedFoodReferenceIds.add(item.normalized_food_id);
+    }
+
+    if (!reference || !hasReferenceNutrition(reference)) {
+      missingItemCount += 1;
+      continue;
+    }
+
+    coveredItemCount += 1;
+    calories += reference.calories_kcal ?? 0;
+    protein += reference.protein_g ?? 0;
+    fat += reference.fat_g ?? 0;
+    carbs += reference.carbs_g ?? 0;
+    fiber += reference.fiber_g ?? 0;
+    sugar += reference.sugar_g ?? 0;
+    sodium += reference.sodium_mg ?? 0;
+
+    if (
+      typeof reference.nutrition_confidence === 'number' &&
+      Number.isFinite(reference.nutrition_confidence)
+    ) {
+      confidenceValues.push(reference.nutrition_confidence);
+    }
+
+    const sourceLabel = reference.nutrition_source_label ?? reference.source_label;
+    if (typeof sourceLabel === 'string' && sourceLabel.trim().length > 0) {
+      sourceLabels.add(sourceLabel.trim());
+    }
+  }
+
+  return {
+    matched_food_reference_ids: [...matchedFoodReferenceIds].sort(),
+    nutrition: {
+      serving_label: row.portion_size ?? null,
+      calories_kcal: coveredItemCount > 0 ? calories : null,
+      protein_g: coveredItemCount > 0 ? protein : null,
+      fat_g: coveredItemCount > 0 ? fat : null,
+      carbs_g: coveredItemCount > 0 ? carbs : null,
+      fiber_g: coveredItemCount > 0 ? fiber : null,
+      sugar_g: coveredItemCount > 0 ? sugar : null,
+      sodium_mg: coveredItemCount > 0 ? sodium : null,
+      confidence: numericAvg(confidenceValues),
+      source_label: null,
+      source_ref: null,
+    },
+    covered_item_count: coveredItemCount,
+    missing_item_count: missingItemCount,
+    source_labels: [...sourceLabels].sort(),
+  };
+}
+
+function deriveFoodNutritionFromLegacyRow(row: EnrichedFoodLogRow): DerivedFoodNutrition | null {
+  const loggedItems = readLoggedFoodItems(row.food_items);
+  if (loggedItems.length === 0 && typeof row.calories !== 'number') return null;
+
+  const caloriesFromItems = loggedItems.reduce(
+    (sum, item) => sum + (item.estimated_calories ?? 0),
+    0
+  );
+  const coveredItemCount = loggedItems.filter(
+    (item) => typeof item.estimated_calories === 'number'
+  ).length;
+  const missingItemCount = Math.max(loggedItems.length - coveredItemCount, 0);
+  const totalCalories =
+    caloriesFromItems > 0
+      ? caloriesFromItems
+      : typeof row.calories === 'number' && Number.isFinite(row.calories)
+        ? row.calories
+        : 0;
+
+  return {
+    matched_food_reference_ids: [],
+    nutrition: {
+      serving_label: row.portion_size ?? null,
+      calories_kcal: totalCalories > 0 ? totalCalories : null,
+      protein_g: null,
+      fat_g: null,
+      carbs_g: null,
+      fiber_g: null,
+      sugar_g: null,
+      sodium_mg: null,
+      confidence: totalCalories > 0 ? 0.35 : null,
+      source_label: totalCalories > 0 ? 'legacy_log_estimate' : null,
+      source_ref: null,
+    },
+    covered_item_count:
+      coveredItemCount > 0
+        ? coveredItemCount
+        : totalCalories > 0 && loggedItems.length === 0
+          ? 1
+          : coveredItemCount,
+    missing_item_count: loggedItems.length > 0 ? missingItemCount : 0,
+    source_labels: totalCalories > 0 ? ['legacy_log_estimate'] : [],
+  };
+}
+
 function mergeMedicationIntelligence(
   primary: ReturnType<typeof deriveMedicationIntelligence>,
   secondary: ReturnType<typeof deriveMedicationIntelligence>
@@ -364,6 +545,16 @@ export function normalizeFoodEvent(row: EnrichedFoodLogRow): CanonicalEvent {
   const derived = normalizedDerived
     ? mergeFoodIntelligence(normalizedDerived, fallbackDerived)
     : fallbackDerived;
+  const normalizedNutrition = deriveFoodNutritionFromNormalizedItems(row);
+  const fallbackNutrition = deriveFoodNutritionFromLegacyRow(row);
+  const nutrition =
+    normalizedNutrition && normalizedNutrition.covered_item_count > 0
+      ? normalizedNutrition
+      : fallbackNutrition;
+  const matchedFoodReferenceIds = uniqueSortedStrings([
+    ...(normalizedNutrition?.matched_food_reference_ids ?? []),
+    ...(nutrition?.matched_food_reference_ids ?? []),
+  ]);
 
   return {
     ...baseEvent(row, 'food'),
@@ -372,6 +563,22 @@ export function normalizeFoodEvent(row: EnrichedFoodLogRow): CanonicalEvent {
       meal_type: row.meal_type,
       food_item_names: derived.food_item_names,
       matched_ingredient_ids: derived.matched_ingredient_ids,
+      ...(matchedFoodReferenceIds.length > 0 && {
+        matched_food_reference_ids: matchedFoodReferenceIds,
+      }),
+      ...(nutrition && {
+        meal_calories_kcal: nutrition.nutrition.calories_kcal,
+        meal_protein_g: nutrition.nutrition.protein_g,
+        meal_fat_g: nutrition.nutrition.fat_g,
+        meal_carbs_g: nutrition.nutrition.carbs_g,
+        meal_fiber_g: nutrition.nutrition.fiber_g,
+        meal_sugar_g: nutrition.nutrition.sugar_g,
+        meal_sodium_mg: nutrition.nutrition.sodium_mg,
+        nutrition_covered_item_count: nutrition.covered_item_count,
+        nutrition_missing_item_count: nutrition.missing_item_count,
+        nutrition_source_labels: nutrition.source_labels,
+        nutrition_confidence_avg: nutrition.nutrition.confidence,
+      }),
       ingredient_signals: derived.ingredient_signals,
       gut_trigger_load: derived.gut_trigger_load,
       high_fodmap_food_count: derived.high_fodmap_food_count,
