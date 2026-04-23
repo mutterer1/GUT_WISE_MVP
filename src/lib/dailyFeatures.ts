@@ -304,6 +304,7 @@ function aggregateStress(events: CanonicalEvent[]) {
 
 function aggregateMedication(events: CanonicalEvent[]) {
   const names: string[] = [];
+  const matchedMedicationIds: string[] = [];
   const families: string[] = [];
   const gutEffects: string[] = [];
   let giRiskMedicationCount = 0;
@@ -316,6 +317,7 @@ function aggregateMedication(events: CanonicalEvent[]) {
     const name = payloadStr(e.payload, 'medication_name');
     if (name) names.push(name);
 
+    matchedMedicationIds.push(...payloadStrArray(e.payload, 'matched_medication_ids'));
     families.push(...payloadStrArray(e.payload, 'medication_families'));
     gutEffects.push(...payloadStrArray(e.payload, 'medication_gut_effects'));
     giRiskMedicationCount += payloadNum(e.payload, 'gi_risk_medication_count') ?? 0;
@@ -332,6 +334,7 @@ function aggregateMedication(events: CanonicalEvent[]) {
   return {
     medication_event_count: events.length,
     medications_taken: uniqueSorted(names),
+    matched_medication_ids: uniqueSorted(matchedMedicationIds),
     medication_families: uniqueSorted(families),
     medication_gut_effects: uniqueSorted(gutEffects),
     gi_risk_medication_count: giRiskMedicationCount,
