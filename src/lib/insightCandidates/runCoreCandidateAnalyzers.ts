@@ -15,6 +15,11 @@ import { analyzeCyclePhaseBmShiftCandidate } from './cyclePhaseBmShiftCandidate'
 import { analyzeCyclePhaseRecurrentSymptomBurdenCandidate } from './cyclePhaseRecurrentSymptomBurdenCandidate';
 import { analyzeMedicationAnyBmShiftCandidate } from './medicationAnyBmShiftCandidate';
 import { analyzeMedicationAnySymptomBurdenCandidate } from './medicationAnySymptomBurdenCandidate';
+import { analyzeMedicationLaxativeNextDayLooseStoolCandidate } from './medicationLaxativeNextDayLooseStoolCandidate';
+import { analyzeMedicationIronSameDayConstipationBurdenCandidate } from './medicationIronSameDayConstipationBurdenCandidate';
+import { analyzeMedicationOpioidSameDayConstipationBurdenCandidate } from './medicationOpioidSameDayConstipationBurdenCandidate';
+import { analyzeMedicationAntibioticSameDaySymptomShiftCandidate } from './medicationAntibioticSameDaySymptomShiftCandidate';
+import { analyzeMedicationAcidSuppressionSameDayBloatingCandidate } from './medicationAcidSuppressionSameDayBloatingCandidate';
 import { analyzeMultifactorStressSleepHydrationRiskCandidate } from './multifactorStressSleepHydrationRiskCandidate';
 import { analyzeFlareSymptomBurdenEpisodeCandidate } from './flareSymptomBurdenEpisodeCandidate';
 import { analyzeFlareRecoveryPatternCandidate } from './flareRecoveryPatternCandidate';
@@ -54,6 +59,11 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeCyclePhaseSymptomShiftCandidate,
   analyzeCyclePhaseBmShiftCandidate,
   analyzeCyclePhaseRecurrentSymptomBurdenCandidate,
+  analyzeMedicationLaxativeNextDayLooseStoolCandidate,
+  analyzeMedicationIronSameDayConstipationBurdenCandidate,
+  analyzeMedicationOpioidSameDayConstipationBurdenCandidate,
+  analyzeMedicationAntibioticSameDaySymptomShiftCandidate,
+  analyzeMedicationAcidSuppressionSameDayBloatingCandidate,
   analyzeMedicationAnyBmShiftCandidate,
   analyzeMedicationAnySymptomBurdenCandidate,
   analyzeMultifactorStressSleepHydrationRiskCandidate,
