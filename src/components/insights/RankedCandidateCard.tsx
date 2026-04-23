@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import type { MedicalContextAnnotatedCandidate } from '../../types/insightCandidates';
+import type {
+  ExplanationInsightItem,
+  ExplanationSignalSourceKind,
+  ExplanationSignalSourceSummary,
+} from '../../types/explanationBundle';
 import type { LLMPerItemExplanation } from '../../types/llmExplanationOutput';
 
 interface RankedCandidateCardProps {
   candidate: MedicalContextAnnotatedCandidate;
+  bundleItem?: ExplanationInsightItem;
   explanation?: LLMPerItemExplanation;
   rank: number;
 }
@@ -168,6 +174,63 @@ const evidenceQualityLabels: Record<string, string> = {
   very_low: 'Very limited evidence',
 };
 
+const signalSourceConfig: Record<
+  ExplanationSignalSourceKind,
+  {
+    label: string;
+    badgeClass: string;
+    panelClass: string;
+    labelClass: string;
+    bodyClass: string;
+  }
+> = {
+  reviewed_nutrition: {
+    label: 'Reviewed nutrition',
+    badgeClass:
+      'border border-[rgba(56,189,122,0.2)] bg-[rgba(56,189,122,0.1)] text-emerald-700 dark:text-emerald-300',
+    panelClass:
+      'border border-[rgba(56,189,122,0.16)] bg-[rgba(56,189,122,0.07)] dark:bg-[rgba(56,189,122,0.1)]',
+    labelClass: 'text-emerald-700 dark:text-emerald-300',
+    bodyClass: 'text-emerald-800/80 dark:text-emerald-200/80',
+  },
+  structured_ingredients: {
+    label: 'Structured ingredients',
+    badgeClass:
+      'border border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.1)] text-[var(--color-accent-primary)]',
+    panelClass:
+      'border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.07)] dark:bg-[rgba(84,160,255,0.1)]',
+    labelClass: 'text-[var(--color-accent-primary)]',
+    bodyClass: 'text-[#2C617D] dark:text-[#C7E1FF]',
+  },
+  mixed_structured_and_nutrition: {
+    label: 'Mixed evidence',
+    badgeClass:
+      'border border-[rgba(124,92,255,0.22)] bg-[rgba(124,92,255,0.1)] text-[#7C5CFF] dark:text-[#B8A8FF]',
+    panelClass:
+      'border border-[rgba(124,92,255,0.16)] bg-[rgba(124,92,255,0.07)] dark:bg-[rgba(124,92,255,0.1)]',
+    labelClass: 'text-[#7C5CFF] dark:text-[#B8A8FF]',
+    bodyClass: 'text-[#6246D9] dark:text-[#D5CCFF]',
+  },
+  fallback_heuristic: {
+    label: 'Heuristic fallback',
+    badgeClass:
+      'border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] text-[var(--color-warning)]',
+    panelClass:
+      'border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] dark:bg-[rgba(255,170,92,0.1)]',
+    labelClass: 'text-[var(--color-warning)]',
+    bodyClass: 'text-[#8A5A16] dark:text-[rgba(255,220,181,0.88)]',
+  },
+  generic_logs: {
+    label: 'Structured logs',
+    badgeClass:
+      'border border-gray-200 bg-gray-100 text-gray-600 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-gray-300',
+    panelClass:
+      'border border-gray-200/80 bg-gray-50/80 dark:border-white/[0.08] dark:bg-white/[0.04]',
+    labelClass: 'text-gray-700 dark:text-gray-200',
+    bodyClass: 'text-gray-600 dark:text-gray-400',
+  },
+};
+
 function getWindowDays(start: string, end: string): number {
   const a = new Date(start);
   const b = new Date(end);
@@ -201,8 +264,37 @@ function formatDateRange(start: string, end: string): string {
   })}`;
 }
 
+function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): string | null {
+  if (source.kind === 'fallback_heuristic') {
+    return 'This card is still relying mostly on fallback heuristics because reviewed nutrition or structured ingredient coverage is limited.';
+  }
+
+  if (
+    source.nutrition_coverage_ratio !== null &&
+    source.structured_food_coverage_ratio !== null &&
+    source.nutrition_coverage_ratio < 0.65 &&
+    source.structured_food_coverage_ratio < 0.65
+  ) {
+    return 'Structured coverage is still partial here. Accepting more reviewed foods with nutrition and ingredient detail would strengthen this signal.';
+  }
+
+  if (source.nutrition_confidence !== null && source.nutrition_confidence < 0.6) {
+    return 'Reviewed nutrition is present here, but the nutrition confidence is still limited.';
+  }
+
+  if (
+    source.ingredient_signal_confidence !== null &&
+    source.ingredient_signal_confidence < 0.6
+  ) {
+    return 'Structured ingredients are present here, but ingredient confidence is still limited.';
+  }
+
+  return null;
+}
+
 export default function RankedCandidateCard({
   candidate,
+  bundleItem,
   explanation,
   rank,
 }: RankedCandidateCardProps) {
@@ -226,6 +318,9 @@ export default function RankedCandidateCard({
   const evidenceGaps = candidate.evidence.evidence_gaps ?? [];
   const contradictionRate = candidate.evidence.contradiction_rate;
   const medicalContextApplied = candidate.medical_context_modifier_applied;
+  const signalSource = bundleItem?.signal_source ?? null;
+  const signalSourceMeta = signalSource ? signalSourceConfig[signalSource.kind] : null;
+  const signalSourceCaution = signalSource ? buildSignalSourceCaution(signalSource) : null;
 
   return (
     <div
@@ -240,6 +335,13 @@ export default function RankedCandidateCard({
           >
             {pt.label}
           </span>
+          {signalSourceMeta && (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${signalSourceMeta.badgeClass}`}
+            >
+              {signalSourceMeta.label}
+            </span>
+          )}
           <span className="text-xs text-gray-400 dark:text-gray-500">{categoryLabel}</span>
         </div>
         <span
@@ -282,6 +384,17 @@ export default function RankedCandidateCard({
           This pattern is still building. More consistent overlap across your logs will help confirm
           or rule it out.
         </p>
+      )}
+
+      {signalSource && signalSourceMeta && (
+        <div className={`mt-4 rounded-xl px-3.5 py-3 ${signalSourceMeta.panelClass}`}>
+          <p className={`text-xs font-medium ${signalSourceMeta.labelClass}`}>
+            Evidence basis | {signalSourceMeta.label}
+          </p>
+          <p className={`mt-1 text-xs leading-relaxed ${signalSourceMeta.bodyClass}`}>
+            {signalSource.summary}
+          </p>
+        </div>
       )}
 
       {candidate.medical_context_annotations.length > 0 && (
@@ -339,6 +452,44 @@ export default function RankedCandidateCard({
                 value={medicalContextApplied ? 'Adjusted ranking' : 'No adjustment'}
               />
             </div>
+
+            {signalSource && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Trust framing
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Metric
+                    label="Nutrition coverage"
+                    value={formatPercent(signalSource.nutrition_coverage_ratio)}
+                  />
+                  <Metric
+                    label="Nutrition confidence"
+                    value={formatPercent(signalSource.nutrition_confidence)}
+                  />
+                  <Metric
+                    label="Ingredient coverage"
+                    value={formatPercent(signalSource.structured_food_coverage_ratio)}
+                  />
+                  <Metric
+                    label="Ingredient confidence"
+                    value={formatPercent(signalSource.ingredient_signal_confidence)}
+                  />
+                </div>
+
+                <p className="mt-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                  {signalSource.summary}
+                </p>
+
+                {signalSourceCaution && (
+                  <div className="mt-3 rounded-xl border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] px-3.5 py-3 dark:bg-[rgba(255,170,92,0.1)]">
+                    <p className="text-xs leading-relaxed text-[var(--color-warning)]">
+                      {signalSourceCaution}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {supportingLogTypes.length > 0 && (
               <div className="mt-4">
