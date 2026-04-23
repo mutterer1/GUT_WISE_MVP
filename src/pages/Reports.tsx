@@ -20,7 +20,12 @@ import TriggerPatternsSection from '../components/reports/TriggerPatternsSection
 import MedicationCorrelationSection from '../components/reports/MedicationCorrelationSection';
 import ClinicalAlertsSection from '../components/reports/ClinicalAlertsSection';
 import ObservedDataTable from '../components/reports/ObservedDataTable';
+import PatternEvidenceSection from '../components/reports/PatternEvidenceSection';
 import PatientNotesSection, { PatientNoteValues } from '../components/reports/PatientNotesSection';
+import {
+  fetchReportInsightSummary,
+  type ReportInsightSummary,
+} from '../services/reportInsightsService';
 import {
   fetchBMAnalytics,
   fetchBristolDistribution,
@@ -58,6 +63,7 @@ export default function Reports() {
   const [triggerPatterns, setTriggerPatterns] = useState<TriggerPattern[]>([]);
   const [medicationCorrelations, setMedicationCorrelations] = useState<MedicationCorrelation[]>([]);
   const [clinicalAlerts, setClinicalAlerts] = useState<ClinicalAlert[]>([]);
+  const [reportInsights, setReportInsights] = useState<ReportInsightSummary | null>(null);
   const [patientNotes, setPatientNotes] = useState<PatientNoteValues>({
     whatChangedRecently: '',
     whatWorriesMeMost: '',
@@ -79,7 +85,16 @@ export default function Reports() {
     try {
       const dateRange = { startDate, endDate };
 
-      const [analytics, distribution, trends, markers, triggers, medications, alerts] =
+      const [
+        analytics,
+        distribution,
+        trends,
+        markers,
+        triggers,
+        medications,
+        alerts,
+        rankedPatternSummary,
+      ] =
         await Promise.all([
           fetchBMAnalytics(user.id, dateRange),
           fetchBristolDistribution(user.id, dateRange),
@@ -88,6 +103,10 @@ export default function Reports() {
           fetchTriggerPatterns(user.id, dateRange),
           fetchMedicationCorrelation(user.id, dateRange),
           generateClinicalAlerts(user.id, dateRange),
+          fetchReportInsightSummary(user.id, dateRange).catch((reportInsightError) => {
+            console.error('Error loading ranked report insights:', reportInsightError);
+            return null;
+          }),
         ]);
 
       setBmAnalytics(analytics);
@@ -97,6 +116,7 @@ export default function Reports() {
       setTriggerPatterns(triggers);
       setMedicationCorrelations(medications);
       setClinicalAlerts(alerts);
+      setReportInsights(rankedPatternSummary);
     } catch (err) {
       console.error('Error loading report data:', err);
       setError('Failed to load report data. Please try again.');
@@ -367,8 +387,10 @@ export default function Reports() {
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                     Lead with observed data, then use the flagged patterns and notes below to guide
-                    a focused clinical conversation. GutWise summarizes patient-reported logs and
-                    does not diagnose conditions.
+                    a focused clinical conversation. Ranked pattern cards below now also show
+                    whether a finding is backed by reviewed nutrition, structured ingredients, or
+                    heuristic fallback. GutWise summarizes patient-reported logs and does not
+                    diagnose conditions.
                   </p>
                 </div>
                 <div className="surface-panel-quiet rounded-[20px] px-4 py-3 text-sm text-[var(--color-text-secondary)] sm:max-w-[16rem]">
@@ -399,6 +421,14 @@ export default function Reports() {
             <ObservedDataTable rows={observedDataRows} />
 
             <ClinicalAlertsSection alerts={clinicalAlerts} />
+
+            {reportInsights && (
+              <PatternEvidenceSection
+                bundle={reportInsights.explanationBundle}
+                missingLogTypes={reportInsights.missing_log_types}
+                evidenceGapSummaries={reportInsights.evidence_gap_summaries}
+              />
+            )}
 
             <SectionGroupLabel label="Supporting Detail" />
 
