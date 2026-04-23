@@ -186,12 +186,28 @@ function getFallbackDefinitionsFromTags(tags: string[]): TagFallbackDefinition[]
   return results;
 }
 
+function aliasMatchesFoodReference(
+  itemName: string,
+  candidate: FoodReferenceItemRow
+): boolean {
+  const normalizedName = normalizeLookupKey(itemName);
+  return candidate.common_aliases.some((alias) => {
+    const normalizedAlias = normalizeLookupKey(alias);
+    return (
+      normalizedAlias === normalizedName ||
+      normalizedAlias.includes(normalizedName) ||
+      normalizedName.includes(normalizedAlias)
+    );
+  });
+}
+
 async function fetchCandidateFoodReferences(
   foodItems: FoodLogNormalizationItemInput[]
 ): Promise<Map<string, FoodReferenceItemRow[]>> {
   const sanitizedItems = sanitizeFoodItems(foodItems);
   const itemNames = [...new Set(sanitizedItems.map((item) => item.name))];
   const matchMap = new Map<string, FoodReferenceItemRow[]>();
+  let fallbackReferenceCache: FoodReferenceItemRow[] | null = null;
 
   await Promise.all(
     itemNames.map(async (itemName) => {
@@ -215,7 +231,25 @@ async function fetchCandidateFoodReferences(
         .limit(8);
 
       if (error) throw error;
-      matchMap.set(itemName, (data ?? []) as FoodReferenceItemRow[]);
+      let candidates = (data ?? []) as FoodReferenceItemRow[];
+
+      if (candidates.length === 0) {
+        if (fallbackReferenceCache === null) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('food_reference_items')
+            .select('*')
+            .limit(300);
+
+          if (fallbackError) throw fallbackError;
+          fallbackReferenceCache = (fallbackData ?? []) as FoodReferenceItemRow[];
+        }
+
+        candidates = fallbackReferenceCache
+          .filter((candidate) => aliasMatchesFoodReference(itemName, candidate))
+          .slice(0, 8);
+      }
+
+      matchMap.set(itemName, candidates);
     })
   );
 
