@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { queueMedicationReferenceCandidate } from './referenceReviewService';
 import type {
   MedicationReferenceItemRow,
   MedicationRegimenStatus,
@@ -165,4 +166,18 @@ export async function syncMedicationNormalizationForLog(params: {
     .eq('user_id', userId);
 
   if (error) throw error;
+
+  if (!matchedReference) {
+    await queueMedicationReferenceCandidate({
+      userId,
+      medicationLogId,
+      displayName: formData.medication_name,
+      dosage: formData.dosage,
+      medicationType: formData.medication_type,
+      route: formData.route,
+      reasonForUse: formData.reason_for_use,
+      regimenStatus: formData.regimen_status ?? null,
+      timingContext: formData.timing_context,
+    });
+  }
 }
