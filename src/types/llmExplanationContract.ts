@@ -1,5 +1,8 @@
 import type { CandidateCategory, CandidateStatus, DataSufficiency, PriorityTier } from './insightCandidates';
-import type { ContradictionLevel } from './explanationBundle';
+import type {
+  ContradictionLevel,
+  ExplanationSignalSourceKind,
+} from './explanationBundle';
 
 export type ExplanationMode = 'structured_findings_only';
 
@@ -34,6 +37,14 @@ export interface LLMInsightItem {
   ranking_reasons: string[];
   evidence: LLMEvidenceSummary;
   analysis_window: { from: string; to: string };
+  signal_source: {
+    kind: ExplanationSignalSourceKind;
+    summary: string;
+    nutrition_coverage_ratio: number | null;
+    nutrition_confidence: number | null;
+    structured_food_coverage_ratio: number | null;
+    ingredient_signal_confidence: number | null;
+  };
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   caution_signals: string[];
