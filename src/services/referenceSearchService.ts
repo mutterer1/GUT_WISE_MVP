@@ -1,122 +1,256 @@
 import { searchFoodSuggestions } from '../data/foodSuggestions';
-import { INGREDIENT_CATALOG } from '../data/ingredientCatalog';
 import { MEDICATION_CATALOG } from '../data/medicationCatalog';
+import { supabase } from '../lib/supabase';
+import type {
+  FoodReferenceItemRow,
+  MedicationReferenceItemRow,
+} from '../types/intelligence';
 
 export interface FoodReferenceSuggestion {
   id: string;
   name: string;
   estimatedCalories?: number;
-  portionLabel?: string;
-  detail?: string;
+  portionLabel?: string | null;
+  detail?: string | null;
 }
 
 export interface MedicationReferenceSuggestion {
   id: string;
   name: string;
-  medicationType: 'prescription' | 'otc' | 'supplement';
-  route?: string;
-  genericName?: string;
-  detail?: string;
+  genericName?: string | null;
+  medicationType?: 'prescription' | 'otc' | 'supplement' | 'unknown' | null;
+  route?: string | null;
+  detail?: string | null;
+}
+
+let foodReferenceCache: FoodReferenceItemRow[] | null = null;
+let medicationReferenceCache: MedicationReferenceItemRow[] | null = null;
+
+function normalizeLookupKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function formatServing(amount: number | null, unit: string | null): string | null {
+  if (amount === null && !unit) return null;
+  if (amount !== null && unit) return `${amount} ${unit}`;
+  if (amount !== null) return String(amount);
+  return unit;
+}
+
+function buildFoodDetail(row: FoodReferenceItemRow): string | null {
+  const detailParts = [row.food_category, row.brand_name].filter(
+    (part): part is string => typeof part === 'string' && part.trim().length > 0
+  );
+  return detailParts.length > 0 ? detailParts.join(' | ') : null;
+}
+
+function buildMedicationDetail(row: MedicationReferenceItemRow): string | null {
+  const detailParts = [row.medication_class, row.route, row.medication_type].filter(
+    (part): part is string => typeof part === 'string' && part.trim().length > 0
+  );
+
+  return detailParts.length > 0 ? detailParts.join(' | ') : null;
+}
+
+function dedupeById<T extends { id: string }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+
+  for (const row of rows) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    deduped.push(row);
+  }
+
+  return deduped;
+}
+
+async function getFoodReferenceCache(): Promise<FoodReferenceItemRow[]> {
+  if (foodReferenceCache !== null) return foodReferenceCache;
+
+  const { data, error } = await supabase
+    .from('food_reference_items')
+    .select('*')
+    .limit(300);
+
+  if (error) throw error;
+
+  foodReferenceCache = (data ?? []) as FoodReferenceItemRow[];
+  return foodReferenceCache;
+}
+
+async function getMedicationReferenceCache(): Promise<MedicationReferenceItemRow[]> {
+  if (medicationReferenceCache !== null) return medicationReferenceCache;
+
+  const { data, error } = await supabase
+    .from('medication_reference_items')
+    .select('*')
+    .limit(300);
+
+  if (error) throw error;
+
+  medicationReferenceCache = (data ?? []) as MedicationReferenceItemRow[];
+  return medicationReferenceCache;
+}
+
+function aliasMatchesFood(query: string, row: FoodReferenceItemRow): boolean {
+  const normalizedQuery = normalizeLookupKey(query);
+  return row.common_aliases.some((alias) => {
+    const normalizedAlias = normalizeLookupKey(alias);
+    return (
+      normalizedAlias.includes(normalizedQuery) ||
+      normalizedQuery.includes(normalizedAlias)
+    );
+  });
+}
+
+function aliasMatchesMedication(query: string, row: MedicationReferenceItemRow): boolean {
+  const normalizedQuery = normalizeLookupKey(query);
+  return row.brand_names.some((brand) => {
+    const normalizedBrand = normalizeLookupKey(brand);
+    return (
+      normalizedBrand.includes(normalizedQuery) ||
+      normalizedQuery.includes(normalizedBrand)
+    );
+  });
+}
+
+function fallbackMedicationSuggestions(query: string): MedicationReferenceSuggestion[] {
+  const normalizedQuery = normalizeLookupKey(query);
+  const genericTerms = new Set([
+    'ppi',
+    'nsaid',
+    'ssri',
+    'antibiotic',
+    'laxative',
+    'antidiarrheal',
+    'opioid',
+    'fiber supplement',
+    'h2 blocker',
+  ]);
+
+  const results: MedicationReferenceSuggestion[] = [];
+
+  for (const entry of MEDICATION_CATALOG) {
+    const matchingTerms = entry.matchTerms.filter((term) => {
+      const normalizedTerm = normalizeLookupKey(term);
+      return normalizedTerm.includes(normalizedQuery) && !genericTerms.has(normalizedTerm);
+    });
+
+    for (const term of matchingTerms) {
+      const suggestionId = `fallback:${entry.id}:${term}`;
+      if (results.some((result) => result.id === suggestionId)) continue;
+
+      results.push({
+        id: suggestionId,
+        name: term
+          .split(' ')
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' '),
+        detail: entry.label,
+      });
+    }
+  }
+
+  return results.slice(0, 8);
+}
+
+export async function searchFoodReferenceSuggestions(
+  query: string
+): Promise<FoodReferenceSuggestion[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const escaped = trimmed.replace(/[%_,'"]/g, '').trim();
+  if (!escaped) return [];
+
+  const { data, error } = await supabase
+    .from('food_reference_items')
+    .select('*')
+    .or([`display_name.ilike.%${escaped}%`, `canonical_name.ilike.%${escaped}%`].join(','))
+    .limit(8);
+
+  if (error) throw error;
+
+  let rows = (data ?? []) as FoodReferenceItemRow[];
+
+  if (rows.length < 8) {
+    const aliasRows = (await getFoodReferenceCache()).filter((row) =>
+      aliasMatchesFood(trimmed, row)
+    );
+    rows = dedupeById([...rows, ...aliasRows]).slice(0, 8);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.display_name,
+    portionLabel: formatServing(row.default_serving_amount, row.default_serving_unit),
+    detail: buildFoodDetail(row),
+  }));
 }
 
 export async function searchFoodSuggestionsWithFallback(
   query: string
 ): Promise<FoodReferenceSuggestion[]> {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
+  try {
+    return await searchFoodReferenceSuggestions(query);
+  } catch {
+    return searchFoodSuggestions(query).map((item) => ({
+      id: `fallback:${item.name}`,
+      name: item.name,
+      estimatedCalories: item.calories,
+      portionLabel: item.portionLabel,
+      detail: 'fallback suggestion',
+    }));
+  }
+}
 
-  const basic = searchFoodSuggestions(q);
-  const results: FoodReferenceSuggestion[] = basic.map((item) => ({
-    id: item.name.replace(/\s+/g, '_'),
-    name: item.name,
-    estimatedCalories: item.calories,
-    portionLabel: item.portionLabel,
-  }));
+export async function searchMedicationReferenceSuggestions(
+  query: string
+): Promise<MedicationReferenceSuggestion[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
 
-  if (results.length < 5) {
-    const seen = new Set(results.map((r) => r.id));
-    for (const entry of INGREDIENT_CATALOG) {
-      if (results.length >= 7) break;
-      const matches =
-        entry.label.toLowerCase().includes(q) ||
-        entry.matchTerms.some((term) => term.includes(q));
-      if (matches && !seen.has(entry.id)) {
-        seen.add(entry.id);
-        results.push({
-          id: entry.id,
-          name: entry.label,
-          detail: entry.commonGutEffects.slice(0, 2).join(', ') || undefined,
-        });
-      }
-    }
+  const escaped = trimmed.replace(/[%_,'"]/g, '').trim();
+  if (!escaped) return [];
+
+  const { data, error } = await supabase
+    .from('medication_reference_items')
+    .select('*')
+    .or([`display_name.ilike.%${escaped}%`, `generic_name.ilike.%${escaped}%`].join(','))
+    .limit(8);
+
+  if (error) throw error;
+
+  let rows = (data ?? []) as MedicationReferenceItemRow[];
+
+  if (rows.length < 8) {
+    const aliasRows = (await getMedicationReferenceCache()).filter((row) =>
+      aliasMatchesMedication(trimmed, row)
+    );
+    rows = dedupeById([...rows, ...aliasRows]).slice(0, 8);
   }
 
-  return results.slice(0, 7);
-}
-
-function resolveMedicationType(
-  family: string
-): MedicationReferenceSuggestion['medicationType'] {
-  const supplementFamilies = new Set(['probiotic', 'magnesium', 'fiber_supplement']);
-  const otcFamilies = new Set([
-    'h2_blocker',
-    'antidiarrheal',
-    'nsaid',
-    'laxative',
-  ]);
-  if (supplementFamilies.has(family)) return 'supplement';
-  if (otcFamilies.has(family)) return 'otc';
-  return 'prescription';
-}
-
-function resolveRoute(family: string): string | undefined {
-  const oral = new Set([
-    'ppi',
-    'h2_blocker',
-    'antibiotic',
-    'laxative',
-    'antidiarrheal',
-    'nsaid',
-    'metformin',
-    'magnesium',
-    'iron',
-    'probiotic',
-    'fiber_supplement',
-    'opioid',
-    'ssri',
-    'gi_antiinflammatory',
-  ]);
-  if (oral.has(family)) return 'oral';
-  return undefined;
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.display_name,
+    genericName: row.generic_name,
+    medicationType: row.medication_type,
+    route: row.route,
+    detail: buildMedicationDetail(row),
+  }));
 }
 
 export async function searchMedicationSuggestionsWithFallback(
   query: string
 ): Promise<MedicationReferenceSuggestion[]> {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-
-  const results: MedicationReferenceSuggestion[] = [];
-
-  for (const entry of MEDICATION_CATALOG) {
-    if (results.length >= 7) break;
-    const labelMatch = entry.label.toLowerCase().includes(q);
-    const termMatch = entry.matchTerms.some((term) => term.includes(q));
-    if (labelMatch || termMatch) {
-      const matchedTerm = entry.matchTerms.find((term) => term.includes(q));
-      results.push({
-        id: entry.id,
-        name: matchedTerm ?? entry.label,
-        medicationType: resolveMedicationType(entry.family),
-        route: resolveRoute(entry.family),
-        genericName:
-          matchedTerm && matchedTerm !== entry.label.toLowerCase()
-            ? entry.label
-            : undefined,
-        detail: entry.commonGutEffects.slice(0, 2).join(', ') || undefined,
-      });
-    }
+  try {
+    return await searchMedicationReferenceSuggestions(query);
+  } catch {
+    return fallbackMedicationSuggestions(query);
   }
-
-  return results;
 }
