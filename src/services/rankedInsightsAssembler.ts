@@ -3,6 +3,7 @@ import type { CanonicalEvent } from '../types/canonicalEvents';
 import type { UserDailyFeatures } from '../types/dailyFeatures';
 import type { UserBaselineSet } from '../types/baselines';
 import type {
+  FoodReferenceItemRow,
   FoodLogItemIngredientRow,
   FoodLogItemRow,
   IngredientReferenceItemRow,
@@ -34,6 +35,7 @@ type EnrichedFoodIngredientRow = FoodLogItemIngredientRow & {
 };
 
 type EnrichedFoodItemRow = FoodLogItemRow & {
+  food_reference?: FoodReferenceItemRow | null;
   normalized_ingredients?: EnrichedFoodIngredientRow[];
 };
 
@@ -98,10 +100,20 @@ async function fetchEnrichedFoodRows(
     .map((row) => row.id)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
+  const normalizedFoodIds = foodLogItems
+    .map((row) => row.normalized_food_id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
   const ingredientRows = await fetchRowsByIds<FoodLogItemIngredientRow>(
     'food_log_item_ingredients',
     'food_log_item_id',
     foodLogItemIds
+  );
+
+  const foodReferences = await fetchRowsByIds<FoodReferenceItemRow>(
+    'food_reference_items',
+    'id',
+    normalizedFoodIds
   );
 
   const ingredientReferenceIds = ingredientRows
@@ -117,6 +129,7 @@ async function fetchEnrichedFoodRows(
   const ingredientReferenceById = new Map(
     ingredientReferences.map((row) => [row.id, row])
   );
+  const foodReferenceById = new Map(foodReferences.map((row) => [row.id, row]));
 
   const ingredientsByFoodLogItemId = new Map<
     string,
@@ -144,6 +157,9 @@ async function fetchEnrichedFoodRows(
     const current = foodItemsByFoodLogId.get(foodLogItem.food_log_id) ?? [];
     current.push({
       ...foodLogItem,
+      food_reference: foodLogItem.normalized_food_id
+        ? foodReferenceById.get(foodLogItem.normalized_food_id) ?? null
+        : null,
       normalized_ingredients: ingredientsByFoodLogItemId.get(foodLogItem.id) ?? [],
     });
     foodItemsByFoodLogId.set(foodLogItem.food_log_id, current);
