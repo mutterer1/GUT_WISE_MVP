@@ -26,7 +26,23 @@ function hasFoodAndSymptomContext(day: UserDailyFeatures): boolean {
   );
 }
 
+function getGutTriggerExposureStrength(day: UserDailyFeatures): number {
+  return Math.max(
+    day.gut_trigger_burden_score ?? 0,
+    day.high_fodmap_burden_score ?? 0,
+    day.artificial_sweetener_burden_score ?? 0,
+    day.high_fat_burden_score ?? 0,
+    day.spicy_burden_score ?? 0
+  );
+}
+
 function isGutTriggerExposureDay(day: UserDailyFeatures): boolean {
+  const exposureStrength = getGutTriggerExposureStrength(day);
+
+  if (exposureStrength >= 0.75) {
+    return true;
+  }
+
   return (
     day.gut_trigger_load >= 2 ||
     day.high_fodmap_food_count >= 1 ||
@@ -76,6 +92,9 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
   let contradictionCount = 0;
   let nonExposedCount = 0;
   let nonExposedElevatedCount = 0;
+  let exposedBurdenTotal = 0;
+  let exposedStructuredCoverageTotal = 0;
+  let exposedSignalConfidenceTotal = 0;
 
   const supportDates: string[] = [];
   const exposedDates: string[] = [];
@@ -88,6 +107,9 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
     if (triggerExposure) {
       exposureCount++;
       exposedDates.push(day.date);
+      exposedBurdenTotal += getGutTriggerExposureStrength(day);
+      exposedStructuredCoverageTotal += day.structured_food_coverage_ratio ?? 0;
+      exposedSignalConfidenceTotal += day.ingredient_signal_confidence_avg ?? 0;
 
       if (elevatedBurden) {
         supportCount++;
@@ -120,6 +142,16 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
       return day.sleep_entry_count > 0;
     })
   );
+  const avgExposedBurden =
+    exposureCount > 0 ? Math.round((exposedBurdenTotal / exposureCount) * 100) / 100 : null;
+  const avgExposedStructuredCoverage =
+    exposureCount > 0
+      ? Math.round((exposedStructuredCoverageTotal / exposureCount) * 100) / 100
+      : null;
+  const avgExposedSignalConfidence =
+    exposureCount > 0
+      ? Math.round((exposedSignalConfidenceTotal / exposureCount) * 100) / 100
+      : null;
 
   const sufficiency = computeDataSufficiency(
     eligibleDays.length,
@@ -174,6 +206,20 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
     recencyWeight,
     supportingLogTypes
   );
+  const adjustedConfidence =
+    confidence === null
+      ? null
+      : Math.round(
+          Math.max(
+            0,
+            Math.min(
+              1,
+              confidence *
+                (0.82 + 0.18 * (avgExposedStructuredCoverage ?? 0)) *
+                (0.85 + 0.15 * (avgExposedSignalConfidence ?? 0.4))
+            )
+          ) * 100
+        ) / 100;
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -197,14 +243,17 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
     uncertainty_statement: uncertaintyStatement,
     evidence_gaps: evidenceGaps,
     notes: [
-      'Exposure days are derived from ingredient-level trigger signals parsed from logged foods and tags.',
-      'This is still a heuristic layer and is not yet portion-adjusted or brand-specific.',
+      'Exposure days are derived from weighted ingredient burden, using reviewed ingredient fraction and prominence when that structure exists.',
+      'Legacy tags and text heuristics remain fallback only when structured ingredient coverage is missing.',
     ],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
       trigger_exposure_day_count: exposureCount,
+      avg_exposed_burden_score: avgExposedBurden,
+      avg_exposed_structured_coverage_ratio: avgExposedStructuredCoverage,
+      avg_exposed_signal_confidence: avgExposedSignalConfidence,
     },
   };
 
@@ -213,10 +262,15 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
     insight_key: INSIGHT_KEY,
     category: 'food',
     subtype: 'food_gut_trigger_load_same_day_symptom_burden',
-    trigger_factors: ['gut_trigger_load', 'ingredient_signals', 'high_fodmap_food_count'],
+    trigger_factors: [
+      'gut_trigger_burden_score',
+      'high_fodmap_burden_score',
+      'ingredient_signals',
+      'structured_food_coverage_ratio',
+    ],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
-    confidence_score: confidence,
+    confidence_score: adjustedConfidence,
     data_sufficiency: sufficiency,
     evidence,
     created_from_start_date: eligibleDays[0].date,
