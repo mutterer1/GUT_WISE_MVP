@@ -78,6 +78,23 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
   if (item.confidence_score !== null && item.confidence_score < 0.4) {
     signals.push('low_confidence_score');
   }
+  if (item.medical_context_sources.some((source) => source.kind === 'pending_review')) {
+    signals.push('medical_context_pending_review');
+  }
+  if (
+    item.medical_context_modifier_applied &&
+    item.medical_context_sources.some((source) => source.kind === 'user_reported')
+  ) {
+    signals.push('medical_context_user_reported');
+  }
+  if (
+    item.medical_context_modifier_applied &&
+    item.medical_context_sources.some(
+      (source) => source.kind === 'document_backed_confirmed'
+    )
+  ) {
+    signals.push('medical_context_document_backed');
+  }
   return signals;
 }
 
@@ -98,6 +115,7 @@ function toInsightItem(item: ExplanationInsightItem): LLMInsightItem {
     analysis_window: item.analysis_window,
     medical_context_annotations: item.medical_context_annotations,
     medical_context_modifier_applied: item.medical_context_modifier_applied,
+    medical_context_sources: item.medical_context_sources,
     caution_signals: deriveCautionSignals(item),
   };
 }
