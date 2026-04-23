@@ -10,6 +10,7 @@ import type {
   ExerciseLogRow,
 } from '../types/logs';
 import type {
+  FoodReferenceIngredientRow,
   FoodNutritionSnapshot,
   FoodLogItemIngredientRow,
   FoodLogItemRow,
@@ -23,6 +24,11 @@ import { deriveFoodIntelligence } from './foodIntelligence';
 import { deriveMedicationIntelligence } from './medicationIntelligence';
 import type { DerivedFoodIntelligence } from './foodIntelligence';
 import type { IngredientSignalKey } from '../data/ingredientCatalog';
+
+function numericAvg(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
 
 function deriveLocalDate(occurredAt: string): string {
   const iso = occurredAt.split('T')[0];
@@ -102,9 +108,14 @@ interface EnrichedFoodLogItemIngredientRow extends FoodLogItemIngredientRow {
   ingredient_reference?: IngredientReferenceItemRow | null;
 }
 
+interface EnrichedFoodReferenceIngredientRow extends FoodReferenceIngredientRow {
+  ingredient_reference?: IngredientReferenceItemRow | null;
+}
+
 interface EnrichedFoodLogItemRow extends FoodLogItemRow {
   food_reference?: FoodReferenceItemRow | null;
   normalized_ingredients?: EnrichedFoodLogItemIngredientRow[];
+  reference_ingredients?: EnrichedFoodReferenceIngredientRow[];
 }
 
 export interface EnrichedFoodLogRow extends FoodLogRow {
@@ -132,8 +143,40 @@ interface DerivedFoodNutrition {
   source_labels: string[];
 }
 
+interface DerivedFoodSignalBurden {
+  food_item_count_total: number;
+  structured_food_item_count: number;
+  structured_ingredient_count: number;
+  structured_food_coverage_ratio: number | null;
+  ingredient_signal_confidence_avg: number | null;
+  signal_burdens: Record<IngredientSignalKey, number>;
+}
+
 function isIngredientSignalKey(value: string): value is IngredientSignalKey {
   return FOOD_SIGNAL_KEYS.includes(value as IngredientSignalKey);
+}
+
+function roundTo(value: number, decimals = 2): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function emptySignalScoreMap(): Record<IngredientSignalKey, number> {
+  return {
+    high_fodmap: 0,
+    dairy: 0,
+    gluten: 0,
+    artificial_sweetener: 0,
+    high_fat: 0,
+    spicy: 0,
+    caffeine_food: 0,
+    alcohol: 0,
+    fiber_dense: 0,
+  };
 }
 
 function readLoggedFoodItems(foodItems: unknown): LoggedFoodItemValue[] {
@@ -170,53 +213,90 @@ function readLoggedFoodItems(foodItems: unknown): LoggedFoodItemValue[] {
   return results;
 }
 
-function mergeFoodIntelligence(
-  primary: DerivedFoodIntelligence,
-  secondary: DerivedFoodIntelligence
-): DerivedFoodIntelligence {
-  return {
-    food_item_names: uniqueSortedStrings([
-      ...primary.food_item_names,
-      ...secondary.food_item_names,
-    ]),
-    matched_ingredient_ids: uniqueSortedStrings([
-      ...primary.matched_ingredient_ids,
-      ...secondary.matched_ingredient_ids,
-    ]),
-    ingredient_signals: uniqueSortedStrings([
-      ...primary.ingredient_signals,
-      ...secondary.ingredient_signals,
-    ]) as IngredientSignalKey[],
-    gut_trigger_load: uniqueSortedStrings([
-      ...primary.ingredient_signals,
-      ...secondary.ingredient_signals,
-    ]).length,
-    high_fodmap_food_count: Math.max(
-      primary.high_fodmap_food_count,
-      secondary.high_fodmap_food_count
-    ),
-    dairy_food_count: Math.max(primary.dairy_food_count, secondary.dairy_food_count),
-    gluten_food_count: Math.max(primary.gluten_food_count, secondary.gluten_food_count),
-    artificial_sweetener_food_count: Math.max(
-      primary.artificial_sweetener_food_count,
-      secondary.artificial_sweetener_food_count
-    ),
-    high_fat_food_count: Math.max(primary.high_fat_food_count, secondary.high_fat_food_count),
-    spicy_food_count: Math.max(primary.spicy_food_count, secondary.spicy_food_count),
-    caffeine_food_count: Math.max(
-      primary.caffeine_food_count,
-      secondary.caffeine_food_count
-    ),
-    alcohol_food_count: Math.max(primary.alcohol_food_count, secondary.alcohol_food_count),
-    fiber_dense_food_count: Math.max(
-      primary.fiber_dense_food_count,
-      secondary.fiber_dense_food_count
-    ),
-    common_gut_effects: uniqueSortedStrings([
-      ...primary.common_gut_effects,
-      ...secondary.common_gut_effects,
-    ]),
-  };
+function deriveReferenceIngredientWeight(
+  ingredient: EnrichedFoodReferenceIngredientRow
+): number {
+  if (
+    typeof ingredient.ingredient_fraction === 'number' &&
+    Number.isFinite(ingredient.ingredient_fraction) &&
+    ingredient.ingredient_fraction > 0
+  ) {
+    return roundTo(clamp(ingredient.ingredient_fraction, 0.12, 1));
+  }
+
+  if (ingredient.is_primary) return 0.85;
+
+  const rank = ingredient.prominence_rank ?? 5;
+  if (rank <= 1) return 0.72;
+  if (rank === 2) return 0.56;
+  if (rank === 3) return 0.42;
+  if (rank === 4) return 0.32;
+  return 0.22;
+}
+
+function deriveReferenceIngredientConfidence(
+  ingredient: EnrichedFoodReferenceIngredientRow
+): number {
+  if (
+    typeof ingredient.ingredient_fraction === 'number' &&
+    Number.isFinite(ingredient.ingredient_fraction) &&
+    ingredient.ingredient_fraction > 0
+  ) {
+    return 0.95;
+  }
+
+  if (ingredient.is_primary) return 0.9;
+  if (ingredient.prominence_rank !== null) return 0.85;
+  return 0.8;
+}
+
+function deriveLoggedIngredientWeight(
+  ingredient: EnrichedFoodLogItemIngredientRow
+): number {
+  if (
+    typeof ingredient.confidence_score === 'number' &&
+    Number.isFinite(ingredient.confidence_score)
+  ) {
+    return roundTo(clamp(ingredient.confidence_score, 0.2, 1));
+  }
+
+  if (ingredient.source_method === 'catalog_match') return 0.6;
+  if (ingredient.source_method === 'manual_entry') return 0.45;
+  return 0.35;
+}
+
+function deriveLoggedIngredientConfidence(
+  ingredient: EnrichedFoodLogItemIngredientRow
+): number {
+  if (
+    typeof ingredient.confidence_score === 'number' &&
+    Number.isFinite(ingredient.confidence_score)
+  ) {
+    return clamp(ingredient.confidence_score, 0.2, 1);
+  }
+
+  if (ingredient.source_method === 'catalog_match') return 0.7;
+  if (ingredient.source_method === 'manual_entry') return 0.55;
+  return 0.45;
+}
+
+function getReferenceIngredientSignals(
+  ingredient: EnrichedFoodReferenceIngredientRow
+): IngredientSignalKey[] {
+  return (ingredient.ingredient_reference?.default_signals ?? []).filter(
+    isIngredientSignalKey
+  );
+}
+
+function getLoggedIngredientSignals(
+  ingredient: EnrichedFoodLogItemIngredientRow
+): IngredientSignalKey[] {
+  const sourceSignals =
+    ingredient.gut_signals_override.length > 0
+      ? ingredient.gut_signals_override
+      : ingredient.ingredient_reference?.default_signals ?? [];
+
+  return sourceSignals.filter(isIngredientSignalKey);
 }
 
 function deriveFoodIntelligenceFromNormalizedItems(
@@ -249,24 +329,46 @@ function deriveFoodIntelligenceFromNormalizedItems(
 
     const itemSignals = new Set<IngredientSignalKey>();
 
-    for (const ingredient of item.normalized_ingredients ?? []) {
-      if (ingredient.ingredient_reference_id) {
-        matchedIngredientIds.add(ingredient.ingredient_reference_id);
-      }
+    const referenceIngredients = item.reference_ingredients ?? [];
+    const normalizedIngredients =
+      referenceIngredients.length === 0 ? item.normalized_ingredients ?? [] : [];
 
-      for (const effect of ingredient.ingredient_reference?.typical_gut_reactions ?? []) {
-        if (effect.trim().length > 0) {
-          commonGutEffects.add(effect.trim());
+    if (referenceIngredients.length > 0) {
+      for (const ingredient of referenceIngredients) {
+        matchedIngredientIds.add(ingredient.ingredient_reference_id);
+
+        for (const effect of ingredient.ingredient_reference?.typical_gut_reactions ?? []) {
+          if (effect.trim().length > 0) {
+            commonGutEffects.add(effect.trim());
+          }
+        }
+
+        for (const signal of getReferenceIngredientSignals(ingredient)) {
+          itemSignals.add(signal);
+          ingredientSignals.add(signal);
         }
       }
+    } else if (normalizedIngredients.length > 0) {
+      for (const ingredient of normalizedIngredients) {
+        if (ingredient.ingredient_reference_id) {
+          matchedIngredientIds.add(ingredient.ingredient_reference_id);
+        }
 
-      const sourceSignals =
-        ingredient.gut_signals_override.length > 0
-          ? ingredient.gut_signals_override
-          : ingredient.ingredient_reference?.default_signals ?? [];
+        for (const effect of ingredient.ingredient_reference?.typical_gut_reactions ?? []) {
+          if (effect.trim().length > 0) {
+            commonGutEffects.add(effect.trim());
+          }
+        }
 
-      for (const signal of sourceSignals) {
-        if (!isIngredientSignalKey(signal)) continue;
+        for (const signal of getLoggedIngredientSignals(ingredient)) {
+          itemSignals.add(signal);
+          ingredientSignals.add(signal);
+        }
+      }
+    } else {
+      for (const signal of (item.food_reference?.default_signals ?? []).filter(
+        isIngredientSignalKey
+      )) {
         itemSignals.add(signal);
         ingredientSignals.add(signal);
       }
@@ -292,6 +394,129 @@ function deriveFoodIntelligenceFromNormalizedItems(
     alcohol_food_count: signalCounts.alcohol,
     fiber_dense_food_count: signalCounts.fiber_dense,
     common_gut_effects: [...commonGutEffects].sort(),
+  };
+}
+
+function deriveFoodSignalBurdenFromNormalizedItems(
+  row: EnrichedFoodLogRow
+): DerivedFoodSignalBurden | null {
+  const normalizedItems = row.normalized_items ?? [];
+  if (normalizedItems.length === 0) return null;
+
+  const signalBurdens = emptySignalScoreMap();
+  const confidenceValues: number[] = [];
+  let structuredFoodItemCount = 0;
+  let structuredIngredientCount = 0;
+
+  for (const item of normalizedItems) {
+    const referenceIngredients = item.reference_ingredients ?? [];
+    const normalizedIngredients =
+      referenceIngredients.length === 0 ? item.normalized_ingredients ?? [] : [];
+    let itemHasStructuredSignals = false;
+
+    if (referenceIngredients.length > 0) {
+      structuredFoodItemCount += 1;
+      structuredIngredientCount += referenceIngredients.length;
+
+      for (const ingredient of referenceIngredients) {
+        const signals = getReferenceIngredientSignals(ingredient);
+        if (signals.length === 0) continue;
+
+        itemHasStructuredSignals = true;
+        const weight = deriveReferenceIngredientWeight(ingredient);
+        confidenceValues.push(deriveReferenceIngredientConfidence(ingredient));
+
+        for (const signal of signals) {
+          signalBurdens[signal] += weight;
+        }
+      }
+    } else if (normalizedIngredients.length > 0) {
+      structuredFoodItemCount += 1;
+      structuredIngredientCount += normalizedIngredients.length;
+
+      for (const ingredient of normalizedIngredients) {
+        const signals = getLoggedIngredientSignals(ingredient);
+        if (signals.length === 0) continue;
+
+        itemHasStructuredSignals = true;
+        const weight = deriveLoggedIngredientWeight(ingredient);
+        confidenceValues.push(deriveLoggedIngredientConfidence(ingredient));
+
+        for (const signal of signals) {
+          signalBurdens[signal] += weight;
+        }
+      }
+    } else {
+      const defaultSignals = (item.food_reference?.default_signals ?? []).filter(
+        isIngredientSignalKey
+      );
+
+      if (defaultSignals.length > 0) {
+        structuredFoodItemCount += 1;
+        confidenceValues.push(0.55);
+        itemHasStructuredSignals = true;
+
+        for (const signal of defaultSignals) {
+          signalBurdens[signal] += 0.45;
+        }
+      }
+    }
+
+    if (!itemHasStructuredSignals) {
+      continue;
+    }
+  }
+
+  for (const signal of FOOD_SIGNAL_KEYS) {
+    signalBurdens[signal] = roundTo(signalBurdens[signal]);
+  }
+
+  return {
+    food_item_count_total: normalizedItems.length,
+    structured_food_item_count: structuredFoodItemCount,
+    structured_ingredient_count: structuredIngredientCount,
+    structured_food_coverage_ratio:
+      normalizedItems.length > 0
+        ? roundTo(structuredFoodItemCount / normalizedItems.length)
+        : null,
+    ingredient_signal_confidence_avg: numericAvg(confidenceValues),
+    signal_burdens: signalBurdens,
+  };
+}
+
+function deriveFallbackFoodSignalBurden(
+  row: EnrichedFoodLogRow,
+  fallbackDerived: DerivedFoodIntelligence
+): DerivedFoodSignalBurden | null {
+  const loggedItemCount = readLoggedFoodItems(row.food_items).length;
+  const signalBurdens = emptySignalScoreMap();
+  const fallbackSignalCounts: Record<IngredientSignalKey, number> = {
+    high_fodmap: fallbackDerived.high_fodmap_food_count,
+    dairy: fallbackDerived.dairy_food_count,
+    gluten: fallbackDerived.gluten_food_count,
+    artificial_sweetener: fallbackDerived.artificial_sweetener_food_count,
+    high_fat: fallbackDerived.high_fat_food_count,
+    spicy: fallbackDerived.spicy_food_count,
+    caffeine_food: fallbackDerived.caffeine_food_count,
+    alcohol: fallbackDerived.alcohol_food_count,
+    fiber_dense: fallbackDerived.fiber_dense_food_count,
+  };
+
+  for (const signal of fallbackDerived.ingredient_signals) {
+    const signalCount = fallbackSignalCounts[signal] > 0 ? fallbackSignalCounts[signal] : 1;
+    signalBurdens[signal] = roundTo(signalCount * 0.35);
+  }
+
+  const hasSignals = Object.values(signalBurdens).some((value) => value > 0);
+  if (!hasSignals) return null;
+
+  return {
+    food_item_count_total: loggedItemCount,
+    structured_food_item_count: 0,
+    structured_ingredient_count: 0,
+    structured_food_coverage_ratio: loggedItemCount > 0 ? 0 : null,
+    ingredient_signal_confidence_avg: 0.25,
+    signal_burdens: signalBurdens,
   };
 }
 
@@ -542,9 +767,23 @@ export function normalizeFoodEvent(row: EnrichedFoodLogRow): CanonicalEvent {
     tags: row.tags,
   });
   const normalizedDerived = deriveFoodIntelligenceFromNormalizedItems(row);
-  const derived = normalizedDerived
-    ? mergeFoodIntelligence(normalizedDerived, fallbackDerived)
-    : fallbackDerived;
+  const derived =
+    normalizedDerived && normalizedDerived.ingredient_signals.length > 0
+      ? {
+          ...normalizedDerived,
+          food_item_names: uniqueSortedStrings([
+            ...normalizedDerived.food_item_names,
+            ...fallbackDerived.food_item_names,
+          ]),
+        }
+      : fallbackDerived;
+  const structuredSignalBurden = deriveFoodSignalBurdenFromNormalizedItems(row);
+  const fallbackSignalBurden = deriveFallbackFoodSignalBurden(row, fallbackDerived);
+  const activeSignalBurden =
+    structuredSignalBurden &&
+    Object.values(structuredSignalBurden.signal_burdens).some((value) => value > 0)
+      ? structuredSignalBurden
+      : fallbackSignalBurden;
   const normalizedNutrition = deriveFoodNutritionFromNormalizedItems(row);
   const fallbackNutrition = deriveFoodNutritionFromLegacyRow(row);
   const nutrition =
@@ -578,6 +817,34 @@ export function normalizeFoodEvent(row: EnrichedFoodLogRow): CanonicalEvent {
         nutrition_missing_item_count: nutrition.missing_item_count,
         nutrition_source_labels: nutrition.source_labels,
         nutrition_confidence_avg: nutrition.nutrition.confidence,
+      }),
+      ...(activeSignalBurden && {
+        food_item_count_total: activeSignalBurden.food_item_count_total,
+        structured_food_item_count: activeSignalBurden.structured_food_item_count,
+        structured_ingredient_count: activeSignalBurden.structured_ingredient_count,
+        structured_food_coverage_ratio:
+          activeSignalBurden.structured_food_coverage_ratio,
+        ingredient_signal_confidence_avg:
+          activeSignalBurden.ingredient_signal_confidence_avg,
+        gut_trigger_burden_score: roundTo(
+          FOOD_SIGNAL_KEYS.reduce(
+            (sum, signal) => sum + activeSignalBurden.signal_burdens[signal],
+            0
+          )
+        ),
+        high_fodmap_burden_score:
+          activeSignalBurden.signal_burdens.high_fodmap,
+        dairy_burden_score: activeSignalBurden.signal_burdens.dairy,
+        gluten_burden_score: activeSignalBurden.signal_burdens.gluten,
+        artificial_sweetener_burden_score:
+          activeSignalBurden.signal_burdens.artificial_sweetener,
+        high_fat_burden_score: activeSignalBurden.signal_burdens.high_fat,
+        spicy_burden_score: activeSignalBurden.signal_burdens.spicy,
+        caffeine_food_burden_score:
+          activeSignalBurden.signal_burdens.caffeine_food,
+        alcohol_food_burden_score: activeSignalBurden.signal_burdens.alcohol,
+        fiber_dense_burden_score:
+          activeSignalBurden.signal_burdens.fiber_dense,
       }),
       ingredient_signals: derived.ingredient_signals,
       gut_trigger_load: derived.gut_trigger_load,
