@@ -1,8 +1,16 @@
+import {
+  INGREDIENT_CATALOG,
+  type IngredientSignalKey,
+} from '../data/ingredientCatalog';
 import { supabase } from '../lib/supabase';
 import { fetchFoodEnrichment } from './foodEnrichmentService';
 import type {
   FoodReferenceCandidateDetail,
+  FoodReferenceIngredientRow,
   FoodReferenceItemRow,
+  FoodLogItemRow,
+  IngredientFodmapLevel,
+  IngredientReferenceItemRow,
   MedicationReferenceCandidateDetail,
   MedicationReferenceItemRow,
   MedicationReferenceType,
@@ -363,6 +371,345 @@ function buildMedicationEvidenceNotes(detail: MedicationReferenceCandidateDetail
 function deriveFoodSignalsFromTags(tags: string[]): string[] {
   const signals = tags.flatMap((tag) => FOOD_TAG_TO_SIGNAL[normalizeLookupKey(tag)] ?? []);
   return dedupeStrings(signals);
+}
+
+function matchIngredientCatalogSignals(name: string): {
+  signals: IngredientSignalKey[];
+  gutReactions: string[];
+} {
+  const normalizedName = normalizeLookupKey(name);
+  const matchedEntries = INGREDIENT_CATALOG.filter((entry) =>
+    entry.matchTerms.some((term) => {
+      const normalizedTerm = normalizeLookupKey(term);
+      return (
+        normalizedName.includes(normalizedTerm) ||
+        normalizedTerm.includes(normalizedName)
+      );
+    })
+  );
+
+  return {
+    signals: dedupeStrings(matchedEntries.flatMap((entry) => entry.signals)) as IngredientSignalKey[],
+    gutReactions: dedupeStrings(
+      matchedEntries.flatMap((entry) => entry.commonGutEffects)
+    ),
+  };
+}
+
+function inferIngredientCategory(
+  ingredientName: string,
+  signals: string[]
+): string | null {
+  const normalizedName = normalizeLookupKey(ingredientName);
+
+  if (signals.includes('dairy')) return 'dairy';
+  if (signals.includes('gluten')) return 'grain';
+  if (signals.includes('spicy')) return 'seasoning';
+  if (signals.includes('artificial_sweetener')) return 'sweetener';
+  if (signals.includes('alcohol')) return 'alcohol';
+  if (signals.includes('caffeine_food')) return 'stimulant';
+
+  if (
+    normalizedName.includes('beef') ||
+    normalizedName.includes('chicken') ||
+    normalizedName.includes('pork') ||
+    normalizedName.includes('turkey') ||
+    normalizedName.includes('sausage') ||
+    normalizedName.includes('bacon')
+  ) {
+    return 'protein';
+  }
+
+  if (
+    normalizedName.includes('onion') ||
+    normalizedName.includes('garlic') ||
+    normalizedName.includes('tomato') ||
+    normalizedName.includes('pepper') ||
+    normalizedName.includes('spinach') ||
+    normalizedName.includes('broccoli')
+  ) {
+    return 'vegetable';
+  }
+
+  if (
+    normalizedName.includes('bean') ||
+    normalizedName.includes('lentil') ||
+    normalizedName.includes('chickpea')
+  ) {
+    return 'legume';
+  }
+
+  if (
+    normalizedName.includes('oil') ||
+    normalizedName.includes('butter') ||
+    normalizedName.includes('cream')
+  ) {
+    return 'fat';
+  }
+
+  return null;
+}
+
+function inferIngredientFodmapLevel(signals: string[]): IngredientFodmapLevel | null {
+  if (signals.includes('high_fodmap')) return 'high';
+  if (signals.length > 0) return 'unknown';
+  return null;
+}
+
+function buildIngredientEvidenceNotes(params: {
+  ingredientName: string;
+  foodDisplayName: string;
+  sourceLabel: string | null;
+  sourceRef: string | null;
+}): string {
+  const parts = [
+    `Promoted from accepted food review for ${params.foodDisplayName}.`,
+  ];
+
+  if (params.sourceLabel) {
+    parts.push(`Enrichment source: ${params.sourceLabel}`);
+  }
+
+  if (params.sourceRef) {
+    parts.push(`Source ref: ${params.sourceRef}`);
+  }
+
+  return parts.join(' | ');
+}
+
+async function resolveExistingIngredientReference(
+  ingredientName: string
+): Promise<IngredientReferenceItemRow | null> {
+  const cleanedName = ingredientName.replace(/[%_,'"]/g, '').trim();
+  if (!cleanedName) return null;
+
+  const { data, error } = await supabase
+    .from('ingredient_reference_items')
+    .select('*')
+    .or(
+      [
+        `display_name.ilike.${cleanedName}`,
+        `canonical_name.ilike.${cleanedName}`,
+        `display_name.ilike.%${cleanedName}%`,
+        `canonical_name.ilike.%${cleanedName}%`,
+      ].join(',')
+    )
+    .limit(12);
+
+  if (error) throw error;
+
+  const normalizedName = normalizeLookupKey(ingredientName);
+  const candidates = (data ?? []) as IngredientReferenceItemRow[];
+
+  return (
+    candidates.find(
+      (candidate) =>
+        normalizeLookupKey(candidate.display_name) === normalizedName ||
+        normalizeLookupKey(candidate.canonical_name) === normalizedName ||
+        candidate.common_aliases.some((alias) => normalizeLookupKey(alias) === normalizedName)
+    ) ?? null
+  );
+}
+
+async function promoteIngredientReferencesForFood(params: {
+  userId: string;
+  foodReferenceId: string;
+  foodDisplayName: string;
+  detail: FoodReferenceCandidateDetail;
+}): Promise<void> {
+  const ingredientNames = dedupeStrings(params.detail.suggested_ingredient_names);
+
+  if (ingredientNames.length > 0) {
+    const ingredientReferencesByKey = new Map<string, IngredientReferenceItemRow>();
+    const missingIngredientRows: Array<{
+      canonical_name: string;
+      display_name: string;
+      ingredient_category: string | null;
+      fodmap_level: IngredientFodmapLevel | null;
+      common_aliases: string[];
+      default_signals: string[];
+      typical_gut_reactions: string[];
+      evidence_notes: string;
+    }> = [];
+
+    for (const ingredientName of ingredientNames) {
+      const existingReference = await resolveExistingIngredientReference(ingredientName);
+      if (existingReference) {
+        ingredientReferencesByKey.set(
+          normalizeLookupKey(ingredientName),
+          existingReference
+        );
+        continue;
+      }
+
+      const normalizedKey = normalizeLookupKey(ingredientName);
+      if (missingIngredientRows.some((row) => row.canonical_name === normalizedKey)) {
+        continue;
+      }
+
+      const derived = matchIngredientCatalogSignals(ingredientName);
+
+      missingIngredientRows.push({
+        canonical_name: normalizedKey,
+        display_name: ingredientName.trim(),
+        ingredient_category: inferIngredientCategory(ingredientName, derived.signals),
+        fodmap_level: inferIngredientFodmapLevel(derived.signals),
+        common_aliases: [],
+        default_signals: derived.signals,
+        typical_gut_reactions: derived.gutReactions,
+        evidence_notes: buildIngredientEvidenceNotes({
+          ingredientName,
+          foodDisplayName: params.foodDisplayName,
+          sourceLabel: params.detail.enrichment_source_label,
+          sourceRef: params.detail.enrichment_source_ref,
+        }),
+      });
+    }
+
+    if (missingIngredientRows.length > 0) {
+      const { data, error } = await supabase
+        .from('ingredient_reference_items')
+        .insert(missingIngredientRows)
+        .select('*');
+
+      if (error) throw error;
+
+      for (const row of (data ?? []) as IngredientReferenceItemRow[]) {
+        ingredientReferencesByKey.set(normalizeLookupKey(row.display_name), row);
+        ingredientReferencesByKey.set(normalizeLookupKey(row.canonical_name), row);
+      }
+    }
+
+    const orderedIngredientReferences = ingredientNames
+      .map((ingredientName) => {
+        const normalizedKey = normalizeLookupKey(ingredientName);
+        return ingredientReferencesByKey.get(normalizedKey) ?? null;
+      })
+      .filter((row): row is IngredientReferenceItemRow => row !== null);
+
+    if (orderedIngredientReferences.length > 0) {
+      const { data: existingLinks, error: existingLinksError } = await supabase
+        .from('food_reference_ingredients')
+        .select('*')
+        .eq('food_reference_id', params.foodReferenceId);
+
+      if (existingLinksError) throw existingLinksError;
+
+      const existingIngredientIds = new Set(
+        ((existingLinks ?? []) as FoodReferenceIngredientRow[]).map(
+          (row) => row.ingredient_reference_id
+        )
+      );
+
+      const newFoodReferenceLinks = orderedIngredientReferences
+        .map((ingredientReference, index) => ({
+          food_reference_id: params.foodReferenceId,
+          ingredient_reference_id: ingredientReference.id,
+          grams_per_default_serving: null,
+          ingredient_fraction: null,
+          prominence_rank: index + 1,
+          is_primary: index === 0,
+          notes: 'Promoted from accepted food review candidate.',
+        }))
+        .filter((row) => !existingIngredientIds.has(row.ingredient_reference_id));
+
+      if (newFoodReferenceLinks.length > 0) {
+        const { error } = await supabase
+          .from('food_reference_ingredients')
+          .insert(newFoodReferenceLinks);
+
+        if (error) throw error;
+      }
+    }
+  }
+
+  const { data: finalFoodReferenceLinks, error: finalLinksError } = await supabase
+    .from('food_reference_ingredients')
+    .select('*')
+    .eq('food_reference_id', params.foodReferenceId)
+    .order('prominence_rank', { ascending: true });
+
+  if (finalLinksError) throw finalLinksError;
+
+  const finalLinks = (finalFoodReferenceLinks ?? []) as FoodReferenceIngredientRow[];
+  if (finalLinks.length === 0) return;
+
+  const ingredientReferenceIds = [
+    ...new Set(finalLinks.map((row) => row.ingredient_reference_id)),
+  ];
+
+  const { data: ingredientReferenceRows, error: ingredientReferenceRowsError } = await supabase
+    .from('ingredient_reference_items')
+    .select('*')
+    .in('id', ingredientReferenceIds);
+
+  if (ingredientReferenceRowsError) throw ingredientReferenceRowsError;
+
+  const ingredientReferenceById = new Map(
+    ((ingredientReferenceRows ?? []) as IngredientReferenceItemRow[]).map((row) => [
+      row.id,
+      row,
+    ])
+  );
+
+  const orderedIngredientReferences = finalLinks
+    .map((link) => ingredientReferenceById.get(link.ingredient_reference_id) ?? null)
+    .filter((row): row is IngredientReferenceItemRow => row !== null);
+
+  if (orderedIngredientReferences.length === 0) return;
+
+  const { data: foodLogItems, error: foodLogItemsError } = await supabase
+    .from('food_log_items')
+    .select('*')
+    .eq('user_id', params.userId)
+    .eq('normalized_food_id', params.foodReferenceId);
+
+  if (foodLogItemsError) throw foodLogItemsError;
+
+  const normalizedFoodLogItems = (foodLogItems ?? []) as FoodLogItemRow[];
+  if (normalizedFoodLogItems.length === 0) return;
+
+  const foodLogItemIds = normalizedFoodLogItems.map((item) => item.id);
+  const { data: existingLogIngredients, error: existingLogIngredientsError } = await supabase
+    .from('food_log_item_ingredients')
+    .select('food_log_item_id')
+    .eq('user_id', params.userId)
+    .in('food_log_item_id', foodLogItemIds);
+
+  if (existingLogIngredientsError) throw existingLogIngredientsError;
+
+  const foodLogItemsWithIngredients = new Set(
+    (existingLogIngredients ?? []).map((row) => row.food_log_item_id as string)
+  );
+
+  const backfillIngredientRows = normalizedFoodLogItems
+    .filter((foodLogItem) => !foodLogItemsWithIngredients.has(foodLogItem.id))
+    .flatMap((foodLogItem) =>
+      orderedIngredientReferences.map((ingredientReference, index) => ({
+        user_id: params.userId,
+        food_log_item_id: foodLogItem.id,
+        ingredient_reference_id: ingredientReference.id,
+        ingredient_name_text:
+          ingredientReference.display_name ?? ingredientReference.canonical_name,
+        quantity_estimate: null,
+        quantity_unit: null,
+        source_method: 'catalog_match' as const,
+        confidence_score: 0.9,
+        gut_signals_override: [],
+        notes:
+          index === 0
+            ? 'Backfilled from accepted food reference ingredients.'
+            : null,
+      }))
+    );
+
+  if (backfillIngredientRows.length > 0) {
+    const { error } = await supabase
+      .from('food_log_item_ingredients')
+      .insert(backfillIngredientRows);
+
+    if (error) throw error;
+  }
 }
 
 async function findPendingCandidate(params: {
@@ -791,6 +1138,8 @@ async function promoteFoodCandidate(
 ): Promise<{ status: ReferenceCandidateReviewStatus; promotedReferenceId: string }> {
   const existingReference = await resolveExistingFoodReference(candidate.display_name);
   if (existingReference) {
+    const detail = readFoodCandidateDetail(candidate.detail);
+
     const { error: updateFoodLogsError } = await supabase
       .from('food_log_items')
       .update({
@@ -803,6 +1152,13 @@ async function promoteFoodCandidate(
       .is('normalized_food_id', null);
 
     if (updateFoodLogsError) throw updateFoodLogsError;
+
+    await promoteIngredientReferencesForFood({
+      userId,
+      foodReferenceId: existingReference.id,
+      foodDisplayName: candidate.display_name,
+      detail,
+    });
 
     return {
       status: 'merged',
@@ -860,6 +1216,13 @@ async function promoteFoodCandidate(
     .is('normalized_food_id', null);
 
   if (updateFoodLogsError) throw updateFoodLogsError;
+
+  await promoteIngredientReferencesForFood({
+    userId,
+    foodReferenceId: promoted.id,
+    foodDisplayName: candidate.display_name,
+    detail,
+  });
 
   return {
     status: 'accepted',
