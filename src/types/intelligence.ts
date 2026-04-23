@@ -124,3 +124,48 @@ export type MedicationRegimenStatus =
   | 'as_needed'
   | 'one_time'
   | 'unknown';
+
+export type ReferenceCandidateKind = 'food' | 'medication';
+
+export type ReferenceCandidateSourceLogType = 'food_log' | 'medication_log';
+
+export type ReferenceCandidateReviewStatus =
+  | 'pending_review'
+  | 'accepted'
+  | 'rejected'
+  | 'merged';
+
+export interface FoodReferenceCandidateDetail {
+  tags: string[];
+  estimated_calories: number | null;
+  portion_size: string | null;
+}
+
+export interface MedicationReferenceCandidateDetail {
+  dosage: string | null;
+  medication_type: MedicationReferenceType | null;
+  route: string | null;
+  reason_for_use: string | null;
+  regimen_status: MedicationRegimenStatus | null;
+  timing_context: string | null;
+}
+
+export interface ReferenceReviewCandidateRow {
+  id: string;
+  user_id: string;
+  candidate_kind: ReferenceCandidateKind;
+  display_name: string;
+  normalized_name_key: string;
+  source_log_type: ReferenceCandidateSourceLogType;
+  source_log_id: string | null;
+  source_item_id: string | null;
+  detail: Record<string, unknown>;
+  review_status: ReferenceCandidateReviewStatus;
+  review_notes: string | null;
+  times_seen: number;
+  last_seen_at: string;
+  reviewed_at: string | null;
+  promoted_reference_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
