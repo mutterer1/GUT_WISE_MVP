@@ -160,7 +160,11 @@ function aggregateSymptoms(events: CanonicalEvent[]) {
 function aggregateFood(events: CanonicalEvent[]) {
   const allFoodItemNames: string[] = [];
   const allTags: string[] = [];
+  const allMatchedIngredientIds: string[] = [];
+  const allMatchedFoodReferenceIds: string[] = [];
   const allIngredientSignals: string[] = [];
+  const allCommonGutEffects: string[] = [];
+  const allNutritionSourceLabels: string[] = [];
   let gutTriggerLoad = 0;
   let highFodmapCount = 0;
   let dairyCount = 0;
@@ -171,6 +175,16 @@ function aggregateFood(events: CanonicalEvent[]) {
   let caffeineFoodCount = 0;
   let alcoholFoodCount = 0;
   let fiberDenseCount = 0;
+  let caloriesTotal = 0;
+  let proteinTotal = 0;
+  let fatTotal = 0;
+  let carbsTotal = 0;
+  let fiberTotal = 0;
+  let sugarTotal = 0;
+  let sodiumTotal = 0;
+  let nutritionCoveredItemCount = 0;
+  let nutritionMissingItemCount = 0;
+  const nutritionConfidences: number[] = [];
   let lateMeal = false;
 
   for (const e of events) {
@@ -179,11 +193,19 @@ function aggregateFood(events: CanonicalEvent[]) {
         ? payloadStrArray(e.payload, 'food_item_names')
         : payloadStrArray(e.payload, 'food_items');
     const tags = payloadStrArray(e.payload, 'tags');
+    const matchedIngredientIds = payloadStrArray(e.payload, 'matched_ingredient_ids');
+    const matchedFoodReferenceIds = payloadStrArray(e.payload, 'matched_food_reference_ids');
     const ingredientSignals = payloadStrArray(e.payload, 'ingredient_signals');
+    const commonGutEffects = payloadStrArray(e.payload, 'common_gut_effects');
+    const nutritionSourceLabels = payloadStrArray(e.payload, 'nutrition_source_labels');
 
     allFoodItemNames.push(...foodItemNames);
     allTags.push(...tags);
+    allMatchedIngredientIds.push(...matchedIngredientIds);
+    allMatchedFoodReferenceIds.push(...matchedFoodReferenceIds);
     allIngredientSignals.push(...ingredientSignals);
+    allCommonGutEffects.push(...commonGutEffects);
+    allNutritionSourceLabels.push(...nutritionSourceLabels);
 
     gutTriggerLoad += payloadNum(e.payload, 'gut_trigger_load') ?? 0;
     highFodmapCount += payloadNum(e.payload, 'high_fodmap_food_count') ?? 0;
@@ -195,15 +217,36 @@ function aggregateFood(events: CanonicalEvent[]) {
     caffeineFoodCount += payloadNum(e.payload, 'caffeine_food_count') ?? 0;
     alcoholFoodCount += payloadNum(e.payload, 'alcohol_food_count') ?? 0;
     fiberDenseCount += payloadNum(e.payload, 'fiber_dense_food_count') ?? 0;
+    caloriesTotal +=
+      payloadNum(e.payload, 'meal_calories_kcal') ?? payloadNum(e.payload, 'calories') ?? 0;
+    proteinTotal += payloadNum(e.payload, 'meal_protein_g') ?? 0;
+    fatTotal += payloadNum(e.payload, 'meal_fat_g') ?? 0;
+    carbsTotal += payloadNum(e.payload, 'meal_carbs_g') ?? 0;
+    fiberTotal += payloadNum(e.payload, 'meal_fiber_g') ?? 0;
+    sugarTotal += payloadNum(e.payload, 'meal_sugar_g') ?? 0;
+    sodiumTotal += payloadNum(e.payload, 'meal_sodium_mg') ?? 0;
+    nutritionCoveredItemCount += payloadNum(e.payload, 'nutrition_covered_item_count') ?? 0;
+    nutritionMissingItemCount += payloadNum(e.payload, 'nutrition_missing_item_count') ?? 0;
+
+    const nutritionConfidence = payloadNum(e.payload, 'nutrition_confidence_avg');
+    if (nutritionConfidence !== null) {
+      nutritionConfidences.push(nutritionConfidence);
+    }
 
     if (e.local_hour >= 20) lateMeal = true;
   }
+
+  const nutritionCoverageDenominator =
+    nutritionCoveredItemCount + nutritionMissingItemCount;
 
   return {
     meal_count: events.length,
     food_item_names: uniqueSorted(allFoodItemNames),
     food_tag_set: uniqueSorted(allTags),
+    matched_ingredient_ids: uniqueSorted(allMatchedIngredientIds),
+    matched_food_reference_ids: uniqueSorted(allMatchedFoodReferenceIds),
     ingredient_signals: uniqueSorted(allIngredientSignals),
+    food_common_gut_effects: uniqueSorted(allCommonGutEffects),
     gut_trigger_load: gutTriggerLoad,
     high_fodmap_food_count: highFodmapCount,
     dairy_food_count: dairyCount,
@@ -214,6 +257,21 @@ function aggregateFood(events: CanonicalEvent[]) {
     caffeine_food_count: caffeineFoodCount,
     alcohol_food_count: alcoholFoodCount,
     fiber_dense_food_count: fiberDenseCount,
+    calories_kcal_total: caloriesTotal,
+    protein_g_total: proteinTotal,
+    fat_g_total: fatTotal,
+    carbs_g_total: carbsTotal,
+    fiber_g_total: fiberTotal,
+    sugar_g_total: sugarTotal,
+    sodium_mg_total: sodiumTotal,
+    nutrition_covered_item_count: nutritionCoveredItemCount,
+    nutrition_missing_item_count: nutritionMissingItemCount,
+    nutrition_coverage_ratio:
+      nutritionCoverageDenominator > 0
+        ? nutritionCoveredItemCount / nutritionCoverageDenominator
+        : null,
+    nutrition_source_labels: uniqueSorted(allNutritionSourceLabels),
+    nutrition_confidence_avg: numericAvg(nutritionConfidences),
     late_meal: lateMeal,
   };
 }
@@ -560,10 +618,24 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
         meal_type: 'lunch',
         food_items: ['salad', 'chicken'],
         food_item_names: ['salad', 'chicken'],
+        matched_ingredient_ids: ['ingredient-fiber'],
+        matched_food_reference_ids: ['food-salad'],
         tags: ['high-fiber'],
         ingredient_signals: ['fiber_dense'],
+        common_gut_effects: ['bulk_support'],
         gut_trigger_load: 1,
         fiber_dense_food_count: 1,
+        meal_calories_kcal: 320,
+        meal_protein_g: 24,
+        meal_fat_g: 12,
+        meal_carbs_g: 28,
+        meal_fiber_g: 7,
+        meal_sugar_g: 4,
+        meal_sodium_mg: 540,
+        nutrition_covered_item_count: 2,
+        nutrition_missing_item_count: 0,
+        nutrition_source_labels: ['reviewed_reference'],
+        nutrition_confidence_avg: 0.82,
       },
       completeness_score: 0.7,
     },
@@ -580,10 +652,22 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
         meal_type: 'dinner',
         food_items: ['pasta'],
         food_item_names: ['pasta'],
+        matched_food_reference_ids: ['food-pasta'],
         tags: ['gluten'],
         ingredient_signals: ['gluten'],
         gut_trigger_load: 1,
         gluten_food_count: 1,
+        meal_calories_kcal: 410,
+        meal_protein_g: 14,
+        meal_fat_g: 11,
+        meal_carbs_g: 63,
+        meal_fiber_g: 3,
+        meal_sugar_g: 6,
+        meal_sodium_mg: 680,
+        nutrition_covered_item_count: 1,
+        nutrition_missing_item_count: 0,
+        nutrition_source_labels: ['reviewed_reference'],
+        nutrition_confidence_avg: 0.78,
       },
       completeness_score: 0.6,
     },
