@@ -32,6 +32,7 @@ function isCaffeineExposureDay(day: UserDailyFeatures): boolean {
   return (
     day.caffeine_beverage_count >= 1 ||
     day.caffeine_food_count >= 1 ||
+    (day.caffeine_food_burden_score ?? 0) >= 0.6 ||
     (day.hydration_caffeine_mg ?? 0) >= 40
   );
 }
@@ -76,6 +77,8 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
   let contradictionCount = 0;
   let nonExposedCount = 0;
   let nonExposedElevatedCount = 0;
+  let caffeineFoodBurdenDayCount = 0;
+  let caffeineFoodBurdenTotal = 0;
 
   const supportDates: string[] = [];
   const exposedDates: string[] = [];
@@ -88,6 +91,10 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     if (caffeineExposure) {
       exposureCount++;
       exposedDates.push(day.date);
+      if ((day.caffeine_food_burden_score ?? 0) > 0) {
+        caffeineFoodBurdenDayCount++;
+        caffeineFoodBurdenTotal += day.caffeine_food_burden_score ?? 0;
+      }
 
       if (elevatedBurden) {
         supportCount++;
@@ -173,6 +180,10 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     recencyWeight,
     supportingLogTypes
   );
+  const avgCaffeineFoodBurden =
+    caffeineFoodBurdenDayCount > 0
+      ? Math.round((caffeineFoodBurdenTotal / caffeineFoodBurdenDayCount) * 100) / 100
+      : null;
 
   const evidence: CandidateEvidence = {
     support_count: supportCount,
@@ -195,13 +206,18 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     baseline_dates: baselineDates.slice(0, 10),
     uncertainty_statement: buildUncertaintyStatement(evidenceGaps),
     evidence_gaps: evidenceGaps,
-    notes: ['Same-day comparison of caffeine exposure days against non-caffeine days.'],
+    notes: [
+      'Same-day comparison of caffeine exposure days against non-caffeine days.',
+      'Food-based caffeine exposure now prefers weighted ingredient burden when reviewed ingredient structure exists.',
+    ],
     statistics: {
       eligible_day_count: eligibleDays.length,
       non_exposed_count: nonExposedCount,
       non_exposed_elevated_count: nonExposedElevatedCount,
       caffeine_exposure_day_count: exposureCount,
       caffeine_food_day_count: eligibleDays.filter((day) => day.caffeine_food_count >= 1).length,
+      caffeine_food_burden_day_count: caffeineFoodBurdenDayCount,
+      avg_caffeine_food_burden_score: avgCaffeineFoodBurden,
     },
   };
 
@@ -210,7 +226,12 @@ export function analyzeFoodCaffeineSameDaySymptomBurdenCandidate(
     insight_key: INSIGHT_KEY,
     category: 'food',
     subtype: 'food_caffeine_same_day_symptom_burden',
-    trigger_factors: ['caffeine_beverage_count', 'caffeine_food_count', 'hydration_caffeine_mg'],
+    trigger_factors: [
+      'caffeine_beverage_count',
+      'caffeine_food_count',
+      'caffeine_food_burden_score',
+      'hydration_caffeine_mg',
+    ],
     target_outcomes: ['symptom_burden_score', 'max_symptom_severity'],
     status,
     confidence_score: confidence,
