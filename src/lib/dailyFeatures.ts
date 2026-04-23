@@ -24,6 +24,11 @@ function uniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort();
 }
 
+function roundTo(value: number, decimals = 3): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
 function lastEventByOccurredAt(events: CanonicalEvent[]): CanonicalEvent | null {
   if (events.length === 0) return null;
   return events.reduce((latest, e) => (e.occurred_at > latest.occurred_at ? e : latest));
@@ -266,6 +271,7 @@ function aggregateFood(events: CanonicalEvent[]) {
   const nutritionCoverageDenominator =
     nutritionCoveredItemCount + nutritionMissingItemCount;
   const structuredCoverageDenominator = foodItemCountTotal;
+  const hasCalories = caloriesTotal > 0;
 
   return {
     meal_count: events.length,
@@ -309,11 +315,17 @@ function aggregateFood(events: CanonicalEvent[]) {
     ),
     calories_kcal_total: caloriesTotal,
     protein_g_total: proteinTotal,
+    protein_g_per_1000kcal: hasCalories ? roundTo((proteinTotal / caloriesTotal) * 1000) : null,
     fat_g_total: fatTotal,
+    fat_calorie_share_ratio: hasCalories ? roundTo((fatTotal * 9) / caloriesTotal) : null,
     carbs_g_total: carbsTotal,
+    carbs_g_per_1000kcal: hasCalories ? roundTo((carbsTotal / caloriesTotal) * 1000) : null,
     fiber_g_total: fiberTotal,
+    fiber_g_per_1000kcal: hasCalories ? roundTo((fiberTotal / caloriesTotal) * 1000) : null,
     sugar_g_total: sugarTotal,
+    sugar_g_per_1000kcal: hasCalories ? roundTo((sugarTotal / caloriesTotal) * 1000) : null,
     sodium_mg_total: sodiumTotal,
+    sodium_mg_per_1000kcal: hasCalories ? roundTo((sodiumTotal / caloriesTotal) * 1000) : null,
     nutrition_covered_item_count: nutritionCoveredItemCount,
     nutrition_missing_item_count: nutritionMissingItemCount,
     nutrition_coverage_ratio:
