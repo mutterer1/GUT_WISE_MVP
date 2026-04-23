@@ -25,6 +25,7 @@ export interface UserDailyFeatures {
   food_item_names: string[];
   food_tag_set: string[];
   ingredient_signals: string[];
+  matched_ingredient_ids?: string[];
   gut_trigger_load: number;
   high_fodmap_food_count: number;
   dairy_food_count: number;
