@@ -17,13 +17,14 @@ interface TrustExplainerContent {
 
 const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
   insights: {
-    title: 'How GutWise builds insights',
-    subtitle: 'Insights come from repeated overlap in your logs, not one-off entries.',
+    title: 'How GutWise builds and labels insights',
+    subtitle:
+      'Insights are stronger when reviewed nutrition and structured ingredients back the pattern, and weaker when GutWise has to fall back to heuristics.',
     points: [
-      'GutWise summarizes patterns in your data, not diagnoses.',
-      'Confidence improves when the same signal appears across multiple days.',
+      'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, mixed evidence, or fallback heuristics.',
+      'Confidence improves when the same signal appears across multiple days with better food coverage and more complete structure.',
     ],
-    note: 'If evidence is limited, GutWise should say so clearly.',
+    note: 'If coverage is partial or heuristic fallback is doing most of the work, GutWise should say that clearly.',
   },
   reports: {
     title: 'How to use this report',
