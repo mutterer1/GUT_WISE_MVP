@@ -4,8 +4,10 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
+import { type MedicationReferenceSuggestion } from '../services/referenceSearchService';
 import { formatDateTime } from '../utils/dateFormatters';
 import type { MedicationRegimenStatus } from '../types/intelligence';
 
@@ -60,6 +62,15 @@ function normalizeOptionalText(value: string): string | null {
 
 function formatSnakeCase(value: string): string {
   return value.replace(/_/g, ' ');
+}
+
+function coerceMedicationType(
+  value: MedicationReferenceSuggestion['medicationType']
+): MedicationFormData['medication_type'] | null {
+  if (value === 'prescription' || value === 'otc' || value === 'supplement') {
+    return value;
+  }
+  return null;
 }
 
 export default function MedicationLog() {
@@ -149,6 +160,15 @@ export default function MedicationLog() {
       });
     },
   });
+
+  const selectMedicationSuggestion = (suggestion: MedicationReferenceSuggestion) => {
+    setFormData({
+      ...formData,
+      medication_name: suggestion.name,
+      medication_type: coerceMedicationType(suggestion.medicationType) ?? formData.medication_type,
+      route: suggestion.route ?? formData.route,
+    });
+  };
 
   const toggleSideEffect = (effect: string) => {
     if (effect === 'None') {
@@ -244,15 +264,16 @@ export default function MedicationLog() {
                 <Pill className="mr-1 inline h-4 w-4" />
                 Medication Name
               </label>
-              <input
-                type="text"
+              <MedicationAutocompleteInput
                 id="medication_name"
                 value={formData.medication_name}
-                onChange={(e) => setFormData({ ...formData, medication_name: e.target.value })}
-                placeholder="e.g. Ibuprofen, Vitamin D..."
-                className="input-base w-full"
-                required
+                onChange={(value) => setFormData({ ...formData, medication_name: value })}
+                onSelect={selectMedicationSuggestion}
               />
+              <p className="field-help mt-2">
+                Search the live medication reference table first, then leave a custom name if the
+                exact product is not there yet.
+              </p>
             </div>
 
             <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
