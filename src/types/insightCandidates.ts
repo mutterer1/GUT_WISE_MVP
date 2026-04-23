@@ -92,21 +92,8 @@ export interface PrioritizedInsightCandidate extends InsightCandidate {
   not_enough_evidence_reasons?: string[];
 }
 
-export type MedicalContextSourceKind =
-  | 'document_backed_confirmed'
-  | 'confirmed'
-  | 'user_reported'
-  | 'pending_review';
-
-export interface MedicalContextSource {
-  kind: MedicalContextSourceKind;
-  context_type: string;
-  label: string;
-}
-
 export interface MedicalContextAnnotatedCandidate extends PrioritizedInsightCandidate {
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   medical_context_score_delta: number;
-  medical_context_sources: MedicalContextSource[];
 }

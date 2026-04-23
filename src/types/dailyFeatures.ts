@@ -25,7 +25,6 @@ export interface UserDailyFeatures {
   food_item_names: string[];
   food_tag_set: string[];
   ingredient_signals: string[];
-  matched_ingredient_ids?: string[];
   gut_trigger_load: number;
   high_fodmap_food_count: number;
   dairy_food_count: number;
@@ -56,7 +55,6 @@ export interface UserDailyFeatures {
 
   medication_event_count: number;
   medications_taken: string[];
-  matched_medication_ids?: string[];
   medication_families: string[];
   medication_gut_effects: string[];
   gi_risk_medication_count: number;

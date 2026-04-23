@@ -76,7 +76,6 @@ function toExplanationItem(c: MedicalContextAnnotatedCandidate): ExplanationInsi
     medical_context_annotations: c.medical_context_annotations,
     medical_context_modifier_applied: c.medical_context_modifier_applied,
     medical_context_score_delta: c.medical_context_score_delta,
-    medical_context_sources: c.medical_context_sources,
   };
 }
 

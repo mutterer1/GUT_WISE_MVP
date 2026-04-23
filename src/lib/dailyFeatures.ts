@@ -161,7 +161,6 @@ function aggregateFood(events: CanonicalEvent[]) {
   const allFoodItemNames: string[] = [];
   const allTags: string[] = [];
   const allIngredientSignals: string[] = [];
-  const allMatchedIngredientIds: string[] = [];
   let gutTriggerLoad = 0;
   let highFodmapCount = 0;
   let dairyCount = 0;
@@ -181,12 +180,10 @@ function aggregateFood(events: CanonicalEvent[]) {
         : payloadStrArray(e.payload, 'food_items');
     const tags = payloadStrArray(e.payload, 'tags');
     const ingredientSignals = payloadStrArray(e.payload, 'ingredient_signals');
-    const matchedIngredientIds = payloadStrArray(e.payload, 'matched_ingredient_ids');
 
     allFoodItemNames.push(...foodItemNames);
     allTags.push(...tags);
     allIngredientSignals.push(...ingredientSignals);
-    allMatchedIngredientIds.push(...matchedIngredientIds);
 
     gutTriggerLoad += payloadNum(e.payload, 'gut_trigger_load') ?? 0;
     highFodmapCount += payloadNum(e.payload, 'high_fodmap_food_count') ?? 0;
@@ -207,7 +204,6 @@ function aggregateFood(events: CanonicalEvent[]) {
     food_item_names: uniqueSorted(allFoodItemNames),
     food_tag_set: uniqueSorted(allTags),
     ingredient_signals: uniqueSorted(allIngredientSignals),
-    matched_ingredient_ids: uniqueSorted(allMatchedIngredientIds),
     gut_trigger_load: gutTriggerLoad,
     high_fodmap_food_count: highFodmapCount,
     dairy_food_count: dairyCount,
@@ -304,7 +300,6 @@ function aggregateStress(events: CanonicalEvent[]) {
 
 function aggregateMedication(events: CanonicalEvent[]) {
   const names: string[] = [];
-  const matchedMedicationIds: string[] = [];
   const families: string[] = [];
   const gutEffects: string[] = [];
   let giRiskMedicationCount = 0;
@@ -317,7 +312,6 @@ function aggregateMedication(events: CanonicalEvent[]) {
     const name = payloadStr(e.payload, 'medication_name');
     if (name) names.push(name);
 
-    matchedMedicationIds.push(...payloadStrArray(e.payload, 'matched_medication_ids'));
     families.push(...payloadStrArray(e.payload, 'medication_families'));
     gutEffects.push(...payloadStrArray(e.payload, 'medication_gut_effects'));
     giRiskMedicationCount += payloadNum(e.payload, 'gi_risk_medication_count') ?? 0;
@@ -334,7 +328,6 @@ function aggregateMedication(events: CanonicalEvent[]) {
   return {
     medication_event_count: events.length,
     medications_taken: uniqueSorted(names),
-    matched_medication_ids: uniqueSorted(matchedMedicationIds),
     medication_families: uniqueSorted(families),
     medication_gut_effects: uniqueSorted(gutEffects),
     gi_risk_medication_count: giRiskMedicationCount,

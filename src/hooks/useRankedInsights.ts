@@ -159,9 +159,6 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
             c.medical_context_modifier_applied ? '1' : '0',
             c.medical_context_score_delta.toFixed(4),
             c.medical_context_annotations.join('~'),
-            c.medical_context_sources
-              .map((source) => `${source.kind}/${source.context_type}/${source.label}`)
-              .join('~'),
           ].join(':')
         )
         .join('|');

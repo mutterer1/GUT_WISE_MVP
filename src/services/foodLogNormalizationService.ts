@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { queueFoodReferenceCandidate } from './referenceReviewService';
 import type {
   FoodReferenceIngredientRow,
   FoodReferenceItemRow,
@@ -17,7 +16,6 @@ interface ReplaceFoodLogItemsParams {
   foodLogId: string;
   foodItems: FoodLogNormalizationItemInput[];
   tags?: string[];
-  portionSize?: string | null;
 }
 
 interface FoodReferenceMatch {
@@ -188,28 +186,12 @@ function getFallbackDefinitionsFromTags(tags: string[]): TagFallbackDefinition[]
   return results;
 }
 
-function aliasMatchesFoodReference(
-  itemName: string,
-  candidate: FoodReferenceItemRow
-): boolean {
-  const normalizedName = normalizeLookupKey(itemName);
-  return candidate.common_aliases.some((alias) => {
-    const normalizedAlias = normalizeLookupKey(alias);
-    return (
-      normalizedAlias === normalizedName ||
-      normalizedAlias.includes(normalizedName) ||
-      normalizedName.includes(normalizedAlias)
-    );
-  });
-}
-
 async function fetchCandidateFoodReferences(
   foodItems: FoodLogNormalizationItemInput[]
 ): Promise<Map<string, FoodReferenceItemRow[]>> {
   const sanitizedItems = sanitizeFoodItems(foodItems);
   const itemNames = [...new Set(sanitizedItems.map((item) => item.name))];
   const matchMap = new Map<string, FoodReferenceItemRow[]>();
-  let fallbackReferenceCache: FoodReferenceItemRow[] | null = null;
 
   await Promise.all(
     itemNames.map(async (itemName) => {
@@ -233,25 +215,7 @@ async function fetchCandidateFoodReferences(
         .limit(8);
 
       if (error) throw error;
-      let candidates = (data ?? []) as FoodReferenceItemRow[];
-
-      if (candidates.length === 0) {
-        if (fallbackReferenceCache === null) {
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('food_reference_items')
-            .select('*')
-            .limit(300);
-
-          if (fallbackError) throw fallbackError;
-          fallbackReferenceCache = (fallbackData ?? []) as FoodReferenceItemRow[];
-        }
-
-        candidates = fallbackReferenceCache
-          .filter((candidate) => aliasMatchesFoodReference(itemName, candidate))
-          .slice(0, 8);
-      }
-
-      matchMap.set(itemName, candidates);
+      matchMap.set(itemName, (data ?? []) as FoodReferenceItemRow[]);
     })
   );
 
@@ -470,7 +434,7 @@ async function buildIngredientRowsForInsertedItems(params: {
 export async function replaceFoodLogItemsForLog(
   params: ReplaceFoodLogItemsParams
 ): Promise<void> {
-  const { userId, foodLogId, tags = [], portionSize = null } = params;
+  const { userId, foodLogId, tags = [] } = params;
 
   const { error: deleteError } = await supabase
     .from('food_log_items')
@@ -499,35 +463,11 @@ export async function replaceFoodLogItemsForLog(
     tags,
   });
 
-  if (ingredientRows.length > 0) {
-    const { error: ingredientInsertError } = await supabase
-      .from('food_log_item_ingredients')
-      .insert(ingredientRows);
+  if (ingredientRows.length === 0) return;
 
-    if (ingredientInsertError) throw ingredientInsertError;
-  }
+  const { error: ingredientInsertError } = await supabase
+    .from('food_log_item_ingredients')
+    .insert(ingredientRows);
 
-  const sortedInsertedItems = [...insertedFoodLogItems].sort(
-    (left, right) => (left.consumed_order ?? 0) - (right.consumed_order ?? 0)
-  );
-  const sanitizedSourceItems = sanitizeFoodItems(params.foodItems);
-
-  await Promise.all(
-    sortedInsertedItems.map(async (foodLogItem, index) => {
-      if (foodLogItem.normalized_food_id) return;
-
-      const sourceItem = sanitizedSourceItems[index];
-      if (!sourceItem) return;
-
-      await queueFoodReferenceCandidate({
-        userId,
-        foodLogId,
-        foodLogItemId: foodLogItem.id,
-        displayName: foodLogItem.display_name,
-        estimatedCalories: sourceItem.estimated_calories,
-        tags,
-        portionSize,
-      });
-    })
-  );
+  if (ingredientInsertError) throw ingredientInsertError;
 }

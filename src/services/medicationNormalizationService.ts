@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { queueMedicationReferenceCandidate } from './referenceReviewService';
 import type {
   MedicationReferenceItemRow,
   MedicationRegimenStatus,
@@ -85,21 +84,6 @@ function pickBestMedicationReferenceMatch(
   return null;
 }
 
-function brandAliasMatchesMedicationReference(
-  medicationName: string,
-  candidate: MedicationReferenceItemRow
-): boolean {
-  const normalizedName = normalizeLookupKey(medicationName);
-  return candidate.brand_names.some((brand) => {
-    const normalizedBrand = normalizeLookupKey(brand);
-    return (
-      normalizedBrand === normalizedName ||
-      normalizedBrand.includes(normalizedName) ||
-      normalizedName.includes(normalizedBrand)
-    );
-  });
-}
-
 async function resolveMedicationReference(
   medicationName: string
 ): Promise<MedicationReferenceItemRow | null> {
@@ -121,24 +105,10 @@ async function resolveMedicationReference(
 
   if (error) throw error;
 
-  let candidates = (data ?? []) as MedicationReferenceItemRow[];
-
-  if (candidates.length === 0) {
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('medication_reference_items')
-      .select('*')
-      .limit(300);
-
-    if (fallbackError) throw fallbackError;
-
-    candidates = ((fallbackData ?? []) as MedicationReferenceItemRow[])
-      .filter((candidate) =>
-        brandAliasMatchesMedicationReference(medicationName, candidate)
-      )
-      .slice(0, 12);
-  }
-
-  return pickBestMedicationReferenceMatch(medicationName, candidates);
+  return pickBestMedicationReferenceMatch(
+    medicationName,
+    (data ?? []) as MedicationReferenceItemRow[]
+  );
 }
 
 export async function syncMedicationNormalizationForLog(params: {
@@ -166,18 +136,4 @@ export async function syncMedicationNormalizationForLog(params: {
     .eq('user_id', userId);
 
   if (error) throw error;
-
-  if (!matchedReference) {
-    await queueMedicationReferenceCandidate({
-      userId,
-      medicationLogId,
-      displayName: formData.medication_name,
-      dosage: formData.dosage,
-      medicationType: formData.medication_type,
-      route: formData.route,
-      reasonForUse: formData.reason_for_use,
-      regimenStatus: formData.regimen_status ?? null,
-      timingContext: formData.timing_context,
-    });
-  }
 }

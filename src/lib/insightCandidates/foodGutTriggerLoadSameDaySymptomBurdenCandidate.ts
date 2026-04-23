@@ -197,8 +197,8 @@ export function analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate(
     uncertainty_statement: uncertaintyStatement,
     evidence_gaps: evidenceGaps,
     notes: [
-      'Exposure days are derived from normalized ingredient rows when available, with fallback to legacy tags and free-text food signals when needed.',
-      'This is still not portion-adjusted or brand-specific.',
+      'Exposure days are derived from ingredient-level trigger signals parsed from logged foods and tags.',
+      'This is still a heuristic layer and is not yet portion-adjusted or brand-specific.',
     ],
     statistics: {
       eligible_day_count: eligibleDays.length,

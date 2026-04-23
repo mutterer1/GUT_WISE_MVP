@@ -15,11 +15,6 @@ import { analyzeCyclePhaseBmShiftCandidate } from './cyclePhaseBmShiftCandidate'
 import { analyzeCyclePhaseRecurrentSymptomBurdenCandidate } from './cyclePhaseRecurrentSymptomBurdenCandidate';
 import { analyzeMedicationAnyBmShiftCandidate } from './medicationAnyBmShiftCandidate';
 import { analyzeMedicationAnySymptomBurdenCandidate } from './medicationAnySymptomBurdenCandidate';
-import { analyzeMedicationLaxativeNextDayLooseStoolCandidate } from './medicationLaxativeNextDayLooseStoolCandidate';
-import { analyzeMedicationIronSameDayConstipationBurdenCandidate } from './medicationIronSameDayConstipationBurdenCandidate';
-import { analyzeMedicationOpioidSameDayConstipationBurdenCandidate } from './medicationOpioidSameDayConstipationBurdenCandidate';
-import { analyzeMedicationAntibioticSameDaySymptomShiftCandidate } from './medicationAntibioticSameDaySymptomShiftCandidate';
-import { analyzeMedicationAcidSuppressionSameDayBloatingCandidate } from './medicationAcidSuppressionSameDayBloatingCandidate';
 import { analyzeMultifactorStressSleepHydrationRiskCandidate } from './multifactorStressSleepHydrationRiskCandidate';
 import { analyzeFlareSymptomBurdenEpisodeCandidate } from './flareSymptomBurdenEpisodeCandidate';
 import { analyzeFlareRecoveryPatternCandidate } from './flareRecoveryPatternCandidate';
@@ -27,12 +22,6 @@ import { analyzeFoodMealRegularitySymptomBurdenCandidate } from './foodMealRegul
 import { analyzeStressHighDaySymptomBurdenCandidate } from './stressHighDaySymptomBurdenCandidate';
 import { analyzeHydrationLowSameDaySymptomBurdenCandidate } from './hydrationLowSameDaySymptomBurdenCandidate';
 import { analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate } from './foodGutTriggerLoadSameDaySymptomBurdenCandidate';
-import { analyzeFoodDairySameDayBloatingBurdenCandidate } from './foodDairySameDayBloatingBurdenCandidate';
-import { analyzeFoodHighFodmapSameDayBloatingBurdenCandidate } from './foodHighFodmapSameDayBloatingBurdenCandidate';
-import { analyzeFoodArtificialSweetenerSameDayLooseStoolCandidate } from './foodArtificialSweetenerSameDayLooseStoolCandidate';
-import { analyzeFoodSpicySameDayUrgencyCandidate } from './foodSpicySameDayUrgencyCandidate';
-import { analyzeFoodHighFatSameDaySymptomBurdenCandidate } from './foodHighFatSameDaySymptomBurdenCandidate';
-import { analyzeFoodGlutenSameDayBowelPatternShiftCandidate } from './foodGlutenSameDayBowelPatternShiftCandidate';
 
 type CandidateAnalyzer = (
   features: UserDailyFeatures[],
@@ -45,12 +34,6 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeHydrationStoolConsistencyCandidate,
   analyzeFoodLateMealNextDayBmShiftCandidate,
   analyzeFoodCaffeineSameDaySymptomBurdenCandidate,
-  analyzeFoodDairySameDayBloatingBurdenCandidate,
-  analyzeFoodHighFodmapSameDayBloatingBurdenCandidate,
-  analyzeFoodArtificialSweetenerSameDayLooseStoolCandidate,
-  analyzeFoodSpicySameDayUrgencyCandidate,
-  analyzeFoodHighFatSameDaySymptomBurdenCandidate,
-  analyzeFoodGlutenSameDayBowelPatternShiftCandidate,
   analyzeFoodGutTriggerLoadSameDaySymptomBurdenCandidate,
   analyzeBmUrgencyRollingElevationCandidate,
   analyzeSymptomTypePersistenceCandidate,
@@ -59,11 +42,6 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeCyclePhaseSymptomShiftCandidate,
   analyzeCyclePhaseBmShiftCandidate,
   analyzeCyclePhaseRecurrentSymptomBurdenCandidate,
-  analyzeMedicationLaxativeNextDayLooseStoolCandidate,
-  analyzeMedicationIronSameDayConstipationBurdenCandidate,
-  analyzeMedicationOpioidSameDayConstipationBurdenCandidate,
-  analyzeMedicationAntibioticSameDaySymptomShiftCandidate,
-  analyzeMedicationAcidSuppressionSameDayBloatingCandidate,
   analyzeMedicationAnyBmShiftCandidate,
   analyzeMedicationAnySymptomBurdenCandidate,
   analyzeMultifactorStressSleepHydrationRiskCandidate,

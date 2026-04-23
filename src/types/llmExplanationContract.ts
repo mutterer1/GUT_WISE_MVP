@@ -1,10 +1,4 @@
-import type {
-  CandidateCategory,
-  CandidateStatus,
-  DataSufficiency,
-  MedicalContextSource,
-  PriorityTier,
-} from './insightCandidates';
+import type { CandidateCategory, CandidateStatus, DataSufficiency, PriorityTier } from './insightCandidates';
 import type { ContradictionLevel } from './explanationBundle';
 
 export type ExplanationMode = 'structured_findings_only';
@@ -42,7 +36,6 @@ export interface LLMInsightItem {
   analysis_window: { from: string; to: string };
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
-  medical_context_sources: MedicalContextSource[];
   caution_signals: string[];
 }
 
