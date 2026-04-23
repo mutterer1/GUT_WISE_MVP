@@ -2,6 +2,7 @@ import type {
   CandidateCategory,
   CandidateStatus,
   DataSufficiency,
+  MedicalContextSource,
   PriorityTier,
 } from './insightCandidates';
 
@@ -44,6 +45,7 @@ export interface ExplanationInsightItem {
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   medical_context_score_delta: number;
+  medical_context_sources: MedicalContextSource[];
 }
 
 export interface RankedExplanationBundleMeta {
