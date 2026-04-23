@@ -34,6 +34,7 @@ import DataManagementSettings from './pages/settings/DataManagementSettings';
 import PreferencesSettings from './pages/settings/PreferencesSettings';
 import MedicalContextSettings from './pages/settings/MedicalContextSettings';
 import MedicalDocumentIntake from './pages/settings/MedicalDocumentIntake';
+import ReferenceReview from './pages/settings/ReferenceReview';
 
 function AppContent() {
   useSaveEventHandler();
@@ -72,6 +73,7 @@ function AppContent() {
           <Route path="/settings/preferences" element={<PreferencesSettings />} />
           <Route path="/settings/medical-context" element={<MedicalContextSettings />} />
           <Route path="/settings/document-intake" element={<MedicalDocumentIntake />} />
+          <Route path="/settings/reference-review" element={<ReferenceReview />} />
           <Route path="/account" element={<Account />} />
         </Route>
       </Routes>
