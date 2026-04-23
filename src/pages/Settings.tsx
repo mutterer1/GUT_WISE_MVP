@@ -7,6 +7,7 @@ import {
   HeartPulse,
   HelpCircle,
   Lock,
+  ShieldCheck,
   Shield,
   User,
 } from 'lucide-react';
@@ -66,6 +67,12 @@ export default function Settings() {
       description: 'Upload medical documents and review candidate facts before activation.',
       path: '/settings/document-intake',
     },
+    {
+      title: 'Reference Review Queue',
+      icon: ShieldCheck,
+      description: 'Review custom foods and medications before promoting them into the live reference library.',
+      path: '/settings/reference-review',
+    },
   ];
 
   return (
@@ -100,7 +107,10 @@ export default function Settings() {
         <section className="grid gap-4 md:grid-cols-2">
           {sections.map((section, index) => {
             const Icon = section.icon;
-            const discovery = section.title === 'Medical Context' || section.title === 'Document Intake & Review';
+            const discovery =
+              section.title === 'Medical Context' ||
+              section.title === 'Document Intake & Review' ||
+              section.title === 'Reference Review Queue';
 
             return (
               <Card
