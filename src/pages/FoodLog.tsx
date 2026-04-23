@@ -17,8 +17,8 @@ import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { type FoodSuggestion } from '../data/foodSuggestions';
 import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
+import { type FoodReferenceSuggestion } from '../services/referenceSearchService';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface FoodItem {
@@ -137,6 +137,7 @@ export default function FoodLog() {
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
         tags: savedFormData.tags,
+        portionSize: savedFormData.portion_size,
       });
     },
     onAfterUpdate: async ({ entryId, userId, formData: savedFormData }) => {
@@ -145,6 +146,7 @@ export default function FoodLog() {
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
         tags: savedFormData.tags,
+        portionSize: savedFormData.portion_size,
       });
     },
   });
@@ -178,12 +180,17 @@ export default function FoodLog() {
     setFoodItemInput('');
   };
 
-  const selectSuggestion = (suggestion: FoodSuggestion) => {
+  const selectSuggestion = (suggestion: FoodReferenceSuggestion) => {
     setFormData({
       ...formData,
       food_items: [
         ...formData.food_items,
-        { name: suggestion.name, estimated_calories: suggestion.calories },
+        {
+          name: suggestion.name,
+          ...(typeof suggestion.estimatedCalories === 'number' && {
+            estimated_calories: suggestion.estimatedCalories,
+          }),
+        },
       ],
     });
     setFoodItemInput('');
@@ -321,7 +328,9 @@ export default function FoodLog() {
               <div className="mb-4">
                 <label className="field-label">Food Items</label>
                 <p className="field-help mt-1">
-                  Add the meal components. Autocomplete can help keep entries consistent.
+                  Add the meal components. Autocomplete can help keep entries consistent, and
+                  custom foods that do not match the live reference table will be queued for
+                  review in Settings.
                 </p>
               </div>
 
@@ -501,8 +510,8 @@ export default function FoodLog() {
                           {formatDateTime(log.logged_at)}
                         </div>
                         <div className="mt-1 text-xs capitalize text-[var(--color-text-tertiary)]">
-                          {log.meal_type} · {log.portion_size}
-                          {logCalories > 0 ? ` · ${logCalories} cal` : ''}
+                          {log.meal_type} | {log.portion_size}
+                          {logCalories > 0 ? ` | ${logCalories} cal` : ''}
                         </div>
                       </div>
 
