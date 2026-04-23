@@ -164,7 +164,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
           <span className="font-medium text-gray-900 dark:text-white">
             {relationshipSummary.trigger}
           </span>
-          <span className="mx-1 text-gray-400 dark:text-gray-500">-></span>
+          <span className="mx-1 text-gray-400 dark:text-gray-500">-</span>
           <span>{relationshipSummary.outcome}</span>
         </p>
       )}
