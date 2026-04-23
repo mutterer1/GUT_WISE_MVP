@@ -161,6 +161,7 @@ function aggregateFood(events: CanonicalEvent[]) {
   const allFoodItemNames: string[] = [];
   const allTags: string[] = [];
   const allIngredientSignals: string[] = [];
+  const allMatchedIngredientIds: string[] = [];
   let gutTriggerLoad = 0;
   let highFodmapCount = 0;
   let dairyCount = 0;
@@ -180,10 +181,12 @@ function aggregateFood(events: CanonicalEvent[]) {
         : payloadStrArray(e.payload, 'food_items');
     const tags = payloadStrArray(e.payload, 'tags');
     const ingredientSignals = payloadStrArray(e.payload, 'ingredient_signals');
+    const matchedIngredientIds = payloadStrArray(e.payload, 'matched_ingredient_ids');
 
     allFoodItemNames.push(...foodItemNames);
     allTags.push(...tags);
     allIngredientSignals.push(...ingredientSignals);
+    allMatchedIngredientIds.push(...matchedIngredientIds);
 
     gutTriggerLoad += payloadNum(e.payload, 'gut_trigger_load') ?? 0;
     highFodmapCount += payloadNum(e.payload, 'high_fodmap_food_count') ?? 0;
@@ -204,6 +207,7 @@ function aggregateFood(events: CanonicalEvent[]) {
     food_item_names: uniqueSorted(allFoodItemNames),
     food_tag_set: uniqueSorted(allTags),
     ingredient_signals: uniqueSorted(allIngredientSignals),
+    matched_ingredient_ids: uniqueSorted(allMatchedIngredientIds),
     gut_trigger_load: gutTriggerLoad,
     high_fodmap_food_count: highFodmapCount,
     dairy_food_count: dairyCount,
