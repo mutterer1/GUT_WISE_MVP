@@ -5,6 +5,7 @@ import {
   Clock3,
   FileSearch,
   Pill,
+  Plus,
   ShieldCheck,
   Sparkles,
   Utensils,
@@ -25,6 +26,7 @@ import {
 } from '../../services/referenceReviewService';
 import type {
   FoodReferenceCandidateDetail,
+  FoodReferenceCandidateIngredient,
   MedicationReferenceCandidateDetail,
   ReferenceReviewCandidateRow,
 } from '../../types/intelligence';
@@ -87,8 +89,19 @@ interface FoodDetailDraft {
   suggested_fiber_g: string;
   suggested_sugar_g: string;
   suggested_sodium_mg: string;
-  suggested_ingredient_names: string;
   suggested_default_signals: string;
+  suggested_ingredients: FoodIngredientDraft[];
+}
+
+interface FoodIngredientDraft {
+  local_id: string;
+  name: string;
+  confidence: string;
+  prominence_rank: string;
+  ingredient_fraction: string;
+  is_primary: boolean;
+  suggested_signals: string;
+  notes: string;
 }
 
 function numberToDraft(value: number | null): string {
@@ -110,6 +123,109 @@ function parseCommaSeparated(value: string): string[] {
   return [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))];
 }
 
+function createIngredientDraftId(): string {
+  return `ingredient-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function createFoodIngredientDraft(
+  ingredient?: FoodReferenceCandidateIngredient,
+  fallbackRank?: number
+): FoodIngredientDraft {
+  return {
+    local_id: createIngredientDraftId(),
+    name: ingredient?.name ?? '',
+    confidence: numberToDraft(ingredient?.confidence ?? null),
+    prominence_rank: numberToDraft(ingredient?.prominence_rank ?? fallbackRank ?? null),
+    ingredient_fraction: numberToDraft(ingredient?.ingredient_fraction ?? null),
+    is_primary: ingredient?.is_primary ?? fallbackRank === 1,
+    suggested_signals: toCommaSeparated(ingredient?.suggested_signals ?? []),
+    notes: ingredient?.notes ?? '',
+  };
+}
+
+function normalizeDraftIngredients(
+  ingredients: FoodReferenceCandidateIngredient[]
+): FoodReferenceCandidateIngredient[] {
+  const sorted = [...ingredients].sort((left, right) => {
+    const leftRank = left.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = right.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank;
+  });
+
+  let primaryAssigned = false;
+
+  return sorted.map((ingredient, index) => {
+    const isPrimary =
+      (ingredient.is_primary && !primaryAssigned) || (!primaryAssigned && index === 0);
+    if (isPrimary) {
+      primaryAssigned = true;
+    }
+
+    return {
+      ...ingredient,
+      prominence_rank: ingredient.prominence_rank ?? index + 1,
+      is_primary: isPrimary,
+    };
+  });
+}
+
+function parseFoodIngredientDrafts(
+  ingredients: FoodIngredientDraft[]
+): FoodReferenceCandidateIngredient[] {
+  return normalizeDraftIngredients(
+    ingredients
+      .map((ingredient) => {
+        const name = ingredient.name.trim();
+        if (!name) return null;
+
+        const confidence = parseDraftNumber(ingredient.confidence);
+        const ingredientFraction = parseDraftNumber(ingredient.ingredient_fraction);
+
+        return {
+          name,
+          confidence:
+            confidence !== null && confidence >= 0 && confidence <= 1 ? confidence : null,
+          prominence_rank: (() => {
+            const parsed = parseDraftNumber(ingredient.prominence_rank);
+            return parsed !== null && parsed > 0 ? Math.round(parsed) : null;
+          })(),
+          is_primary: ingredient.is_primary,
+          ingredient_fraction:
+            ingredientFraction !== null &&
+            ingredientFraction >= 0 &&
+            ingredientFraction <= 1
+              ? ingredientFraction
+              : null,
+          suggested_signals: parseCommaSeparated(ingredient.suggested_signals),
+          notes: ingredient.notes.trim() || null,
+        };
+      })
+      .filter((ingredient): ingredient is FoodReferenceCandidateIngredient => ingredient !== null)
+  );
+}
+
+function formatIngredientCandidateSummary(
+  ingredient: FoodReferenceCandidateIngredient
+): string {
+  const details = [
+    ingredient.is_primary
+      ? 'primary'
+      : ingredient.prominence_rank !== null
+        ? `rank ${ingredient.prominence_rank}`
+        : null,
+    ingredient.confidence !== null
+      ? `${Math.round(ingredient.confidence * 100)}% confidence`
+      : null,
+    ingredient.ingredient_fraction !== null
+      ? `${Math.round(ingredient.ingredient_fraction * 100)}% serving`
+      : null,
+  ].filter((detail): detail is string => detail !== null);
+
+  return details.length > 0
+    ? `${ingredient.name} (${details.join(', ')})`
+    : ingredient.name;
+}
+
 function createFoodDetailDraft(detail: FoodReferenceCandidateDetail): FoodDetailDraft {
   return {
     suggested_food_category: detail.suggested_food_category ?? '',
@@ -123,8 +239,26 @@ function createFoodDetailDraft(detail: FoodReferenceCandidateDetail): FoodDetail
     suggested_fiber_g: numberToDraft(detail.suggested_fiber_g),
     suggested_sugar_g: numberToDraft(detail.suggested_sugar_g),
     suggested_sodium_mg: numberToDraft(detail.suggested_sodium_mg),
-    suggested_ingredient_names: toCommaSeparated(detail.suggested_ingredient_names),
     suggested_default_signals: toCommaSeparated(detail.suggested_default_signals),
+    suggested_ingredients:
+      detail.suggested_ingredients.length > 0
+        ? detail.suggested_ingredients.map((ingredient, index) =>
+            createFoodIngredientDraft(ingredient, index + 1)
+          )
+        : detail.suggested_ingredient_names.map((ingredientName, index) =>
+            createFoodIngredientDraft(
+              {
+                name: ingredientName,
+                confidence: detail.enrichment_confidence,
+                prominence_rank: index + 1,
+                is_primary: index === 0,
+                ingredient_fraction: null,
+                suggested_signals: [],
+                notes: null,
+              },
+              index + 1
+            )
+          ),
   };
 }
 
@@ -132,6 +266,8 @@ function applyFoodDetailDraft(
   base: FoodReferenceCandidateDetail,
   draft: FoodDetailDraft
 ): FoodReferenceCandidateDetail {
+  const suggestedIngredients = parseFoodIngredientDrafts(draft.suggested_ingredients);
+
   return {
     ...base,
     suggested_food_category: draft.suggested_food_category.trim() || null,
@@ -145,7 +281,8 @@ function applyFoodDetailDraft(
     suggested_fiber_g: parseDraftNumber(draft.suggested_fiber_g),
     suggested_sugar_g: parseDraftNumber(draft.suggested_sugar_g),
     suggested_sodium_mg: parseDraftNumber(draft.suggested_sodium_mg),
-    suggested_ingredient_names: parseCommaSeparated(draft.suggested_ingredient_names),
+    suggested_ingredient_names: suggestedIngredients.map((ingredient) => ingredient.name),
+    suggested_ingredients: suggestedIngredients,
     suggested_default_signals: parseCommaSeparated(draft.suggested_default_signals),
   };
 }
@@ -217,10 +354,12 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
       rows.push({ label: 'Secondary nutrition', value: secondaryNutrition });
     }
 
-    if (Array.isArray(detail.suggested_ingredient_names) && detail.suggested_ingredient_names.length > 0) {
+    if (detail.suggested_ingredients.length > 0) {
       rows.push({
         label: 'Suggested ingredients',
-        value: detail.suggested_ingredient_names.join(', '),
+        value: detail.suggested_ingredients
+          .map((ingredient) => formatIngredientCandidateSummary(ingredient))
+          .join(' | '),
       });
     }
 
@@ -369,6 +508,74 @@ export default function ReferenceReview() {
 
   const handleFoodDraftChange = (field: keyof FoodDetailDraft, value: string) => {
     setFoodDraft((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handleFoodIngredientDraftChange = (
+    localId: string,
+    field: keyof Omit<FoodIngredientDraft, 'local_id'>,
+    value: string | boolean
+  ) => {
+    setFoodDraft((current) =>
+      current
+        ? {
+            ...current,
+            suggested_ingredients: current.suggested_ingredients.map((ingredient) =>
+              ingredient.local_id === localId
+                ? field === 'is_primary'
+                  ? {
+                      ...ingredient,
+                      is_primary: Boolean(value),
+                    }
+                  : {
+                      ...ingredient,
+                      [field]: String(value),
+                    }
+                : field === 'is_primary' && value === true
+                  ? {
+                      ...ingredient,
+                      is_primary: false,
+                    }
+                  : ingredient
+            ),
+          }
+        : current
+    );
+  };
+
+  const handleAddFoodIngredient = () => {
+    setFoodDraft((current) =>
+      current
+        ? {
+            ...current,
+            suggested_ingredients: [
+              ...current.suggested_ingredients,
+              createFoodIngredientDraft(undefined, current.suggested_ingredients.length + 1),
+            ],
+          }
+        : current
+    );
+  };
+
+  const handleRemoveFoodIngredient = (localId: string) => {
+    setFoodDraft((current) => {
+      if (!current) return current;
+
+      const remainingIngredients = current.suggested_ingredients.filter(
+        (ingredient) => ingredient.local_id !== localId
+      );
+
+      if (remainingIngredients.length > 0 && !remainingIngredients.some((ingredient) => ingredient.is_primary)) {
+        remainingIngredients[0] = {
+          ...remainingIngredients[0],
+          is_primary: true,
+        };
+      }
+
+      return {
+        ...current,
+        suggested_ingredients: remainingIngredients,
+      };
+    });
   };
 
   const handleRefreshFoodCandidate = async (candidateId: string) => {
@@ -800,15 +1007,164 @@ export default function ReferenceReview() {
                                 }
                                 placeholder="Comma-separated signals"
                               />
-                              <EditableTextarea
-                                label="Ingredients"
-                                value={foodDraft.suggested_ingredient_names}
-                                onChange={(value) =>
-                                  handleFoodDraftChange('suggested_ingredient_names', value)
-                                }
-                                className="sm:col-span-2"
-                                placeholder="Comma-separated ingredients"
-                              />
+                            </div>
+                          )}
+
+                          {isEditingFood && foodDraft && (
+                            <div className="rounded-[20px] border border-white/8 bg-black/[0.12] p-4">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                    Ingredient review
+                                  </p>
+                                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                                    Edit the ingredient stack directly before promotion. Confidence
+                                    and fraction fields should use values between 0 and 1.
+                                  </p>
+                                </div>
+
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={handleAddFoodIngredient}
+                                  disabled={isProcessing}
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  Add ingredient
+                                </Button>
+                              </div>
+
+                              {foodDraft.suggested_ingredients.length === 0 ? (
+                                <div className="mt-4 rounded-[18px] border border-dashed border-white/10 px-4 py-4 text-sm leading-6 text-[var(--color-text-tertiary)]">
+                                  No structured ingredients yet. Add ingredients here before
+                                  accepting this food into the live reference layer.
+                                </div>
+                              ) : (
+                                <div className="mt-4 space-y-3">
+                                  {foodDraft.suggested_ingredients.map((ingredient, index) => (
+                                    <div
+                                      key={ingredient.local_id}
+                                      className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] p-4"
+                                    >
+                                      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                            Ingredient {index + 1}
+                                          </p>
+                                          <p className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                                            Review prominence, confidence, and gut signal context.
+                                          </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <label className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs text-[var(--color-text-secondary)]">
+                                            <input
+                                              type="checkbox"
+                                              checked={ingredient.is_primary}
+                                              onChange={(event) =>
+                                                handleFoodIngredientDraftChange(
+                                                  ingredient.local_id,
+                                                  'is_primary',
+                                                  event.target.checked
+                                                )
+                                              }
+                                              className="h-3.5 w-3.5 rounded border-white/20 bg-transparent"
+                                            />
+                                            Primary ingredient
+                                          </label>
+
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleRemoveFoodIngredient(ingredient.local_id)}
+                                            disabled={isProcessing}
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                            Remove
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <EditableField
+                                          label="Ingredient name"
+                                          value={ingredient.name}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'name',
+                                              value
+                                            )
+                                          }
+                                        />
+                                        <EditableField
+                                          label="Signals"
+                                          value={ingredient.suggested_signals}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'suggested_signals',
+                                              value
+                                            )
+                                          }
+                                          placeholder="Comma-separated signals"
+                                        />
+                                        <EditableField
+                                          label="Confidence (0-1)"
+                                          value={ingredient.confidence}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'confidence',
+                                              value
+                                            )
+                                          }
+                                          inputMode="decimal"
+                                          placeholder="e.g. 0.82"
+                                        />
+                                        <EditableField
+                                          label="Prominence rank"
+                                          value={ingredient.prominence_rank}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'prominence_rank',
+                                              value
+                                            )
+                                          }
+                                          inputMode="numeric"
+                                          placeholder="1"
+                                        />
+                                        <EditableField
+                                          label="Fraction of serving (0-1)"
+                                          value={ingredient.ingredient_fraction}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'ingredient_fraction',
+                                              value
+                                            )
+                                          }
+                                          inputMode="decimal"
+                                          placeholder="e.g. 0.25"
+                                        />
+                                        <EditableField
+                                          label="Review note"
+                                          value={ingredient.notes}
+                                          onChange={(value) =>
+                                            handleFoodIngredientDraftChange(
+                                              ingredient.local_id,
+                                              'notes',
+                                              value
+                                            )
+                                          }
+                                          placeholder="Optional ingredient note"
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -888,35 +1244,6 @@ function EditableField({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         inputMode={inputMode}
-        className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
-      />
-    </label>
-  );
-}
-
-function EditableTextarea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  className = '',
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className}`}>
-      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-        {label}
-      </span>
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        rows={3}
         className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
       />
     </label>
