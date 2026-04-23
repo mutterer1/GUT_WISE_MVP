@@ -4,6 +4,7 @@ import type {
   ContradictionSummary,
   ExplanationEvidenceSummary,
   ExplanationInsightItem,
+  ExplanationSignalSourceSummary,
   RankedExplanationBundle,
   RankedExplanationBundleMeta,
 } from '../../types/explanationBundle';
@@ -55,6 +56,145 @@ function buildEvidenceSummary(
   };
 }
 
+function readStatisticNumber(
+  statistics: Record<string, unknown> | undefined,
+  key: string
+): number | null {
+  const value = statistics?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function formatPercent(value: number | null): string {
+  if (value === null) return 'unknown';
+  return `${Math.round(value * 100)}%`;
+}
+
+function appendCoverageDetail(
+  label: string,
+  value: number | null
+): string {
+  if (value === null) return `${label} was not quantified in the current evidence.`;
+  return `${label} was about ${formatPercent(value)} on exposed days.`;
+}
+
+function derivesNutritionSignal(candidate: MedicalContextAnnotatedCandidate): boolean {
+  return candidate.trigger_factors.some((factor) =>
+    [
+      'calories_kcal_total',
+      'protein_g_total',
+      'protein_g_per_1000kcal',
+      'fat_g_total',
+      'fat_calorie_share_ratio',
+      'carbs_g_total',
+      'carbs_g_per_1000kcal',
+      'fiber_g_total',
+      'fiber_g_per_1000kcal',
+      'sugar_g_total',
+      'sugar_g_per_1000kcal',
+      'sodium_mg_total',
+      'sodium_mg_per_1000kcal',
+      'nutrition_coverage_ratio',
+    ].includes(factor)
+  );
+}
+
+function derivesStructuredIngredientSignal(
+  candidate: MedicalContextAnnotatedCandidate
+): boolean {
+  return candidate.trigger_factors.some((factor) =>
+    factor.includes('ingredient') ||
+    factor.includes('burden_score') ||
+    factor.includes('high_fat_burden') ||
+    factor.includes('high_fodmap_burden') ||
+    factor.includes('structured_food_coverage_ratio')
+  );
+}
+
+function buildSignalSourceSummary(
+  candidate: MedicalContextAnnotatedCandidate
+): ExplanationSignalSourceSummary {
+  const statistics = candidate.evidence.statistics;
+  const nutritionCoverage =
+    readStatisticNumber(statistics, 'average_exposed_nutrition_coverage_ratio') ??
+    readStatisticNumber(statistics, 'avg_exposed_nutrition_coverage_ratio');
+  const nutritionConfidence =
+    readStatisticNumber(statistics, 'average_exposed_nutrition_confidence') ??
+    readStatisticNumber(statistics, 'avg_exposed_nutrition_confidence');
+  const structuredCoverage =
+    readStatisticNumber(statistics, 'average_exposed_structured_coverage_ratio') ??
+    readStatisticNumber(statistics, 'avg_exposed_structured_coverage_ratio');
+  const ingredientSignalConfidence =
+    readStatisticNumber(statistics, 'average_exposed_signal_confidence') ??
+    readStatisticNumber(statistics, 'avg_exposed_signal_confidence');
+
+  const usesNutrition = derivesNutritionSignal(candidate) || nutritionCoverage !== null;
+  const usesStructuredIngredients =
+    derivesStructuredIngredientSignal(candidate) ||
+    structuredCoverage !== null ||
+    ingredientSignalConfidence !== null;
+
+  if (usesNutrition && usesStructuredIngredients) {
+    return {
+      kind: 'mixed_structured_and_nutrition',
+      summary:
+        `This finding combines reviewed nutrition totals with structured ingredient context. ` +
+        `${appendCoverageDetail('Nutrition coverage', nutritionCoverage)} ` +
+        `${appendCoverageDetail('Structured ingredient coverage', structuredCoverage)}`,
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+    };
+  }
+
+  if (usesNutrition) {
+    return {
+      kind: 'reviewed_nutrition',
+      summary:
+        `This finding is mainly driven by reviewed nutrition totals. ` +
+        `${appendCoverageDetail('Nutrition coverage', nutritionCoverage)}`,
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+    };
+  }
+
+  if (usesStructuredIngredients) {
+    return {
+      kind: 'structured_ingredients',
+      summary:
+        `This finding is mainly driven by structured ingredient matches and burden scoring. ` +
+        `${appendCoverageDetail('Structured ingredient coverage', structuredCoverage)}`,
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+    };
+  }
+
+  if (candidate.category === 'food') {
+    return {
+      kind: 'fallback_heuristic',
+      summary:
+        'This finding relies more on fallback food heuristics than on reviewed nutrition or structured ingredient coverage.',
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+    };
+  }
+
+  return {
+    kind: 'generic_logs',
+    summary: 'This finding is based on the available structured logs for this category.',
+    nutrition_coverage_ratio: nutritionCoverage,
+    nutrition_confidence: nutritionConfidence,
+    structured_food_coverage_ratio: structuredCoverage,
+    ingredient_signal_confidence: ingredientSignalConfidence,
+  };
+}
+
 function toExplanationItem(c: MedicalContextAnnotatedCandidate): ExplanationInsightItem {
   return {
     insight_key: c.insight_key,
@@ -73,6 +213,7 @@ function toExplanationItem(c: MedicalContextAnnotatedCandidate): ExplanationInsi
       from: c.created_from_start_date,
       to: c.created_from_end_date,
     },
+    signal_source: buildSignalSourceSummary(c),
     medical_context_annotations: c.medical_context_annotations,
     medical_context_modifier_applied: c.medical_context_modifier_applied,
     medical_context_score_delta: c.medical_context_score_delta,
