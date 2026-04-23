@@ -1,6 +1,7 @@
 import type {
   PrioritizedInsightCandidate,
   MedicalContextAnnotatedCandidate,
+  MedicalContextSource,
   CandidateCategory,
   PriorityTier,
 } from '../../types/insightCandidates';
@@ -18,6 +19,7 @@ const SCORE_CAP = 100;
 type Modifier = {
   annotation: string;
   scoreDelta: number;
+  source: MedicalContextSource;
 };
 
 function factEvidenceLabel(
@@ -34,6 +36,22 @@ function factEvidenceLabel(
   if (fact.confirmation_state === 'confirmed') return 'confirmed';
   if (fact.confirmation_state === 'user_reported') return 'user-reported';
   return 'candidate';
+}
+
+function factSourceKind(
+  fact: { confirmation_state: ConfirmationState; provenance?: { source: string; source_document_id: string | null } }
+): MedicalContextSource['kind'] {
+  if (
+    fact.confirmation_state === 'confirmed' &&
+    fact.provenance?.source === 'document_extraction' &&
+    fact.provenance.source_document_id
+  ) {
+    return 'document_backed_confirmed';
+  }
+
+  if (fact.confirmation_state === 'confirmed') return 'confirmed';
+  if (fact.confirmation_state === 'user_reported') return 'user_reported';
+  return 'pending_review';
 }
 
 function factTrustDelta(
@@ -96,6 +114,11 @@ function applyDiagnosisModifiers(
         confirmed: 3,
         userReported: 1,
       }),
+      source: {
+        kind: factSourceKind(d),
+        context_type: 'diagnosis',
+        label: d.detail.condition_name,
+      },
     }))
     .slice(0, 1);
 }
@@ -120,6 +143,11 @@ function applyAllergyModifiers(
         confirmed: 4,
         userReported: 2,
       }),
+      source: {
+        kind: factSourceKind(a),
+        context_type: 'allergy_intolerance',
+        label: `${a.detail.substance} ${a.detail.reaction_type}`,
+      },
     }))
     .slice(0, 1);
 }
@@ -141,6 +169,11 @@ function applyMedicationModifiers(
         confirmed: 3,
         userReported: 1,
       }),
+      source: {
+        kind: factSourceKind(m),
+        context_type: 'medication',
+        label: m.detail.medication_name,
+      },
     }))
     .slice(0, 2);
 }
@@ -162,6 +195,11 @@ function applyRedFlagModifiers(
         confirmed: 1,
         userReported: 0,
       }),
+      source: {
+        kind: factSourceKind(topRedFlag),
+        context_type: 'red_flag_history',
+        label: topRedFlag.detail.flag_type,
+      },
     },
   ];
 }
@@ -185,6 +223,11 @@ function applyDietGuidanceModifiers(
         confirmed: 1,
         userReported: 0,
       }),
+      source: {
+        kind: factSourceKind(activeGuidance[0]),
+        context_type: 'diet_guidance',
+        label: activeGuidance[0].detail.guidance_type,
+      },
     },
   ];
 }
@@ -201,8 +244,30 @@ function applyPendingCandidateModifiers(
           ? 'You have 1 pending medical-context review item, so this ranking may change as more evidence is confirmed'
           : `You have ${summary.pending_candidates_count} pending medical-context review items, so this ranking may change as more evidence is confirmed`,
       scoreDelta: 0,
+      source: {
+        kind: 'pending_review',
+        context_type: 'pending_review',
+        label:
+          summary.pending_candidates_count === 1
+            ? '1 pending review item'
+            : `${summary.pending_candidates_count} pending review items`,
+      },
     },
   ];
+}
+
+function dedupeSources(sources: MedicalContextSource[]): MedicalContextSource[] {
+  const seen = new Set<string>();
+  const deduped: MedicalContextSource[] = [];
+
+  for (const source of sources) {
+    const key = `${source.kind}::${source.context_type}::${source.label}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(source);
+  }
+
+  return deduped;
 }
 
 function annotateOne(
@@ -224,6 +289,7 @@ function annotateOne(
       medical_context_annotations: [],
       medical_context_modifier_applied: false,
       medical_context_score_delta: 0,
+      medical_context_sources: [],
     };
   }
 
@@ -238,6 +304,7 @@ function annotateOne(
     medical_context_annotations: modifiers.map((m) => m.annotation),
     medical_context_modifier_applied: true,
     medical_context_score_delta: scoreDelta,
+    medical_context_sources: dedupeSources(modifiers.map((m) => m.source)),
   };
 }
 
@@ -251,6 +318,7 @@ export function applyMedicalContextModifiers(
       medical_context_annotations: [],
       medical_context_modifier_applied: false,
       medical_context_score_delta: 0,
+      medical_context_sources: [],
     }));
   }
 
