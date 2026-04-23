@@ -78,6 +78,33 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
   if (item.confidence_score !== null && item.confidence_score < 0.4) {
     signals.push('low_confidence_score');
   }
+  if (item.signal_source.kind === 'fallback_heuristic') {
+    signals.push('heuristic_food_signal');
+  }
+  if (
+    item.signal_source.nutrition_coverage_ratio !== null &&
+    item.signal_source.nutrition_coverage_ratio < 0.65
+  ) {
+    signals.push('nutrition_coverage_partial');
+  }
+  if (
+    item.signal_source.structured_food_coverage_ratio !== null &&
+    item.signal_source.structured_food_coverage_ratio < 0.65
+  ) {
+    signals.push('ingredient_structure_partial');
+  }
+  if (
+    item.signal_source.nutrition_confidence !== null &&
+    item.signal_source.nutrition_confidence < 0.6
+  ) {
+    signals.push('nutrition_confidence_low');
+  }
+  if (
+    item.signal_source.ingredient_signal_confidence !== null &&
+    item.signal_source.ingredient_signal_confidence < 0.6
+  ) {
+    signals.push('ingredient_signal_confidence_low');
+  }
   return signals;
 }
 
@@ -96,6 +123,7 @@ function toInsightItem(item: ExplanationInsightItem): LLMInsightItem {
     ranking_reasons: item.ranking_reasons,
     evidence: buildEvidenceSummary(item),
     analysis_window: item.analysis_window,
+    signal_source: item.signal_source,
     medical_context_annotations: item.medical_context_annotations,
     medical_context_modifier_applied: item.medical_context_modifier_applied,
     caution_signals: deriveCautionSignals(item),
