@@ -137,6 +137,7 @@ export default function FoodLog() {
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
         tags: savedFormData.tags,
+        portionSize: savedFormData.portion_size,
       });
     },
     onAfterUpdate: async ({ entryId, userId, formData: savedFormData }) => {
@@ -145,6 +146,7 @@ export default function FoodLog() {
         foodLogId: entryId,
         foodItems: savedFormData.food_items,
         tags: savedFormData.tags,
+        portionSize: savedFormData.portion_size,
       });
     },
   });
@@ -326,7 +328,9 @@ export default function FoodLog() {
               <div className="mb-4">
                 <label className="field-label">Food Items</label>
                 <p className="field-help mt-1">
-                  Add the meal components. Autocomplete can help keep entries consistent.
+                  Add the meal components. Autocomplete can help keep entries consistent, and
+                  custom foods that do not match the live reference table will be queued for
+                  review in Settings.
                 </p>
               </div>
 
