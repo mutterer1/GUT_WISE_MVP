@@ -61,6 +61,26 @@ function formatKind(value: ReferenceReviewCandidateRow['candidate_kind']): strin
   return value === 'food' ? 'Food' : 'Medication';
 }
 
+function formatMacroSummary(detail: FoodReferenceCandidateDetail): string | null {
+  const parts = [
+    typeof detail.suggested_protein_g === 'number' ? `Protein ${detail.suggested_protein_g}g` : null,
+    typeof detail.suggested_fat_g === 'number' ? `Fat ${detail.suggested_fat_g}g` : null,
+    typeof detail.suggested_carbs_g === 'number' ? `Carbs ${detail.suggested_carbs_g}g` : null,
+  ].filter((part): part is string => part !== null);
+
+  return parts.length > 0 ? parts.join(' | ') : null;
+}
+
+function formatSecondaryNutritionSummary(detail: FoodReferenceCandidateDetail): string | null {
+  const parts = [
+    typeof detail.suggested_fiber_g === 'number' ? `Fiber ${detail.suggested_fiber_g}g` : null,
+    typeof detail.suggested_sugar_g === 'number' ? `Sugar ${detail.suggested_sugar_g}g` : null,
+    typeof detail.suggested_sodium_mg === 'number' ? `Sodium ${detail.suggested_sodium_mg}mg` : null,
+  ].filter((part): part is string => part !== null);
+
+  return parts.length > 0 ? parts.join(' | ') : null;
+}
+
 function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label: string; value: string }> {
   if (candidate.candidate_kind === 'food') {
     const detail = candidate.detail as unknown as FoodReferenceCandidateDetail;
@@ -74,6 +94,50 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
     }
     if (detail.portion_size) {
       rows.push({ label: 'Observed portion', value: detail.portion_size });
+    }
+    if (detail.suggested_serving_label) {
+      rows.push({ label: 'Suggested serving', value: detail.suggested_serving_label });
+    }
+    if (typeof detail.suggested_calories_kcal === 'number') {
+      rows.push({ label: 'Suggested calories', value: `${detail.suggested_calories_kcal} kcal` });
+    }
+
+    const macroSummary = formatMacroSummary(detail);
+    if (macroSummary) {
+      rows.push({ label: 'Suggested macros', value: macroSummary });
+    }
+
+    const secondaryNutrition = formatSecondaryNutritionSummary(detail);
+    if (secondaryNutrition) {
+      rows.push({ label: 'Secondary nutrition', value: secondaryNutrition });
+    }
+
+    if (Array.isArray(detail.suggested_ingredient_names) && detail.suggested_ingredient_names.length > 0) {
+      rows.push({
+        label: 'Suggested ingredients',
+        value: detail.suggested_ingredient_names.join(', '),
+      });
+    }
+
+    if (Array.isArray(detail.suggested_default_signals) && detail.suggested_default_signals.length > 0) {
+      rows.push({
+        label: 'Suggested gut signals',
+        value: detail.suggested_default_signals.join(', '),
+      });
+    }
+
+    if (detail.enrichment_source_label) {
+      const value = detail.enrichment_source_ref
+        ? `${detail.enrichment_source_label} | ${detail.enrichment_source_ref}`
+        : detail.enrichment_source_label;
+      rows.push({ label: 'Enrichment source', value });
+    }
+
+    if (typeof detail.enrichment_confidence === 'number') {
+      rows.push({
+        label: 'Enrichment confidence',
+        value: `${Math.round(detail.enrichment_confidence * 100)}%`,
+      });
     }
 
     return rows;
