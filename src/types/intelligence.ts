@@ -55,6 +55,16 @@ export interface FoodNutritionSnapshot {
   source_ref: string | null;
 }
 
+export interface FoodReferenceCandidateIngredient {
+  name: string;
+  confidence: number | null;
+  prominence_rank: number | null;
+  is_primary: boolean;
+  ingredient_fraction: number | null;
+  suggested_signals: string[];
+  notes: string | null;
+}
+
 export interface FoodReferenceIngredientRow {
   id: string;
   food_reference_id: string;
@@ -176,6 +186,7 @@ export interface FoodReferenceCandidateDetail {
   suggested_sugar_g: number | null;
   suggested_sodium_mg: number | null;
   suggested_ingredient_names: string[];
+  suggested_ingredients: FoodReferenceCandidateIngredient[];
   suggested_default_signals: string[];
   enrichment_source_label: string | null;
   enrichment_source_ref: string | null;
