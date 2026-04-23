@@ -166,15 +166,28 @@ function aggregateFood(events: CanonicalEvent[]) {
   const allCommonGutEffects: string[] = [];
   const allNutritionSourceLabels: string[] = [];
   let gutTriggerLoad = 0;
+  let gutTriggerBurdenScore = 0;
   let highFodmapCount = 0;
+  let highFodmapBurdenScore = 0;
   let dairyCount = 0;
+  let dairyBurdenScore = 0;
   let glutenCount = 0;
+  let glutenBurdenScore = 0;
   let artificialSweetenerCount = 0;
+  let artificialSweetenerBurdenScore = 0;
   let highFatCount = 0;
+  let highFatBurdenScore = 0;
   let spicyCount = 0;
+  let spicyBurdenScore = 0;
   let caffeineFoodCount = 0;
+  let caffeineFoodBurdenScore = 0;
   let alcoholFoodCount = 0;
+  let alcoholFoodBurdenScore = 0;
   let fiberDenseCount = 0;
+  let fiberDenseBurdenScore = 0;
+  let foodItemCountTotal = 0;
+  let structuredFoodItemCount = 0;
+  let structuredIngredientCount = 0;
   let caloriesTotal = 0;
   let proteinTotal = 0;
   let fatTotal = 0;
@@ -208,15 +221,29 @@ function aggregateFood(events: CanonicalEvent[]) {
     allNutritionSourceLabels.push(...nutritionSourceLabels);
 
     gutTriggerLoad += payloadNum(e.payload, 'gut_trigger_load') ?? 0;
+    gutTriggerBurdenScore += payloadNum(e.payload, 'gut_trigger_burden_score') ?? 0;
     highFodmapCount += payloadNum(e.payload, 'high_fodmap_food_count') ?? 0;
+    highFodmapBurdenScore += payloadNum(e.payload, 'high_fodmap_burden_score') ?? 0;
     dairyCount += payloadNum(e.payload, 'dairy_food_count') ?? 0;
+    dairyBurdenScore += payloadNum(e.payload, 'dairy_burden_score') ?? 0;
     glutenCount += payloadNum(e.payload, 'gluten_food_count') ?? 0;
+    glutenBurdenScore += payloadNum(e.payload, 'gluten_burden_score') ?? 0;
     artificialSweetenerCount += payloadNum(e.payload, 'artificial_sweetener_food_count') ?? 0;
+    artificialSweetenerBurdenScore +=
+      payloadNum(e.payload, 'artificial_sweetener_burden_score') ?? 0;
     highFatCount += payloadNum(e.payload, 'high_fat_food_count') ?? 0;
+    highFatBurdenScore += payloadNum(e.payload, 'high_fat_burden_score') ?? 0;
     spicyCount += payloadNum(e.payload, 'spicy_food_count') ?? 0;
+    spicyBurdenScore += payloadNum(e.payload, 'spicy_burden_score') ?? 0;
     caffeineFoodCount += payloadNum(e.payload, 'caffeine_food_count') ?? 0;
+    caffeineFoodBurdenScore += payloadNum(e.payload, 'caffeine_food_burden_score') ?? 0;
     alcoholFoodCount += payloadNum(e.payload, 'alcohol_food_count') ?? 0;
+    alcoholFoodBurdenScore += payloadNum(e.payload, 'alcohol_food_burden_score') ?? 0;
     fiberDenseCount += payloadNum(e.payload, 'fiber_dense_food_count') ?? 0;
+    fiberDenseBurdenScore += payloadNum(e.payload, 'fiber_dense_burden_score') ?? 0;
+    foodItemCountTotal += payloadNum(e.payload, 'food_item_count_total') ?? 0;
+    structuredFoodItemCount += payloadNum(e.payload, 'structured_food_item_count') ?? 0;
+    structuredIngredientCount += payloadNum(e.payload, 'structured_ingredient_count') ?? 0;
     caloriesTotal +=
       payloadNum(e.payload, 'meal_calories_kcal') ?? payloadNum(e.payload, 'calories') ?? 0;
     proteinTotal += payloadNum(e.payload, 'meal_protein_g') ?? 0;
@@ -238,6 +265,7 @@ function aggregateFood(events: CanonicalEvent[]) {
 
   const nutritionCoverageDenominator =
     nutritionCoveredItemCount + nutritionMissingItemCount;
+  const structuredCoverageDenominator = foodItemCountTotal;
 
   return {
     meal_count: events.length,
@@ -248,15 +276,37 @@ function aggregateFood(events: CanonicalEvent[]) {
     ingredient_signals: uniqueSorted(allIngredientSignals),
     food_common_gut_effects: uniqueSorted(allCommonGutEffects),
     gut_trigger_load: gutTriggerLoad,
+    gut_trigger_burden_score: gutTriggerBurdenScore,
     high_fodmap_food_count: highFodmapCount,
+    high_fodmap_burden_score: highFodmapBurdenScore,
     dairy_food_count: dairyCount,
+    dairy_burden_score: dairyBurdenScore,
     gluten_food_count: glutenCount,
+    gluten_burden_score: glutenBurdenScore,
     artificial_sweetener_food_count: artificialSweetenerCount,
+    artificial_sweetener_burden_score: artificialSweetenerBurdenScore,
     high_fat_food_count: highFatCount,
+    high_fat_burden_score: highFatBurdenScore,
     spicy_food_count: spicyCount,
+    spicy_burden_score: spicyBurdenScore,
     caffeine_food_count: caffeineFoodCount,
+    caffeine_food_burden_score: caffeineFoodBurdenScore,
     alcohol_food_count: alcoholFoodCount,
+    alcohol_food_burden_score: alcoholFoodBurdenScore,
     fiber_dense_food_count: fiberDenseCount,
+    fiber_dense_burden_score: fiberDenseBurdenScore,
+    food_item_count_total: foodItemCountTotal,
+    structured_food_item_count: structuredFoodItemCount,
+    structured_ingredient_count: structuredIngredientCount,
+    structured_food_coverage_ratio:
+      structuredCoverageDenominator > 0
+        ? structuredFoodItemCount / structuredCoverageDenominator
+        : null,
+    ingredient_signal_confidence_avg: numericAvg(
+      events
+        .map((event) => payloadNum(event.payload, 'ingredient_signal_confidence_avg'))
+        .filter((value): value is number => value !== null)
+    ),
     calories_kcal_total: caloriesTotal,
     protein_g_total: proteinTotal,
     fat_g_total: fatTotal,
