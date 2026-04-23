@@ -149,16 +149,39 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
         has_medical_context: hasMedicalContext,
       });
 
-      const newFingerprint = annotatedCandidates
-        .map((c, idx) =>
+      const newFingerprint = explanationBundle.items
+        .map((item, idx) =>
           [
             idx,
-            c.insight_key,
-            c.priority_score.toFixed(4),
-            c.priority_tier,
-            c.medical_context_modifier_applied ? '1' : '0',
-            c.medical_context_score_delta.toFixed(4),
-            c.medical_context_annotations.join('~'),
+            item.insight_key,
+            item.priority_score.toFixed(4),
+            item.priority_tier,
+            item.medical_context_modifier_applied ? '1' : '0',
+            item.medical_context_score_delta.toFixed(4),
+            item.medical_context_annotations.join('~'),
+            item.signal_source.kind,
+            item.signal_source.summary,
+            item.signal_source.nutrition_coverage_ratio !== null
+              ? item.signal_source.nutrition_coverage_ratio.toFixed(3)
+              : 'null',
+            item.signal_source.nutrition_confidence !== null
+              ? item.signal_source.nutrition_confidence.toFixed(3)
+              : 'null',
+            item.signal_source.structured_food_coverage_ratio !== null
+              ? item.signal_source.structured_food_coverage_ratio.toFixed(3)
+              : 'null',
+            item.signal_source.ingredient_signal_confidence !== null
+              ? item.signal_source.ingredient_signal_confidence.toFixed(3)
+              : 'null',
+            item.evidence.support_count,
+            item.evidence.exposure_count,
+            item.evidence.baseline_rate !== null
+              ? item.evidence.baseline_rate.toFixed(3)
+              : 'null',
+            item.evidence.exposed_rate !== null
+              ? item.evidence.exposed_rate.toFixed(3)
+              : 'null',
+            item.evidence.lift !== null ? item.evidence.lift.toFixed(3) : 'null',
           ].join(':')
         )
         .join('|');
