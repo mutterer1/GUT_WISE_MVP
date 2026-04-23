@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Check,
@@ -17,7 +18,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   acceptReferenceReviewCandidate,
   fetchReferenceReviewCandidates,
+  readFoodCandidateDetail,
+  refreshFoodReferenceCandidateEnrichment,
   rejectReferenceReviewCandidate,
+  updateFoodReferenceCandidateDetail,
 } from '../../services/referenceReviewService';
 import type {
   FoodReferenceCandidateDetail,
@@ -47,6 +51,104 @@ const STATUS_META = {
       'border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]',
   },
 } as const;
+
+const ENRICHMENT_STATUS_META = {
+  not_started: {
+    label: 'Pending lookup',
+    className:
+      'border-[rgba(148,163,184,0.18)] bg-[rgba(148,163,184,0.08)] text-[var(--color-text-tertiary)]',
+  },
+  enriched: {
+    label: 'Source matched',
+    className:
+      'border-[rgba(52,211,153,0.22)] bg-[rgba(52,211,153,0.12)] text-[rgba(110,231,183,0.98)]',
+  },
+  fallback: {
+    label: 'Fallback estimate',
+    className:
+      'border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.12)] text-[rgba(245,190,80,0.98)]',
+  },
+  failed: {
+    label: 'Lookup failed',
+    className:
+      'border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.12)] text-[rgba(252,165,165,0.98)]',
+  },
+} as const;
+
+interface FoodDetailDraft {
+  suggested_food_category: string;
+  suggested_brand_name: string;
+  suggested_common_aliases: string;
+  suggested_serving_label: string;
+  suggested_calories_kcal: string;
+  suggested_protein_g: string;
+  suggested_fat_g: string;
+  suggested_carbs_g: string;
+  suggested_fiber_g: string;
+  suggested_sugar_g: string;
+  suggested_sodium_mg: string;
+  suggested_ingredient_names: string;
+  suggested_default_signals: string;
+}
+
+function numberToDraft(value: number | null): string {
+  return typeof value === 'number' ? String(value) : '';
+}
+
+function parseDraftNumber(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number.parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toCommaSeparated(values: string[]): string {
+  return values.join(', ');
+}
+
+function parseCommaSeparated(value: string): string[] {
+  return [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))];
+}
+
+function createFoodDetailDraft(detail: FoodReferenceCandidateDetail): FoodDetailDraft {
+  return {
+    suggested_food_category: detail.suggested_food_category ?? '',
+    suggested_brand_name: detail.suggested_brand_name ?? '',
+    suggested_common_aliases: toCommaSeparated(detail.suggested_common_aliases),
+    suggested_serving_label: detail.suggested_serving_label ?? '',
+    suggested_calories_kcal: numberToDraft(detail.suggested_calories_kcal),
+    suggested_protein_g: numberToDraft(detail.suggested_protein_g),
+    suggested_fat_g: numberToDraft(detail.suggested_fat_g),
+    suggested_carbs_g: numberToDraft(detail.suggested_carbs_g),
+    suggested_fiber_g: numberToDraft(detail.suggested_fiber_g),
+    suggested_sugar_g: numberToDraft(detail.suggested_sugar_g),
+    suggested_sodium_mg: numberToDraft(detail.suggested_sodium_mg),
+    suggested_ingredient_names: toCommaSeparated(detail.suggested_ingredient_names),
+    suggested_default_signals: toCommaSeparated(detail.suggested_default_signals),
+  };
+}
+
+function applyFoodDetailDraft(
+  base: FoodReferenceCandidateDetail,
+  draft: FoodDetailDraft
+): FoodReferenceCandidateDetail {
+  return {
+    ...base,
+    suggested_food_category: draft.suggested_food_category.trim() || null,
+    suggested_brand_name: draft.suggested_brand_name.trim() || null,
+    suggested_common_aliases: parseCommaSeparated(draft.suggested_common_aliases),
+    suggested_serving_label: draft.suggested_serving_label.trim() || null,
+    suggested_calories_kcal: parseDraftNumber(draft.suggested_calories_kcal),
+    suggested_protein_g: parseDraftNumber(draft.suggested_protein_g),
+    suggested_fat_g: parseDraftNumber(draft.suggested_fat_g),
+    suggested_carbs_g: parseDraftNumber(draft.suggested_carbs_g),
+    suggested_fiber_g: parseDraftNumber(draft.suggested_fiber_g),
+    suggested_sugar_g: parseDraftNumber(draft.suggested_sugar_g),
+    suggested_sodium_mg: parseDraftNumber(draft.suggested_sodium_mg),
+    suggested_ingredient_names: parseCommaSeparated(draft.suggested_ingredient_names),
+    suggested_default_signals: parseCommaSeparated(draft.suggested_default_signals),
+  };
+}
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return 'Recently';
@@ -83,7 +185,7 @@ function formatSecondaryNutritionSummary(detail: FoodReferenceCandidateDetail): 
 
 function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label: string; value: string }> {
   if (candidate.candidate_kind === 'food') {
-    const detail = candidate.detail as unknown as FoodReferenceCandidateDetail;
+    const detail = readFoodCandidateDetail(candidate.detail);
     const rows: Array<{ label: string; value: string }> = [];
 
     if (Array.isArray(detail.tags) && detail.tags.length > 0) {
@@ -94,6 +196,9 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
     }
     if (detail.portion_size) {
       rows.push({ label: 'Observed portion', value: detail.portion_size });
+    }
+    if (detail.suggested_brand_name) {
+      rows.push({ label: 'Suggested brand', value: detail.suggested_brand_name });
     }
     if (detail.suggested_serving_label) {
       rows.push({ label: 'Suggested serving', value: detail.suggested_serving_label });
@@ -119,6 +224,13 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
       });
     }
 
+    if (Array.isArray(detail.suggested_common_aliases) && detail.suggested_common_aliases.length > 0) {
+      rows.push({
+        label: 'Suggested aliases',
+        value: detail.suggested_common_aliases.join(', '),
+      });
+    }
+
     if (Array.isArray(detail.suggested_default_signals) && detail.suggested_default_signals.length > 0) {
       rows.push({
         label: 'Suggested gut signals',
@@ -137,6 +249,20 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
       rows.push({
         label: 'Enrichment confidence',
         value: `${Math.round(detail.enrichment_confidence * 100)}%`,
+      });
+    }
+
+    if (detail.enrichment_last_attempt_at) {
+      rows.push({
+        label: 'Last lookup',
+        value: formatDate(detail.enrichment_last_attempt_at),
+      });
+    }
+
+    if (detail.enrichment_notes) {
+      rows.push({
+        label: 'Lookup note',
+        value: detail.enrichment_notes,
       });
     }
 
@@ -167,13 +293,20 @@ export default function ReferenceReview() {
   const [candidates, setCandidates] = useState<ReferenceReviewCandidateRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [processing, setProcessing] = useState<string | null>(null);
+  const [processing, setProcessing] = useState<{
+    candidateId: string;
+    action: 'accept' | 'reject' | 'refresh' | 'save';
+  } | null>(null);
   const [statusFilter, setStatusFilter] = useState<'pending_review' | 'all'>('pending_review');
+  const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
+  const [foodDraft, setFoodDraft] = useState<FoodDetailDraft | null>(null);
 
   const loadCandidates = useCallback(async () => {
     if (!user?.id) return;
 
     try {
+      setLoading(true);
+      setError('');
       const data = await fetchReferenceReviewCandidates(
         user.id,
         statusFilter === 'pending_review' ? 'pending_review' : undefined
@@ -193,7 +326,7 @@ export default function ReferenceReview() {
   const handleAccept = async (candidateId: string) => {
     if (!user?.id) return;
 
-    setProcessing(candidateId);
+    setProcessing({ candidateId, action: 'accept' });
     setError('');
 
     try {
@@ -209,7 +342,7 @@ export default function ReferenceReview() {
   const handleReject = async (candidateId: string) => {
     if (!user?.id) return;
 
-    setProcessing(candidateId);
+    setProcessing({ candidateId, action: 'reject' });
     setError('');
 
     try {
@@ -217,6 +350,70 @@ export default function ReferenceReview() {
       await loadCandidates();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject reference candidate.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const beginFoodEditing = (candidate: ReferenceReviewCandidateRow) => {
+    if (candidate.candidate_kind !== 'food') return;
+    const detail = readFoodCandidateDetail(candidate.detail);
+    setEditingCandidateId(candidate.id);
+    setFoodDraft(createFoodDetailDraft(detail));
+  };
+
+  const cancelFoodEditing = () => {
+    setEditingCandidateId(null);
+    setFoodDraft(null);
+  };
+
+  const handleFoodDraftChange = (field: keyof FoodDetailDraft, value: string) => {
+    setFoodDraft((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handleRefreshFoodCandidate = async (candidateId: string) => {
+    if (!user?.id) return;
+
+    setProcessing({ candidateId, action: 'refresh' });
+    setError('');
+
+    try {
+      const refreshed = await refreshFoodReferenceCandidateEnrichment(user.id, candidateId);
+      setCandidates((current) =>
+        current.map((candidate) => (candidate.id === refreshed.id ? refreshed : candidate))
+      );
+
+      if (editingCandidateId === candidateId) {
+        setFoodDraft(createFoodDetailDraft(readFoodCandidateDetail(refreshed.detail)));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh food enrichment.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleSaveFoodDraft = async (candidate: ReferenceReviewCandidateRow) => {
+    if (!user?.id || !foodDraft) return;
+
+    setProcessing({ candidateId: candidate.id, action: 'save' });
+    setError('');
+
+    try {
+      const baseDetail = readFoodCandidateDetail(candidate.detail);
+      const updated = await updateFoodReferenceCandidateDetail({
+        userId: user.id,
+        candidateId: candidate.id,
+        detail: applyFoodDetailDraft(baseDetail, foodDraft),
+      });
+
+      setCandidates((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry))
+      );
+      setEditingCandidateId(null);
+      setFoodDraft(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save food suggestion.');
     } finally {
       setProcessing(null);
     }
@@ -364,9 +561,18 @@ export default function ReferenceReview() {
               {candidates.map((candidate) => {
                 const statusMeta = STATUS_META[candidate.review_status];
                 const isPending = candidate.review_status === 'pending_review';
-                const isProcessing = processing === candidate.id;
+                const processingAction =
+                  processing?.candidateId === candidate.id ? processing.action : null;
+                const isProcessing = processingAction !== null;
                 const detailRows = renderDetailList(candidate);
                 const KindIcon = candidate.candidate_kind === 'food' ? Utensils : Pill;
+                const foodDetail =
+                  candidate.candidate_kind === 'food'
+                    ? readFoodCandidateDetail(candidate.detail)
+                    : null;
+                const enrichmentStatusMeta =
+                  foodDetail ? ENRICHMENT_STATUS_META[foodDetail.enrichment_status] : null;
+                const isEditingFood = editingCandidateId === candidate.id && foodDraft !== null;
 
                 return (
                   <Card
@@ -392,6 +598,13 @@ export default function ReferenceReview() {
                             >
                               {statusMeta.label}
                             </span>
+                            {foodDetail && (
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${enrichmentStatusMeta?.className}`}
+                              >
+                                {enrichmentStatusMeta?.label}
+                              </span>
+                            )}
                           </div>
 
                           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-tertiary)]">
@@ -410,7 +623,7 @@ export default function ReferenceReview() {
                               className="w-full"
                             >
                               <Check className="h-3.5 w-3.5" />
-                              {isProcessing ? 'Working...' : 'Accept'}
+                              {processingAction === 'accept' ? 'Accepting...' : 'Accept'}
                             </Button>
                             <Button
                               size="sm"
@@ -420,7 +633,7 @@ export default function ReferenceReview() {
                               className="w-full border-[rgba(248,113,113,0.18)] text-[rgba(252,165,165,0.98)] hover:bg-[rgba(248,113,113,0.08)]"
                             >
                               <X className="h-3.5 w-3.5" />
-                              Reject
+                              {processingAction === 'reject' ? 'Rejecting...' : 'Reject'}
                             </Button>
                           </div>
                         )}
@@ -441,6 +654,163 @@ export default function ReferenceReview() {
                               </p>
                             </div>
                           ))}
+                        </div>
+                      )}
+
+                      {candidate.candidate_kind === 'food' && isPending && foodDetail && (
+                        <div className="space-y-4 rounded-[22px] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleRefreshFoodCandidate(candidate.id)}
+                              disabled={isProcessing}
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              {processingAction === 'refresh'
+                                ? 'Refreshing source...'
+                                : 'Refresh source lookup'}
+                            </Button>
+
+                            {isEditingFood ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveFoodDraft(candidate)}
+                                  disabled={isProcessing || !foodDraft}
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                  {processingAction === 'save' ? 'Saving...' : 'Save suggestion'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={cancelFoodEditing}
+                                  disabled={isProcessing}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Cancel edit
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => beginFoodEditing(candidate)}
+                                disabled={isProcessing}
+                              >
+                                <FileSearch className="h-3.5 w-3.5" />
+                                Edit suggestion
+                              </Button>
+                            )}
+                          </div>
+
+                          {isEditingFood && foodDraft && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <EditableField
+                                label="Category"
+                                value={foodDraft.suggested_food_category}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_food_category', value)
+                                }
+                              />
+                              <EditableField
+                                label="Brand"
+                                value={foodDraft.suggested_brand_name}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_brand_name', value)
+                                }
+                              />
+                              <EditableField
+                                label="Serving"
+                                value={foodDraft.suggested_serving_label}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_serving_label', value)
+                                }
+                              />
+                              <EditableField
+                                label="Common aliases"
+                                value={foodDraft.suggested_common_aliases}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_common_aliases', value)
+                                }
+                                placeholder="e.g. lasagne, meat lasagna"
+                              />
+                              <EditableField
+                                label="Calories (kcal)"
+                                value={foodDraft.suggested_calories_kcal}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_calories_kcal', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Protein (g)"
+                                value={foodDraft.suggested_protein_g}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_protein_g', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Fat (g)"
+                                value={foodDraft.suggested_fat_g}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_fat_g', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Carbs (g)"
+                                value={foodDraft.suggested_carbs_g}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_carbs_g', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Fiber (g)"
+                                value={foodDraft.suggested_fiber_g}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_fiber_g', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Sugar (g)"
+                                value={foodDraft.suggested_sugar_g}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_sugar_g', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Sodium (mg)"
+                                value={foodDraft.suggested_sodium_mg}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_sodium_mg', value)
+                                }
+                                inputMode="decimal"
+                              />
+                              <EditableField
+                                label="Suggested gut signals"
+                                value={foodDraft.suggested_default_signals}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_default_signals', value)
+                                }
+                                placeholder="Comma-separated signals"
+                              />
+                              <EditableTextarea
+                                label="Ingredients"
+                                value={foodDraft.suggested_ingredient_names}
+                                onChange={(value) =>
+                                  handleFoodDraftChange('suggested_ingredient_names', value)
+                                }
+                                className="sm:col-span-2"
+                                placeholder="Comma-separated ingredients"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -489,5 +859,66 @@ function MetricTile({
       </p>
       <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">{helper}</p>
     </div>
+  );
+}
+
+function EditableField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  className = '',
+  inputMode,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>['inputMode'];
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
+      />
+    </label>
+  );
+}
+
+function EditableTextarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  className = '',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
+      />
+    </label>
   );
 }
