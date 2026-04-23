@@ -3,6 +3,7 @@ import type { CanonicalEvent } from '../types/canonicalEvents';
 import type { UserDailyFeatures } from '../types/dailyFeatures';
 import type { UserBaselineSet } from '../types/baselines';
 import type {
+  FoodReferenceIngredientRow,
   FoodReferenceItemRow,
   FoodLogItemIngredientRow,
   FoodLogItemRow,
@@ -34,9 +35,14 @@ type EnrichedFoodIngredientRow = FoodLogItemIngredientRow & {
   ingredient_reference?: IngredientReferenceItemRow | null;
 };
 
+type EnrichedFoodReferenceIngredientRow = FoodReferenceIngredientRow & {
+  ingredient_reference?: IngredientReferenceItemRow | null;
+};
+
 type EnrichedFoodItemRow = FoodLogItemRow & {
   food_reference?: FoodReferenceItemRow | null;
   normalized_ingredients?: EnrichedFoodIngredientRow[];
+  reference_ingredients?: EnrichedFoodReferenceIngredientRow[];
 };
 
 type EnrichedMedicationRow = EnrichedMedicationLogRow;
@@ -116,8 +122,15 @@ async function fetchEnrichedFoodRows(
     normalizedFoodIds
   );
 
+  const foodReferenceIngredientRows = await fetchRowsByIds<FoodReferenceIngredientRow>(
+    'food_reference_ingredients',
+    'food_reference_id',
+    normalizedFoodIds
+  );
+
   const ingredientReferenceIds = ingredientRows
     .map((row) => row.ingredient_reference_id)
+    .concat(foodReferenceIngredientRows.map((row) => row.ingredient_reference_id))
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
   const ingredientReferences = await fetchRowsByIds<IngredientReferenceItemRow>(
@@ -130,6 +143,10 @@ async function fetchEnrichedFoodRows(
     ingredientReferences.map((row) => [row.id, row])
   );
   const foodReferenceById = new Map(foodReferences.map((row) => [row.id, row]));
+  const referenceIngredientsByFoodReferenceId = new Map<
+    string,
+    EnrichedFoodReferenceIngredientRow[]
+  >();
 
   const ingredientsByFoodLogItemId = new Map<
     string,
@@ -147,6 +164,31 @@ async function fetchEnrichedFoodRows(
     ingredientsByFoodLogItemId.set(ingredientRow.food_log_item_id, current);
   }
 
+  for (const referenceIngredientRow of foodReferenceIngredientRows) {
+    const current =
+      referenceIngredientsByFoodReferenceId.get(referenceIngredientRow.food_reference_id) ?? [];
+    current.push({
+      ...referenceIngredientRow,
+      ingredient_reference: ingredientReferenceById.get(
+        referenceIngredientRow.ingredient_reference_id
+      ) ?? null,
+    });
+    referenceIngredientsByFoodReferenceId.set(
+      referenceIngredientRow.food_reference_id,
+      current
+    );
+  }
+
+  for (const [foodReferenceId, rows] of referenceIngredientsByFoodReferenceId) {
+    rows.sort((left, right) => {
+      const leftRank = left.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+      const rightRank = right.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return left.created_at.localeCompare(right.created_at);
+    });
+    referenceIngredientsByFoodReferenceId.set(foodReferenceId, rows);
+  }
+
   const foodItemsByFoodLogId = new Map<string, EnrichedFoodItemRow[]>();
 
   for (const foodLogItem of [...foodLogItems].sort((a, b) => {
@@ -161,6 +203,9 @@ async function fetchEnrichedFoodRows(
         ? foodReferenceById.get(foodLogItem.normalized_food_id) ?? null
         : null,
       normalized_ingredients: ingredientsByFoodLogItemId.get(foodLogItem.id) ?? [],
+      reference_ingredients: foodLogItem.normalized_food_id
+        ? referenceIngredientsByFoodReferenceId.get(foodLogItem.normalized_food_id) ?? []
+        : [],
     });
     foodItemsByFoodLogId.set(foodLogItem.food_log_id, current);
   }
