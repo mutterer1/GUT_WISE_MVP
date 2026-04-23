@@ -11,6 +11,13 @@ export interface FoodReferenceSuggestion {
   name: string;
   estimatedCalories?: number;
   portionLabel?: string | null;
+  proteinG?: number;
+  fatG?: number;
+  carbsG?: number;
+  fiberG?: number;
+  sugarG?: number;
+  sodiumMg?: number;
+  sourceLabel?: string | null;
   detail?: string | null;
 }
 
@@ -42,7 +49,11 @@ function formatServing(amount: number | null, unit: string | null): string | nul
 }
 
 function buildFoodDetail(row: FoodReferenceItemRow): string | null {
-  const detailParts = [row.food_category, row.brand_name].filter(
+  const detailParts = [
+    row.food_category,
+    row.brand_name,
+    typeof row.calories_kcal === 'number' ? `${Math.round(row.calories_kcal)} kcal` : null,
+  ].filter(
     (part): part is string => typeof part === 'string' && part.trim().length > 0
   );
   return detailParts.length > 0 ? detailParts.join(' | ') : null;
@@ -188,7 +199,17 @@ export async function searchFoodReferenceSuggestions(
   return rows.map((row) => ({
     id: row.id,
     name: row.display_name,
-    portionLabel: formatServing(row.default_serving_amount, row.default_serving_unit),
+    estimatedCalories: row.calories_kcal ?? undefined,
+    portionLabel:
+      row.reviewed_serving_label ??
+      formatServing(row.default_serving_amount, row.default_serving_unit),
+    proteinG: row.protein_g ?? undefined,
+    fatG: row.fat_g ?? undefined,
+    carbsG: row.carbs_g ?? undefined,
+    fiberG: row.fiber_g ?? undefined,
+    sugarG: row.sugar_g ?? undefined,
+    sodiumMg: row.sodium_mg ?? undefined,
+    sourceLabel: row.nutrition_source_label,
     detail: buildFoodDetail(row),
   }));
 }
