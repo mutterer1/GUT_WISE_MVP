@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { fetchFoodEnrichment } from './foodEnrichmentService';
 import type {
   FoodReferenceCandidateDetail,
+  FoodReferenceCandidateIngredient,
   FoodReferenceIngredientRow,
   FoodReferenceItemRow,
   FoodLogItemRow,
@@ -90,9 +91,207 @@ function dedupeStrings(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+function buildFoodCandidateIngredient(params: {
+  name: string;
+  confidence?: number | null;
+  prominenceRank?: number | null;
+  isPrimary?: boolean;
+  ingredientFraction?: number | null;
+  suggestedSignals?: string[];
+  notes?: string | null;
+}): FoodReferenceCandidateIngredient | null {
+  const name = cleanOptionalText(params.name);
+  if (!name) return null;
+
+  const derived = matchIngredientCatalogSignals(name);
+  const suggestedSignals = dedupeStrings([
+    ...(params.suggestedSignals ?? []),
+    ...derived.signals,
+  ]);
+
+  return {
+    name,
+    confidence: cleanOptionalConfidence(params.confidence),
+    prominence_rank:
+      typeof params.prominenceRank === 'number' &&
+      Number.isFinite(params.prominenceRank) &&
+      params.prominenceRank > 0
+        ? Math.round(params.prominenceRank)
+        : null,
+    is_primary: Boolean(params.isPrimary),
+    ingredient_fraction: cleanOptionalConfidence(params.ingredientFraction),
+    suggested_signals: suggestedSignals,
+    notes: cleanOptionalText(params.notes),
+  };
+}
+
+function normalizeFoodCandidateIngredients(
+  ingredients: FoodReferenceCandidateIngredient[],
+  fallbackConfidence: number | null = null
+): FoodReferenceCandidateIngredient[] {
+  const sorted = [...ingredients]
+    .filter((ingredient) => cleanOptionalText(ingredient.name) !== null)
+    .sort((left, right) => {
+      const leftRank = left.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+      const rightRank = right.prominence_rank ?? Number.MAX_SAFE_INTEGER;
+      return leftRank - rightRank;
+    });
+
+  const normalized = sorted
+    .map((ingredient, index) =>
+      buildFoodCandidateIngredient({
+        name: ingredient.name,
+        confidence: ingredient.confidence ?? fallbackConfidence,
+        prominenceRank: ingredient.prominence_rank ?? index + 1,
+        isPrimary: ingredient.is_primary || index === 0,
+        ingredientFraction: ingredient.ingredient_fraction,
+        suggestedSignals: ingredient.suggested_signals,
+        notes: ingredient.notes,
+      })
+    )
+    .filter((ingredient): ingredient is FoodReferenceCandidateIngredient => ingredient !== null);
+
+  if (normalized.length > 0 && !normalized.some((ingredient) => ingredient.is_primary)) {
+    normalized[0] = {
+      ...normalized[0],
+      is_primary: true,
+    };
+  }
+
+  return normalized;
+}
+
+function buildFallbackFoodCandidateIngredients(
+  ingredientNames: string[],
+  fallbackConfidence: number | null = null
+): FoodReferenceCandidateIngredient[] {
+  return normalizeFoodCandidateIngredients(
+    ingredientNames
+      .map((ingredientName, index) =>
+        buildFoodCandidateIngredient({
+          name: ingredientName,
+          confidence:
+            fallbackConfidence !== null
+              ? Math.max(0.2, Math.min(0.95, fallbackConfidence - index * 0.04))
+              : null,
+          prominenceRank: index + 1,
+          isPrimary: index === 0,
+        })
+      )
+      .filter((ingredient): ingredient is FoodReferenceCandidateIngredient => ingredient !== null),
+    fallbackConfidence
+  );
+}
+
+function mergeFoodCandidateIngredients(
+  existingIngredients: FoodReferenceCandidateIngredient[],
+  incomingIngredients: FoodReferenceCandidateIngredient[],
+  fallbackConfidence: number | null = null
+): FoodReferenceCandidateIngredient[] {
+  const merged = new Map<string, FoodReferenceCandidateIngredient>();
+
+  for (const ingredient of existingIngredients) {
+    merged.set(normalizeLookupKey(ingredient.name), ingredient);
+  }
+
+  for (const ingredient of incomingIngredients) {
+    const key = normalizeLookupKey(ingredient.name);
+    const existing = merged.get(key);
+
+    if (!existing) {
+      merged.set(key, ingredient);
+      continue;
+    }
+
+    merged.set(key, {
+      ...existing,
+      confidence: existing.confidence ?? ingredient.confidence ?? fallbackConfidence,
+      prominence_rank: existing.prominence_rank ?? ingredient.prominence_rank,
+      is_primary: existing.is_primary || ingredient.is_primary,
+      ingredient_fraction: existing.ingredient_fraction ?? ingredient.ingredient_fraction,
+      suggested_signals: dedupeStrings([
+        ...existing.suggested_signals,
+        ...ingredient.suggested_signals,
+      ]),
+      notes: existing.notes ?? ingredient.notes ?? null,
+    });
+  }
+
+  return normalizeFoodCandidateIngredients([...merged.values()], fallbackConfidence);
+}
+
+function formatIngredientSuggestionSummary(
+  ingredients: FoodReferenceCandidateIngredient[]
+): string | null {
+  if (ingredients.length === 0) return null;
+
+  return ingredients
+    .slice(0, 6)
+    .map((ingredient) => {
+      const parts = [ingredient.name];
+
+      if (ingredient.is_primary) {
+        parts.push('primary');
+      } else if (ingredient.prominence_rank !== null) {
+        parts.push(`#${ingredient.prominence_rank}`);
+      }
+
+      if (ingredient.confidence !== null) {
+        parts.push(`${Math.round(ingredient.confidence * 100)}%`);
+      }
+
+      if (ingredient.ingredient_fraction !== null) {
+        parts.push(`${Math.round(ingredient.ingredient_fraction * 100)}% of serving`);
+      }
+
+      return `${parts[0]} (${parts.slice(1).join(', ')})`;
+    })
+    .join(', ');
+}
+
 export function readFoodCandidateDetail(
   detail: Record<string, unknown>
 ): FoodReferenceCandidateDetail {
+  const suggestedIngredientNames = Array.isArray(detail.suggested_ingredient_names)
+    ? dedupeStrings(
+        detail.suggested_ingredient_names.filter(
+          (ingredient): ingredient is string => typeof ingredient === 'string'
+        )
+      )
+    : [];
+  const enrichmentConfidence = cleanOptionalConfidence(detail.enrichment_confidence);
+  const rawSuggestedIngredients = Array.isArray(detail.suggested_ingredients)
+    ? detail.suggested_ingredients
+    : [];
+  const parsedSuggestedIngredients = rawSuggestedIngredients
+    .map((value) => {
+      if (!value || typeof value !== 'object') return null;
+
+      const candidate = value as Record<string, unknown>;
+      return buildFoodCandidateIngredient({
+        name: typeof candidate.name === 'string' ? candidate.name : '',
+        confidence: cleanOptionalConfidence(candidate.confidence),
+        prominenceRank:
+          typeof candidate.prominence_rank === 'number' ? candidate.prominence_rank : null,
+        isPrimary: candidate.is_primary === true,
+        ingredientFraction: cleanOptionalConfidence(candidate.ingredient_fraction),
+        suggestedSignals: Array.isArray(candidate.suggested_signals)
+          ? candidate.suggested_signals.filter(
+              (signal): signal is string => typeof signal === 'string'
+            )
+          : [],
+        notes: typeof candidate.notes === 'string' ? candidate.notes : null,
+      });
+    })
+    .filter((ingredient): ingredient is FoodReferenceCandidateIngredient => ingredient !== null);
+  const suggestedIngredients =
+    parsedSuggestedIngredients.length > 0 || suggestedIngredientNames.length === 0
+      ? normalizeFoodCandidateIngredients(parsedSuggestedIngredients, enrichmentConfidence)
+      : buildFallbackFoodCandidateIngredients(
+          suggestedIngredientNames,
+          enrichmentConfidence
+        );
+
   return {
     tags: Array.isArray(detail.tags)
       ? dedupeStrings(detail.tags.filter((tag): tag is string => typeof tag === 'string'))
@@ -125,13 +324,8 @@ export function readFoodCandidateDetail(
     suggested_fiber_g: cleanOptionalNumber(detail.suggested_fiber_g),
     suggested_sugar_g: cleanOptionalNumber(detail.suggested_sugar_g),
     suggested_sodium_mg: cleanOptionalNumber(detail.suggested_sodium_mg),
-    suggested_ingredient_names: Array.isArray(detail.suggested_ingredient_names)
-      ? dedupeStrings(
-          detail.suggested_ingredient_names.filter(
-            (ingredient): ingredient is string => typeof ingredient === 'string'
-          )
-        )
-      : [],
+    suggested_ingredient_names: suggestedIngredients.map((ingredient) => ingredient.name),
+    suggested_ingredients: suggestedIngredients,
     suggested_default_signals: Array.isArray(detail.suggested_default_signals)
       ? dedupeStrings(
           detail.suggested_default_signals.filter(
@@ -145,7 +339,7 @@ export function readFoodCandidateDetail(
     enrichment_source_ref: cleanOptionalText(
       typeof detail.enrichment_source_ref === 'string' ? detail.enrichment_source_ref : null
     ),
-    enrichment_confidence: cleanOptionalConfidence(detail.enrichment_confidence),
+    enrichment_confidence: enrichmentConfidence,
     enrichment_status:
       detail.enrichment_status === 'not_started' ||
       detail.enrichment_status === 'enriched' ||
@@ -198,6 +392,11 @@ function mergeFoodCandidateDetails(
   incoming: FoodReferenceCandidateDetail
 ): FoodReferenceCandidateDetail {
   const existingDetail = readFoodCandidateDetail(existing);
+  const mergedIngredients = mergeFoodCandidateIngredients(
+    existingDetail.suggested_ingredients,
+    incoming.suggested_ingredients,
+    existingDetail.enrichment_confidence ?? incoming.enrichment_confidence ?? null
+  );
 
   return {
     tags: dedupeStrings([...existingDetail.tags, ...(incoming.tags ?? [])]),
@@ -226,10 +425,8 @@ function mergeFoodCandidateDetails(
     suggested_sugar_g: existingDetail.suggested_sugar_g ?? incoming.suggested_sugar_g ?? null,
     suggested_sodium_mg:
       existingDetail.suggested_sodium_mg ?? incoming.suggested_sodium_mg ?? null,
-    suggested_ingredient_names: dedupeStrings([
-      ...existingDetail.suggested_ingredient_names,
-      ...incoming.suggested_ingredient_names,
-    ]),
+    suggested_ingredient_names: mergedIngredients.map((ingredient) => ingredient.name),
+    suggested_ingredients: mergedIngredients,
     suggested_default_signals: dedupeStrings([
       ...existingDetail.suggested_default_signals,
       ...incoming.suggested_default_signals,
@@ -254,6 +451,17 @@ function applyFoodEnrichmentResult(
   existing: FoodReferenceCandidateDetail,
   enriched: FoodReferenceCandidateDetail
 ): FoodReferenceCandidateDetail {
+  const refreshedIngredients =
+    enriched.suggested_ingredients.length > 0
+      ? normalizeFoodCandidateIngredients(
+          enriched.suggested_ingredients,
+          enriched.enrichment_confidence
+        )
+      : buildFallbackFoodCandidateIngredients(
+          enriched.suggested_ingredient_names,
+          enriched.enrichment_confidence
+        );
+
   return {
     ...existing,
     suggested_food_category: enriched.suggested_food_category,
@@ -271,7 +479,8 @@ function applyFoodEnrichmentResult(
     suggested_fiber_g: enriched.suggested_fiber_g,
     suggested_sugar_g: enriched.suggested_sugar_g,
     suggested_sodium_mg: enriched.suggested_sodium_mg,
-    suggested_ingredient_names: enriched.suggested_ingredient_names,
+    suggested_ingredient_names: refreshedIngredients.map((ingredient) => ingredient.name),
+    suggested_ingredients: refreshedIngredients,
     suggested_default_signals: dedupeStrings([
       ...existing.suggested_default_signals,
       ...enriched.suggested_default_signals,
@@ -338,8 +547,9 @@ function buildFoodEvidenceNotes(detail: FoodReferenceCandidateDetail): string | 
     parts.push(`Suggested macros: ${macroParts.join(', ')}`);
   }
 
-  if (detail.suggested_ingredient_names.length > 0) {
-    parts.push(`Suggested ingredients: ${detail.suggested_ingredient_names.join(', ')}`);
+  const ingredientSummary = formatIngredientSuggestionSummary(detail.suggested_ingredients);
+  if (ingredientSummary) {
+    parts.push(`Suggested ingredients: ${ingredientSummary}`);
   }
 
   if (detail.suggested_common_aliases.length > 0) {
@@ -477,6 +687,52 @@ function buildIngredientEvidenceNotes(params: {
   return parts.join(' | ');
 }
 
+function buildFoodReferenceIngredientLinkNotes(
+  suggestion: FoodReferenceCandidateIngredient
+): string {
+  const parts = ['Promoted from accepted food review candidate.'];
+
+  if (suggestion.confidence !== null) {
+    parts.push(`Confidence ${Math.round(suggestion.confidence * 100)}%.`);
+  }
+
+  if (suggestion.ingredient_fraction !== null) {
+    parts.push(`Estimated fraction ${Math.round(suggestion.ingredient_fraction * 100)}% of serving.`);
+  }
+
+  if (suggestion.suggested_signals.length > 0) {
+    parts.push(`Signals: ${suggestion.suggested_signals.join(', ')}.`);
+  }
+
+  if (suggestion.notes) {
+    parts.push(`Reviewed note: ${suggestion.notes}`);
+  }
+
+  return parts.join(' ');
+}
+
+function buildBackfilledIngredientNote(
+  suggestion: FoodReferenceCandidateIngredient,
+  isFirstIngredient: boolean
+): string | null {
+  const parts = [isFirstIngredient ? 'Backfilled from accepted food reference ingredients.' : ''];
+
+  if (suggestion.confidence !== null) {
+    parts.push(`Confidence ${Math.round(suggestion.confidence * 100)}%.`);
+  }
+
+  if (suggestion.ingredient_fraction !== null) {
+    parts.push(`Estimated fraction ${Math.round(suggestion.ingredient_fraction * 100)}% of serving.`);
+  }
+
+  if (suggestion.notes) {
+    parts.push(`Reviewed note: ${suggestion.notes}`);
+  }
+
+  const cleaned = parts.map((part) => part.trim()).filter(Boolean);
+  return cleaned.length > 0 ? cleaned.join(' ') : null;
+}
+
 async function resolveExistingIngredientReference(
   ingredientName: string
 ): Promise<IngredientReferenceItemRow | null> {
@@ -517,9 +773,21 @@ async function promoteIngredientReferencesForFood(params: {
   foodDisplayName: string;
   detail: FoodReferenceCandidateDetail;
 }): Promise<void> {
-  const ingredientNames = dedupeStrings(params.detail.suggested_ingredient_names);
+  const ingredientSuggestions =
+    params.detail.suggested_ingredients.length > 0
+      ? normalizeFoodCandidateIngredients(
+          params.detail.suggested_ingredients,
+          params.detail.enrichment_confidence
+        )
+      : buildFallbackFoodCandidateIngredients(
+          params.detail.suggested_ingredient_names,
+          params.detail.enrichment_confidence
+        );
+  const suggestionByNormalizedName = new Map(
+    ingredientSuggestions.map((suggestion) => [normalizeLookupKey(suggestion.name), suggestion])
+  );
 
-  if (ingredientNames.length > 0) {
+  if (ingredientSuggestions.length > 0) {
     const ingredientReferencesByKey = new Map<string, IngredientReferenceItemRow>();
     const missingIngredientRows: Array<{
       canonical_name: string;
@@ -532,13 +800,11 @@ async function promoteIngredientReferencesForFood(params: {
       evidence_notes: string;
     }> = [];
 
-    for (const ingredientName of ingredientNames) {
+    for (const suggestion of ingredientSuggestions) {
+      const ingredientName = suggestion.name;
       const existingReference = await resolveExistingIngredientReference(ingredientName);
       if (existingReference) {
-        ingredientReferencesByKey.set(
-          normalizeLookupKey(ingredientName),
-          existingReference
-        );
+        ingredientReferencesByKey.set(normalizeLookupKey(ingredientName), existingReference);
         continue;
       }
 
@@ -548,14 +814,18 @@ async function promoteIngredientReferencesForFood(params: {
       }
 
       const derived = matchIngredientCatalogSignals(ingredientName);
+      const mergedSignals = dedupeStrings([
+        ...suggestion.suggested_signals,
+        ...derived.signals,
+      ]);
 
       missingIngredientRows.push({
         canonical_name: normalizedKey,
         display_name: ingredientName.trim(),
-        ingredient_category: inferIngredientCategory(ingredientName, derived.signals),
-        fodmap_level: inferIngredientFodmapLevel(derived.signals),
+        ingredient_category: inferIngredientCategory(ingredientName, mergedSignals),
+        fodmap_level: inferIngredientFodmapLevel(mergedSignals),
         common_aliases: [],
-        default_signals: derived.signals,
+        default_signals: mergedSignals,
         typical_gut_reactions: derived.gutReactions,
         evidence_notes: buildIngredientEvidenceNotes({
           ingredientName,
@@ -580,12 +850,28 @@ async function promoteIngredientReferencesForFood(params: {
       }
     }
 
-    const orderedIngredientReferences = ingredientNames
-      .map((ingredientName) => {
-        const normalizedKey = normalizeLookupKey(ingredientName);
-        return ingredientReferencesByKey.get(normalizedKey) ?? null;
+    const orderedIngredientReferences = ingredientSuggestions
+      .map((suggestion, index) => {
+        const normalizedKey = normalizeLookupKey(suggestion.name);
+        const ingredientReference = ingredientReferencesByKey.get(normalizedKey) ?? null;
+
+        if (!ingredientReference) return null;
+
+        return {
+          ingredientReference,
+          suggestion,
+          fallbackRank: index + 1,
+        };
       })
-      .filter((row): row is IngredientReferenceItemRow => row !== null);
+      .filter(
+        (
+          row
+        ): row is {
+          ingredientReference: IngredientReferenceItemRow;
+          suggestion: FoodReferenceCandidateIngredient;
+          fallbackRank: number;
+        } => row !== null
+      );
 
     if (orderedIngredientReferences.length > 0) {
       const { data: existingLinks, error: existingLinksError } = await supabase
@@ -595,23 +881,70 @@ async function promoteIngredientReferencesForFood(params: {
 
       if (existingLinksError) throw existingLinksError;
 
-      const existingIngredientIds = new Set(
-        ((existingLinks ?? []) as FoodReferenceIngredientRow[]).map(
-          (row) => row.ingredient_reference_id
-        )
+      const existingLinksByIngredientId = new Map(
+        ((existingLinks ?? []) as FoodReferenceIngredientRow[]).map((row) => [
+          row.ingredient_reference_id,
+          row,
+        ])
       );
 
-      const newFoodReferenceLinks = orderedIngredientReferences
-        .map((ingredientReference, index) => ({
+      const newFoodReferenceLinks: Array<{
+        food_reference_id: string;
+        ingredient_reference_id: string;
+        grams_per_default_serving: number | null;
+        ingredient_fraction: number | null;
+        prominence_rank: number | null;
+        is_primary: boolean;
+        notes: string;
+      }> = [];
+
+      for (const {
+        ingredientReference,
+        suggestion,
+        fallbackRank,
+      } of orderedIngredientReferences) {
+        const existingLink = existingLinksByIngredientId.get(ingredientReference.id);
+        const nextLink = {
           food_reference_id: params.foodReferenceId,
           ingredient_reference_id: ingredientReference.id,
           grams_per_default_serving: null,
-          ingredient_fraction: null,
-          prominence_rank: index + 1,
-          is_primary: index === 0,
-          notes: 'Promoted from accepted food review candidate.',
-        }))
-        .filter((row) => !existingIngredientIds.has(row.ingredient_reference_id));
+          ingredient_fraction:
+            suggestion.ingredient_fraction ?? existingLink?.ingredient_fraction ?? null,
+          prominence_rank:
+            suggestion.prominence_rank ?? existingLink?.prominence_rank ?? fallbackRank,
+          is_primary: suggestion.is_primary || existingLink?.is_primary || fallbackRank === 1,
+          notes: buildFoodReferenceIngredientLinkNotes({
+            ...suggestion,
+            notes: suggestion.notes ?? existingLink?.notes ?? null,
+          }),
+        };
+
+        if (!existingLink) {
+          newFoodReferenceLinks.push(nextLink);
+          continue;
+        }
+
+        const hasMeaningfulChange =
+          existingLink.ingredient_fraction !== nextLink.ingredient_fraction ||
+          existingLink.prominence_rank !== nextLink.prominence_rank ||
+          existingLink.is_primary !== nextLink.is_primary ||
+          existingLink.notes !== nextLink.notes;
+
+        if (hasMeaningfulChange) {
+          const { error } = await supabase
+            .from('food_reference_ingredients')
+            .update({
+              ingredient_fraction: nextLink.ingredient_fraction,
+              prominence_rank: nextLink.prominence_rank,
+              is_primary: nextLink.is_primary,
+              notes: nextLink.notes,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingLink.id);
+
+          if (error) throw error;
+        }
+      }
 
       if (newFoodReferenceLinks.length > 0) {
         const { error } = await supabase
@@ -653,8 +986,40 @@ async function promoteIngredientReferencesForFood(params: {
   );
 
   const orderedIngredientReferences = finalLinks
-    .map((link) => ingredientReferenceById.get(link.ingredient_reference_id) ?? null)
-    .filter((row): row is IngredientReferenceItemRow => row !== null);
+    .map((link, index) => {
+      const ingredientReference = ingredientReferenceById.get(link.ingredient_reference_id) ?? null;
+      if (!ingredientReference) return null;
+
+      const fallbackSuggestion = buildFoodCandidateIngredient({
+        name: ingredientReference.display_name ?? ingredientReference.canonical_name,
+        confidence: params.detail.enrichment_confidence ?? 0.78,
+        prominenceRank: link.prominence_rank ?? index + 1,
+        isPrimary: link.is_primary,
+        ingredientFraction: link.ingredient_fraction,
+        suggestedSignals: ingredientReference.default_signals,
+        notes: link.notes,
+      });
+
+      if (!fallbackSuggestion) return null;
+
+      return {
+        ingredientReference,
+        suggestion:
+          suggestionByNormalizedName.get(
+            normalizeLookupKey(
+              ingredientReference.display_name ?? ingredientReference.canonical_name
+            )
+          ) ?? fallbackSuggestion,
+      };
+    })
+    .filter(
+      (
+        row
+      ): row is {
+        ingredientReference: IngredientReferenceItemRow;
+        suggestion: FoodReferenceCandidateIngredient;
+      } => row !== null
+    );
 
   if (orderedIngredientReferences.length === 0) return;
 
@@ -685,7 +1050,7 @@ async function promoteIngredientReferencesForFood(params: {
   const backfillIngredientRows = normalizedFoodLogItems
     .filter((foodLogItem) => !foodLogItemsWithIngredients.has(foodLogItem.id))
     .flatMap((foodLogItem) =>
-      orderedIngredientReferences.map((ingredientReference, index) => ({
+      orderedIngredientReferences.map(({ ingredientReference, suggestion }, index) => ({
         user_id: params.userId,
         food_log_item_id: foodLogItem.id,
         ingredient_reference_id: ingredientReference.id,
@@ -694,12 +1059,10 @@ async function promoteIngredientReferencesForFood(params: {
         quantity_estimate: null,
         quantity_unit: null,
         source_method: 'catalog_match' as const,
-        confidence_score: 0.9,
-        gut_signals_override: [],
-        notes:
-          index === 0
-            ? 'Backfilled from accepted food reference ingredients.'
-            : null,
+        confidence_score:
+          suggestion.confidence ?? params.detail.enrichment_confidence ?? 0.9,
+        gut_signals_override: suggestion.suggested_signals,
+        notes: buildBackfilledIngredientNote(suggestion, index === 0),
       }))
     );
 
@@ -825,6 +1188,7 @@ export async function queueFoodReferenceCandidate(
     suggested_sugar_g: null,
     suggested_sodium_mg: null,
     suggested_ingredient_names: [],
+    suggested_ingredients: [],
     suggested_default_signals: deriveFoodSignalsFromTags(dedupeStrings(input.tags ?? [])),
     enrichment_source_label:
       typeof input.estimatedCalories === 'number' ? 'log_autocomplete' : null,
@@ -1025,6 +1389,10 @@ export async function refreshFoodReferenceCandidateEnrichment(
     suggested_sugar_g: enriched.suggestedSugarG,
     suggested_sodium_mg: enriched.suggestedSodiumMg,
     suggested_ingredient_names: enriched.suggestedIngredientNames,
+    suggested_ingredients: buildFallbackFoodCandidateIngredients(
+      enriched.suggestedIngredientNames,
+      enriched.enrichmentConfidence
+    ),
     suggested_default_signals: enriched.suggestedDefaultSignals,
     enrichment_source_label: enriched.enrichmentSourceLabel,
     enrichment_source_ref: enriched.enrichmentSourceRef,
