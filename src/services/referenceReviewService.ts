@@ -61,6 +61,16 @@ function cleanOptionalText(value?: string | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function cleanOptionalNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function cleanOptionalConfidence(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  if (value < 0 || value > 1) return null;
+  return value;
+}
+
 function dedupeStrings(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
@@ -70,12 +80,45 @@ function readFoodCandidateDetail(detail: Record<string, unknown>): FoodReference
     tags: Array.isArray(detail.tags)
       ? dedupeStrings(detail.tags.filter((tag): tag is string => typeof tag === 'string'))
       : [],
-    estimated_calories:
-      typeof detail.estimated_calories === 'number' ? detail.estimated_calories : null,
+    estimated_calories: cleanOptionalNumber(detail.estimated_calories),
     portion_size:
       typeof detail.portion_size === 'string' && detail.portion_size.trim().length > 0
         ? detail.portion_size.trim()
         : null,
+    suggested_food_category: cleanOptionalText(
+      typeof detail.suggested_food_category === 'string' ? detail.suggested_food_category : null
+    ),
+    suggested_serving_label: cleanOptionalText(
+      typeof detail.suggested_serving_label === 'string' ? detail.suggested_serving_label : null
+    ),
+    suggested_calories_kcal: cleanOptionalNumber(detail.suggested_calories_kcal),
+    suggested_protein_g: cleanOptionalNumber(detail.suggested_protein_g),
+    suggested_fat_g: cleanOptionalNumber(detail.suggested_fat_g),
+    suggested_carbs_g: cleanOptionalNumber(detail.suggested_carbs_g),
+    suggested_fiber_g: cleanOptionalNumber(detail.suggested_fiber_g),
+    suggested_sugar_g: cleanOptionalNumber(detail.suggested_sugar_g),
+    suggested_sodium_mg: cleanOptionalNumber(detail.suggested_sodium_mg),
+    suggested_ingredient_names: Array.isArray(detail.suggested_ingredient_names)
+      ? dedupeStrings(
+          detail.suggested_ingredient_names.filter(
+            (ingredient): ingredient is string => typeof ingredient === 'string'
+          )
+        )
+      : [],
+    suggested_default_signals: Array.isArray(detail.suggested_default_signals)
+      ? dedupeStrings(
+          detail.suggested_default_signals.filter(
+            (signal): signal is string => typeof signal === 'string'
+          )
+        )
+      : [],
+    enrichment_source_label: cleanOptionalText(
+      typeof detail.enrichment_source_label === 'string' ? detail.enrichment_source_label : null
+    ),
+    enrichment_source_ref: cleanOptionalText(
+      typeof detail.enrichment_source_ref === 'string' ? detail.enrichment_source_ref : null
+    ),
+    enrichment_confidence: cleanOptionalConfidence(detail.enrichment_confidence),
   };
 }
 
@@ -118,6 +161,37 @@ function mergeFoodCandidateDetails(
     tags: dedupeStrings([...existingDetail.tags, ...(incoming.tags ?? [])]),
     estimated_calories: existingDetail.estimated_calories ?? incoming.estimated_calories ?? null,
     portion_size: existingDetail.portion_size ?? incoming.portion_size ?? null,
+    suggested_food_category:
+      existingDetail.suggested_food_category ?? incoming.suggested_food_category ?? null,
+    suggested_serving_label:
+      existingDetail.suggested_serving_label ?? incoming.suggested_serving_label ?? null,
+    suggested_calories_kcal:
+      existingDetail.suggested_calories_kcal ??
+      incoming.suggested_calories_kcal ??
+      incoming.estimated_calories ??
+      null,
+    suggested_protein_g:
+      existingDetail.suggested_protein_g ?? incoming.suggested_protein_g ?? null,
+    suggested_fat_g: existingDetail.suggested_fat_g ?? incoming.suggested_fat_g ?? null,
+    suggested_carbs_g: existingDetail.suggested_carbs_g ?? incoming.suggested_carbs_g ?? null,
+    suggested_fiber_g: existingDetail.suggested_fiber_g ?? incoming.suggested_fiber_g ?? null,
+    suggested_sugar_g: existingDetail.suggested_sugar_g ?? incoming.suggested_sugar_g ?? null,
+    suggested_sodium_mg:
+      existingDetail.suggested_sodium_mg ?? incoming.suggested_sodium_mg ?? null,
+    suggested_ingredient_names: dedupeStrings([
+      ...existingDetail.suggested_ingredient_names,
+      ...incoming.suggested_ingredient_names,
+    ]),
+    suggested_default_signals: dedupeStrings([
+      ...existingDetail.suggested_default_signals,
+      ...incoming.suggested_default_signals,
+    ]),
+    enrichment_source_label:
+      existingDetail.enrichment_source_label ?? incoming.enrichment_source_label ?? null,
+    enrichment_source_ref:
+      existingDetail.enrichment_source_ref ?? incoming.enrichment_source_ref ?? null,
+    enrichment_confidence:
+      existingDetail.enrichment_confidence ?? incoming.enrichment_confidence ?? null,
   };
 }
 
@@ -150,6 +224,32 @@ function buildFoodEvidenceNotes(detail: FoodReferenceCandidateDetail): string | 
 
   if (detail.portion_size) {
     parts.push(`Observed portion size: ${detail.portion_size}`);
+  }
+
+  if (detail.suggested_serving_label) {
+    parts.push(`Suggested serving: ${detail.suggested_serving_label}`);
+  }
+
+  if (detail.suggested_calories_kcal !== null) {
+    parts.push(`Suggested calories: ${detail.suggested_calories_kcal} kcal`);
+  }
+
+  const macroParts = [
+    detail.suggested_protein_g !== null ? `protein ${detail.suggested_protein_g}g` : null,
+    detail.suggested_fat_g !== null ? `fat ${detail.suggested_fat_g}g` : null,
+    detail.suggested_carbs_g !== null ? `carbs ${detail.suggested_carbs_g}g` : null,
+  ].filter((part): part is string => part !== null);
+
+  if (macroParts.length > 0) {
+    parts.push(`Suggested macros: ${macroParts.join(', ')}`);
+  }
+
+  if (detail.suggested_ingredient_names.length > 0) {
+    parts.push(`Suggested ingredients: ${detail.suggested_ingredient_names.join(', ')}`);
+  }
+
+  if (detail.enrichment_source_label) {
+    parts.push(`Enrichment source: ${detail.enrichment_source_label}`);
   }
 
   return parts.join(' | ');
@@ -271,6 +371,22 @@ export async function queueFoodReferenceCandidate(
     estimated_calories:
       typeof input.estimatedCalories === 'number' ? input.estimatedCalories : null,
     portion_size: cleanOptionalText(input.portionSize),
+    suggested_food_category: null,
+    suggested_serving_label: cleanOptionalText(input.portionSize),
+    suggested_calories_kcal:
+      typeof input.estimatedCalories === 'number' ? input.estimatedCalories : null,
+    suggested_protein_g: null,
+    suggested_fat_g: null,
+    suggested_carbs_g: null,
+    suggested_fiber_g: null,
+    suggested_sugar_g: null,
+    suggested_sodium_mg: null,
+    suggested_ingredient_names: [],
+    suggested_default_signals: deriveFoodSignalsFromTags(dedupeStrings(input.tags ?? [])),
+    enrichment_source_label:
+      typeof input.estimatedCalories === 'number' ? 'log_autocomplete' : null,
+    enrichment_source_ref: null,
+    enrichment_confidence: typeof input.estimatedCalories === 'number' ? 0.35 : null,
   };
 
   const existing = await findPendingCandidate({
@@ -483,11 +599,25 @@ async function promoteFoodCandidate(
       canonical_name: canonicalName,
       display_name: candidate.display_name,
       brand_name: null,
-      food_category: null,
+      food_category: detail.suggested_food_category,
       default_serving_amount: null,
       default_serving_unit: null,
+      reviewed_serving_label: detail.suggested_serving_label ?? detail.portion_size,
+      calories_kcal: detail.suggested_calories_kcal ?? detail.estimated_calories,
+      protein_g: detail.suggested_protein_g,
+      fat_g: detail.suggested_fat_g,
+      carbs_g: detail.suggested_carbs_g,
+      fiber_g: detail.suggested_fiber_g,
+      sugar_g: detail.suggested_sugar_g,
+      sodium_mg: detail.suggested_sodium_mg,
+      nutrition_confidence: detail.enrichment_confidence,
+      nutrition_source_label: detail.enrichment_source_label,
+      nutrition_source_ref: detail.enrichment_source_ref,
       common_aliases: [],
-      default_signals: deriveFoodSignalsFromTags(detail.tags),
+      default_signals:
+        detail.suggested_default_signals.length > 0
+          ? detail.suggested_default_signals
+          : deriveFoodSignalsFromTags(detail.tags),
       source_label: 'user_review',
       evidence_notes: buildFoodEvidenceNotes(detail),
     })
