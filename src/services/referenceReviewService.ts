@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { fetchFoodEnrichment } from './foodEnrichmentService';
 import type {
   FoodReferenceCandidateDetail,
   FoodReferenceItemRow,
@@ -31,6 +32,12 @@ interface QueueMedicationReferenceCandidateInput {
   reasonForUse?: string | null;
   regimenStatus?: MedicationRegimenStatus | null;
   timingContext?: string | null;
+}
+
+interface UpdateFoodReferenceCandidateDetailInput {
+  userId: string;
+  candidateId: string;
+  detail: FoodReferenceCandidateDetail;
 }
 
 const FOOD_TAG_TO_SIGNAL: Record<string, string[]> = {
@@ -75,7 +82,9 @@ function dedupeStrings(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
-function readFoodCandidateDetail(detail: Record<string, unknown>): FoodReferenceCandidateDetail {
+export function readFoodCandidateDetail(
+  detail: Record<string, unknown>
+): FoodReferenceCandidateDetail {
   return {
     tags: Array.isArray(detail.tags)
       ? dedupeStrings(detail.tags.filter((tag): tag is string => typeof tag === 'string'))
@@ -88,6 +97,16 @@ function readFoodCandidateDetail(detail: Record<string, unknown>): FoodReference
     suggested_food_category: cleanOptionalText(
       typeof detail.suggested_food_category === 'string' ? detail.suggested_food_category : null
     ),
+    suggested_brand_name: cleanOptionalText(
+      typeof detail.suggested_brand_name === 'string' ? detail.suggested_brand_name : null
+    ),
+    suggested_common_aliases: Array.isArray(detail.suggested_common_aliases)
+      ? dedupeStrings(
+          detail.suggested_common_aliases.filter(
+            (alias): alias is string => typeof alias === 'string'
+          )
+        )
+      : [],
     suggested_serving_label: cleanOptionalText(
       typeof detail.suggested_serving_label === 'string' ? detail.suggested_serving_label : null
     ),
@@ -119,6 +138,21 @@ function readFoodCandidateDetail(detail: Record<string, unknown>): FoodReference
       typeof detail.enrichment_source_ref === 'string' ? detail.enrichment_source_ref : null
     ),
     enrichment_confidence: cleanOptionalConfidence(detail.enrichment_confidence),
+    enrichment_status:
+      detail.enrichment_status === 'not_started' ||
+      detail.enrichment_status === 'enriched' ||
+      detail.enrichment_status === 'fallback' ||
+      detail.enrichment_status === 'failed'
+        ? detail.enrichment_status
+        : 'not_started',
+    enrichment_last_attempt_at: cleanOptionalText(
+      typeof detail.enrichment_last_attempt_at === 'string'
+        ? detail.enrichment_last_attempt_at
+        : null
+    ),
+    enrichment_notes: cleanOptionalText(
+      typeof detail.enrichment_notes === 'string' ? detail.enrichment_notes : null
+    ),
   };
 }
 
@@ -163,6 +197,12 @@ function mergeFoodCandidateDetails(
     portion_size: existingDetail.portion_size ?? incoming.portion_size ?? null,
     suggested_food_category:
       existingDetail.suggested_food_category ?? incoming.suggested_food_category ?? null,
+    suggested_brand_name:
+      existingDetail.suggested_brand_name ?? incoming.suggested_brand_name ?? null,
+    suggested_common_aliases: dedupeStrings([
+      ...existingDetail.suggested_common_aliases,
+      ...incoming.suggested_common_aliases,
+    ]),
     suggested_serving_label:
       existingDetail.suggested_serving_label ?? incoming.suggested_serving_label ?? null,
     suggested_calories_kcal:
@@ -192,6 +232,48 @@ function mergeFoodCandidateDetails(
       existingDetail.enrichment_source_ref ?? incoming.enrichment_source_ref ?? null,
     enrichment_confidence:
       existingDetail.enrichment_confidence ?? incoming.enrichment_confidence ?? null,
+    enrichment_status:
+      existingDetail.enrichment_status !== 'not_started'
+        ? existingDetail.enrichment_status
+        : incoming.enrichment_status,
+    enrichment_last_attempt_at:
+      existingDetail.enrichment_last_attempt_at ?? incoming.enrichment_last_attempt_at ?? null,
+    enrichment_notes: existingDetail.enrichment_notes ?? incoming.enrichment_notes ?? null,
+  };
+}
+
+function applyFoodEnrichmentResult(
+  existing: FoodReferenceCandidateDetail,
+  enriched: FoodReferenceCandidateDetail
+): FoodReferenceCandidateDetail {
+  return {
+    ...existing,
+    suggested_food_category: enriched.suggested_food_category,
+    suggested_brand_name: enriched.suggested_brand_name,
+    suggested_common_aliases: enriched.suggested_common_aliases,
+    suggested_serving_label:
+      enriched.suggested_serving_label ?? existing.suggested_serving_label ?? existing.portion_size,
+    suggested_calories_kcal:
+      enriched.suggested_calories_kcal ??
+      existing.suggested_calories_kcal ??
+      existing.estimated_calories,
+    suggested_protein_g: enriched.suggested_protein_g,
+    suggested_fat_g: enriched.suggested_fat_g,
+    suggested_carbs_g: enriched.suggested_carbs_g,
+    suggested_fiber_g: enriched.suggested_fiber_g,
+    suggested_sugar_g: enriched.suggested_sugar_g,
+    suggested_sodium_mg: enriched.suggested_sodium_mg,
+    suggested_ingredient_names: enriched.suggested_ingredient_names,
+    suggested_default_signals: dedupeStrings([
+      ...existing.suggested_default_signals,
+      ...enriched.suggested_default_signals,
+    ]),
+    enrichment_source_label: enriched.enrichment_source_label,
+    enrichment_source_ref: enriched.enrichment_source_ref,
+    enrichment_confidence: enriched.enrichment_confidence,
+    enrichment_status: enriched.enrichment_status,
+    enrichment_last_attempt_at: enriched.enrichment_last_attempt_at,
+    enrichment_notes: enriched.enrichment_notes,
   };
 }
 
@@ -226,6 +308,10 @@ function buildFoodEvidenceNotes(detail: FoodReferenceCandidateDetail): string | 
     parts.push(`Observed portion size: ${detail.portion_size}`);
   }
 
+  if (detail.suggested_brand_name) {
+    parts.push(`Suggested brand: ${detail.suggested_brand_name}`);
+  }
+
   if (detail.suggested_serving_label) {
     parts.push(`Suggested serving: ${detail.suggested_serving_label}`);
   }
@@ -248,8 +334,16 @@ function buildFoodEvidenceNotes(detail: FoodReferenceCandidateDetail): string | 
     parts.push(`Suggested ingredients: ${detail.suggested_ingredient_names.join(', ')}`);
   }
 
+  if (detail.suggested_common_aliases.length > 0) {
+    parts.push(`Suggested aliases: ${detail.suggested_common_aliases.join(', ')}`);
+  }
+
   if (detail.enrichment_source_label) {
     parts.push(`Enrichment source: ${detail.enrichment_source_label}`);
+  }
+
+  if (detail.enrichment_notes) {
+    parts.push(`Enrichment notes: ${detail.enrichment_notes}`);
   }
 
   return parts.join(' | ');
@@ -372,6 +466,8 @@ export async function queueFoodReferenceCandidate(
       typeof input.estimatedCalories === 'number' ? input.estimatedCalories : null,
     portion_size: cleanOptionalText(input.portionSize),
     suggested_food_category: null,
+    suggested_brand_name: null,
+    suggested_common_aliases: [],
     suggested_serving_label: cleanOptionalText(input.portionSize),
     suggested_calories_kcal:
       typeof input.estimatedCalories === 'number' ? input.estimatedCalories : null,
@@ -387,6 +483,9 @@ export async function queueFoodReferenceCandidate(
       typeof input.estimatedCalories === 'number' ? 'log_autocomplete' : null,
     enrichment_source_ref: null,
     enrichment_confidence: typeof input.estimatedCalories === 'number' ? 0.35 : null,
+    enrichment_status: 'not_started',
+    enrichment_last_attempt_at: null,
+    enrichment_notes: null,
   };
 
   const existing = await findPendingCandidate({
@@ -398,6 +497,7 @@ export async function queueFoodReferenceCandidate(
   const now = new Date().toISOString();
 
   if (existing) {
+    const existingDetail = readFoodCandidateDetail(existing.detail);
     const mergedDetail = mergeFoodCandidateDetails(existing.detail, detail);
 
     const { error } = await supabase
@@ -417,10 +517,17 @@ export async function queueFoodReferenceCandidate(
       .eq('user_id', input.userId);
 
     if (error) throw error;
+
+    if (
+      existingDetail.enrichment_status === 'not_started' ||
+      existingDetail.enrichment_source_label === null
+    ) {
+      void refreshFoodReferenceCandidateEnrichment(input.userId, existing.id).catch(() => {});
+    }
     return;
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('reference_review_candidates')
     .insert({
       user_id: input.userId,
@@ -436,9 +543,20 @@ export async function queueFoodReferenceCandidate(
         'Custom food entry captured from your logs because it did not match the current reference table.',
       times_seen: 1,
       last_seen_at: now,
-    });
+    })
+    .select('id')
+    .maybeSingle();
 
   if (error) throw error;
+
+  const insertedCandidateId =
+    data && typeof data.id === 'string' && data.id.length > 0 ? data.id : null;
+
+  if (insertedCandidateId) {
+    void refreshFoodReferenceCandidateEnrichment(input.userId, insertedCandidateId).catch(
+      () => {}
+    );
+  }
 }
 
 export async function queueMedicationReferenceCandidate(
@@ -509,6 +627,108 @@ export async function queueMedicationReferenceCandidate(
     });
 
   if (error) throw error;
+}
+
+async function fetchReferenceReviewCandidateById(
+  userId: string,
+  candidateId: string
+): Promise<ReferenceReviewCandidateRow> {
+  const { data, error } = await supabase
+    .from('reference_review_candidates')
+    .select('*')
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Reference candidate not found.');
+
+  return data as ReferenceReviewCandidateRow;
+}
+
+export async function refreshFoodReferenceCandidateEnrichment(
+  userId: string,
+  candidateId: string
+): Promise<ReferenceReviewCandidateRow> {
+  const candidate = await fetchReferenceReviewCandidateById(userId, candidateId);
+  if (candidate.candidate_kind !== 'food') {
+    throw new Error('Only food reference candidates can be enriched from external food sources.');
+  }
+
+  const existingDetail = readFoodCandidateDetail(candidate.detail);
+  const enriched = await fetchFoodEnrichment({
+    displayName: candidate.display_name,
+    observedTags: existingDetail.tags,
+    observedPortionSize: existingDetail.portion_size,
+    observedCalories: existingDetail.estimated_calories,
+    forceRefresh: true,
+  });
+
+  const enrichedDetail = applyFoodEnrichmentResult(existingDetail, {
+    ...existingDetail,
+    suggested_food_category: enriched.suggestedFoodCategory,
+    suggested_brand_name: enriched.suggestedBrandName,
+    suggested_common_aliases: enriched.suggestedCommonAliases,
+    suggested_serving_label: enriched.suggestedServingLabel,
+    suggested_calories_kcal: enriched.suggestedCaloriesKcal,
+    suggested_protein_g: enriched.suggestedProteinG,
+    suggested_fat_g: enriched.suggestedFatG,
+    suggested_carbs_g: enriched.suggestedCarbsG,
+    suggested_fiber_g: enriched.suggestedFiberG,
+    suggested_sugar_g: enriched.suggestedSugarG,
+    suggested_sodium_mg: enriched.suggestedSodiumMg,
+    suggested_ingredient_names: enriched.suggestedIngredientNames,
+    suggested_default_signals: enriched.suggestedDefaultSignals,
+    enrichment_source_label: enriched.enrichmentSourceLabel,
+    enrichment_source_ref: enriched.enrichmentSourceRef,
+    enrichment_confidence: enriched.enrichmentConfidence,
+    enrichment_status: enriched.enrichmentStatus,
+    enrichment_last_attempt_at: enriched.enrichmentLastAttemptAt,
+    enrichment_notes: enriched.enrichmentNotes,
+  });
+
+  const { data, error } = await supabase
+    .from('reference_review_candidates')
+    .update({
+      detail: enrichedDetail,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Food enrichment update did not return the refreshed candidate.');
+
+  return data as ReferenceReviewCandidateRow;
+}
+
+export async function updateFoodReferenceCandidateDetail(
+  input: UpdateFoodReferenceCandidateDetailInput
+): Promise<ReferenceReviewCandidateRow> {
+  const candidate = await fetchReferenceReviewCandidateById(input.userId, input.candidateId);
+  if (candidate.candidate_kind !== 'food') {
+    throw new Error('Only food reference candidates can be edited with food enrichment fields.');
+  }
+
+  const normalizedDetail = readFoodCandidateDetail(input.detail);
+
+  const { data, error } = await supabase
+    .from('reference_review_candidates')
+    .update({
+      detail: normalizedDetail,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.candidateId)
+    .eq('user_id', input.userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Food reference candidate update did not return a row.');
+
+  return data as ReferenceReviewCandidateRow;
 }
 
 export async function fetchReferenceReviewCandidates(
@@ -598,7 +818,7 @@ async function promoteFoodCandidate(
     .insert({
       canonical_name: canonicalName,
       display_name: candidate.display_name,
-      brand_name: null,
+      brand_name: detail.suggested_brand_name,
       food_category: detail.suggested_food_category,
       default_serving_amount: null,
       default_serving_unit: null,
@@ -613,7 +833,7 @@ async function promoteFoodCandidate(
       nutrition_confidence: detail.enrichment_confidence,
       nutrition_source_label: detail.enrichment_source_label,
       nutrition_source_ref: detail.enrichment_source_ref,
-      common_aliases: [],
+      common_aliases: detail.suggested_common_aliases,
       default_signals:
         detail.suggested_default_signals.length > 0
           ? detail.suggested_default_signals
