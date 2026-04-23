@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { queueFoodReferenceCandidate } from './referenceReviewService';
 import type {
   FoodReferenceIngredientRow,
   FoodReferenceItemRow,
@@ -16,6 +17,7 @@ interface ReplaceFoodLogItemsParams {
   foodLogId: string;
   foodItems: FoodLogNormalizationItemInput[];
   tags?: string[];
+  portionSize?: string | null;
 }
 
 interface FoodReferenceMatch {
@@ -468,7 +470,7 @@ async function buildIngredientRowsForInsertedItems(params: {
 export async function replaceFoodLogItemsForLog(
   params: ReplaceFoodLogItemsParams
 ): Promise<void> {
-  const { userId, foodLogId, tags = [] } = params;
+  const { userId, foodLogId, tags = [], portionSize = null } = params;
 
   const { error: deleteError } = await supabase
     .from('food_log_items')
@@ -497,11 +499,35 @@ export async function replaceFoodLogItemsForLog(
     tags,
   });
 
-  if (ingredientRows.length === 0) return;
+  if (ingredientRows.length > 0) {
+    const { error: ingredientInsertError } = await supabase
+      .from('food_log_item_ingredients')
+      .insert(ingredientRows);
 
-  const { error: ingredientInsertError } = await supabase
-    .from('food_log_item_ingredients')
-    .insert(ingredientRows);
+    if (ingredientInsertError) throw ingredientInsertError;
+  }
 
-  if (ingredientInsertError) throw ingredientInsertError;
+  const sortedInsertedItems = [...insertedFoodLogItems].sort(
+    (left, right) => (left.consumed_order ?? 0) - (right.consumed_order ?? 0)
+  );
+  const sanitizedSourceItems = sanitizeFoodItems(params.foodItems);
+
+  await Promise.all(
+    sortedInsertedItems.map(async (foodLogItem, index) => {
+      if (foodLogItem.normalized_food_id) return;
+
+      const sourceItem = sanitizedSourceItems[index];
+      if (!sourceItem) return;
+
+      await queueFoodReferenceCandidate({
+        userId,
+        foodLogId,
+        foodLogItemId: foodLogItem.id,
+        displayName: foodLogItem.display_name,
+        estimatedCalories: sourceItem.estimated_calories,
+        tags,
+        portionSize,
+      });
+    })
+  );
 }
