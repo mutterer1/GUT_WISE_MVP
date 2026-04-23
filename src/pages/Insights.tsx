@@ -8,6 +8,7 @@ import { Brain, RefreshCw, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../utils/insightEngine';
 import { useRankedInsights } from '../hooks/useRankedInsights';
+import type { ExplanationInsightItem } from '../types/explanationBundle';
 import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
 
 function formatShortDate(iso: string): string {
@@ -130,6 +131,10 @@ export default function Insights() {
       : [];
 
   const exMap = isSafeToUse ? explanationMap() : new Map();
+  const bundleItemMap = new Map<string, ExplanationInsightItem>();
+  for (const item of rankedInsights?.explanationBundle.items ?? []) {
+    bundleItemMap.set(item.insight_key, item);
+  }
 
   return (
     <MainLayout>
@@ -272,6 +277,7 @@ export default function Insights() {
                   <RankedCandidateCard
                     key={candidate.insight_key}
                     candidate={candidate}
+                    bundleItem={bundleItemMap.get(candidate.insight_key)}
                     explanation={exMap.get(candidate.insight_key)}
                     rank={index + 1}
                   />
