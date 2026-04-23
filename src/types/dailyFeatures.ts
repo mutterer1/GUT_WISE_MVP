@@ -24,7 +24,10 @@ export interface UserDailyFeatures {
   meal_count: number;
   food_item_names: string[];
   food_tag_set: string[];
+  matched_ingredient_ids?: string[];
+  matched_food_reference_ids?: string[];
   ingredient_signals: string[];
+  food_common_gut_effects?: string[];
   gut_trigger_load: number;
   high_fodmap_food_count: number;
   dairy_food_count: number;
@@ -35,6 +38,18 @@ export interface UserDailyFeatures {
   caffeine_food_count: number;
   alcohol_food_count: number;
   fiber_dense_food_count: number;
+  calories_kcal_total?: number;
+  protein_g_total?: number;
+  fat_g_total?: number;
+  carbs_g_total?: number;
+  fiber_g_total?: number;
+  sugar_g_total?: number;
+  sodium_mg_total?: number;
+  nutrition_covered_item_count?: number;
+  nutrition_missing_item_count?: number;
+  nutrition_coverage_ratio?: number | null;
+  nutrition_source_labels?: string[];
+  nutrition_confidence_avg?: number | null;
   late_meal: boolean;
 
   hydration_total_ml: number;
