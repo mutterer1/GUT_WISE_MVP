@@ -31,6 +31,11 @@ export interface AssembledInsightInputs {
   baselines: UserBaselineSet;
 }
 
+interface LoggedAtBounds {
+  start: string;
+  end?: string;
+}
+
 type EnrichedFoodIngredientRow = FoodLogItemIngredientRow & {
   ingredient_reference?: IngredientReferenceItemRow | null;
 };
@@ -53,17 +58,34 @@ function lookbackDateISO(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function applyLoggedAtBounds<TQuery>(query: TQuery, bounds: LoggedAtBounds): TQuery {
+  let next = (query as {
+    gte: (column: string, value: string) => TQuery;
+  }).gte('logged_at', bounds.start);
+
+  if (bounds.end) {
+    next = (next as {
+      lte: (column: string, value: string) => TQuery;
+    }).lte('logged_at', bounds.end);
+  }
+
+  return next;
+}
+
 async function fetchTable<T>(
   table: string,
   userId: string,
-  since: string
+  bounds: LoggedAtBounds
 ): Promise<T[]> {
-  const { data, error } = await supabase
+  const query = applyLoggedAtBounds(
+    supabase
     .from(table)
     .select('*')
-    .eq('user_id', userId)
-    .gte('logged_at', since)
-    .order('logged_at', { ascending: true });
+      .eq('user_id', userId),
+    bounds
+  ).order('logged_at', { ascending: true });
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Failed to fetch ${table}: ${error.message}`);
   return (data ?? []) as T[];
@@ -85,9 +107,9 @@ async function fetchRowsByIds<T>(
 
 async function fetchEnrichedFoodRows(
   userId: string,
-  since: string
+  bounds: LoggedAtBounds
 ): Promise<EnrichedFoodLogRow[]> {
-  const foodRows = await fetchTable<EnrichedFoodLogRow>('food_logs', userId, since);
+  const foodRows = await fetchTable<EnrichedFoodLogRow>('food_logs', userId, bounds);
   const foodLogIds = foodRows
     .map((row) => row.id)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
@@ -218,12 +240,12 @@ async function fetchEnrichedFoodRows(
 
 async function fetchEnrichedMedicationRows(
   userId: string,
-  since: string
+  bounds: LoggedAtBounds
 ): Promise<EnrichedMedicationRow[]> {
   const medicationRows = await fetchTable<EnrichedMedicationRow>(
     'medication_logs',
     userId,
-    since
+    bounds
   );
 
   const normalizedMedicationIds = medicationRows
@@ -252,23 +274,21 @@ async function fetchEnrichedMedicationRows(
   }));
 }
 
-export async function assembleRankedInsightInputs(
+async function assembleRankedInsightInputsForBounds(
   userId: string,
-  lookbackDays = 90
+  bounds: LoggedAtBounds
 ): Promise<AssembledInsightInputs | null> {
-  const since = lookbackDateISO(lookbackDays);
-
   const [bmRows, symptomRows, foodRows, hydrationRows, sleepRows, stressRows, medicationRows, menstrualRows, exerciseRows] =
     await Promise.all([
-      fetchTable<Parameters<typeof normalizeBMEvent>[0]>('bm_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeSymptomEvent>[0]>('symptom_logs', userId, since),
-      fetchEnrichedFoodRows(userId, since),
-      fetchTable<Parameters<typeof normalizeHydrationEvent>[0]>('hydration_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeSleepEvent>[0]>('sleep_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeStressEvent>[0]>('stress_logs', userId, since),
-      fetchEnrichedMedicationRows(userId, since),
-      fetchTable<Parameters<typeof normalizeMenstrualCycleEvent>[0]>('menstrual_cycle_logs', userId, since),
-      fetchTable<Parameters<typeof normalizeExerciseEvent>[0]>('exercise_logs', userId, since),
+      fetchTable<Parameters<typeof normalizeBMEvent>[0]>('bm_logs', userId, bounds),
+      fetchTable<Parameters<typeof normalizeSymptomEvent>[0]>('symptom_logs', userId, bounds),
+      fetchEnrichedFoodRows(userId, bounds),
+      fetchTable<Parameters<typeof normalizeHydrationEvent>[0]>('hydration_logs', userId, bounds),
+      fetchTable<Parameters<typeof normalizeSleepEvent>[0]>('sleep_logs', userId, bounds),
+      fetchTable<Parameters<typeof normalizeStressEvent>[0]>('stress_logs', userId, bounds),
+      fetchEnrichedMedicationRows(userId, bounds),
+      fetchTable<Parameters<typeof normalizeMenstrualCycleEvent>[0]>('menstrual_cycle_logs', userId, bounds),
+      fetchTable<Parameters<typeof normalizeExerciseEvent>[0]>('exercise_logs', userId, bounds),
     ]);
 
   const allEvents: CanonicalEvent[] = [
@@ -291,4 +311,23 @@ export async function assembleRankedInsightInputs(
   if (!baselines) return null;
 
   return { dailyFeatures, baselines };
+}
+
+export async function assembleRankedInsightInputs(
+  userId: string,
+  lookbackDays = 90
+): Promise<AssembledInsightInputs | null> {
+  const since = lookbackDateISO(lookbackDays);
+  return assembleRankedInsightInputsForBounds(userId, { start: since });
+}
+
+export async function assembleRankedInsightInputsForDateRange(
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<AssembledInsightInputs | null> {
+  return assembleRankedInsightInputsForBounds(userId, {
+    start: startDate,
+    end: endDate,
+  });
 }
