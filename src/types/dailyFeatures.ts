@@ -56,6 +56,7 @@ export interface UserDailyFeatures {
 
   medication_event_count: number;
   medications_taken: string[];
+  matched_medication_ids?: string[];
   medication_families: string[];
   medication_gut_effects: string[];
   gi_risk_medication_count: number;
