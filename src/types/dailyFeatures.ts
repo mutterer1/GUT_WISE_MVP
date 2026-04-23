@@ -55,11 +55,17 @@ export interface UserDailyFeatures {
   ingredient_signal_confidence_avg?: number | null;
   calories_kcal_total?: number;
   protein_g_total?: number;
+  protein_g_per_1000kcal?: number | null;
   fat_g_total?: number;
+  fat_calorie_share_ratio?: number | null;
   carbs_g_total?: number;
+  carbs_g_per_1000kcal?: number | null;
   fiber_g_total?: number;
+  fiber_g_per_1000kcal?: number | null;
   sugar_g_total?: number;
+  sugar_g_per_1000kcal?: number | null;
   sodium_mg_total?: number;
+  sodium_mg_per_1000kcal?: number | null;
   nutrition_covered_item_count?: number;
   nutrition_missing_item_count?: number;
   nutrition_coverage_ratio?: number | null;
