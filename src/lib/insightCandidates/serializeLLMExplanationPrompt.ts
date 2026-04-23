@@ -1,6 +1,14 @@
 import type { LLMExplanationInput, LLMInsightItem } from '../../types/llmExplanationContract';
 
 function serializeItem(item: LLMInsightItem, index: number): string {
+  const sourceParts = [
+    `kind=${item.signal_source.kind}`,
+    `nutrition_coverage=${item.signal_source.nutrition_coverage_ratio !== null ? item.signal_source.nutrition_coverage_ratio.toFixed(3) : 'null'}`,
+    `nutrition_confidence=${item.signal_source.nutrition_confidence !== null ? item.signal_source.nutrition_confidence.toFixed(3) : 'null'}`,
+    `structured_coverage=${item.signal_source.structured_food_coverage_ratio !== null ? item.signal_source.structured_food_coverage_ratio.toFixed(3) : 'null'}`,
+    `ingredient_confidence=${item.signal_source.ingredient_signal_confidence !== null ? item.signal_source.ingredient_signal_confidence.toFixed(3) : 'null'}`,
+  ].join(' ');
+
   const lines: string[] = [
     `[ITEM_${index + 1}]`,
     `key: ${item.insight_key}`,
@@ -16,6 +24,8 @@ function serializeItem(item: LLMInsightItem, index: number): string {
       ` lift=${item.evidence.lift !== null ? item.evidence.lift.toFixed(3) : 'null'}` +
       ` contradictions=${item.evidence.contradiction_level}`,
     `ranking_reasons: ${item.ranking_reasons.join('; ') || 'none'}`,
+    `signal_source: ${sourceParts}`,
+    `signal_source_summary: ${item.signal_source.summary}`,
   ];
 
   if (item.evidence.statistics !== undefined) {
@@ -62,6 +72,8 @@ function buildSystemPrompt(input: LLMExplanationInput): string {
     '  - Do not recommend medications, supplements, or clinical interventions.',
     '  - Do not claim causation. Use association language only.',
     '  - When caution_signals are present for an item, acknowledge limited evidence.',
+    '  - If signal_source is present, explicitly reflect whether the item is driven by reviewed nutrition, structured ingredients, mixed evidence, or fallback heuristics.',
+    '  - Do not imply reviewed nutrition coverage when signal_source.kind is fallback_heuristic.',
     '  - Prioritize highest-scored items first in the output.',
     '  - Output only per-item explanations. No preamble. No summary section unless items are empty.',
   ].join('\n');
@@ -125,6 +137,7 @@ function buildUserPrompt(input: LLMExplanationInput): string {
       'Each explanation: 1-3 sentences. Calm, clinical, patient-readable.',
       'Reference trigger_factors, target_outcomes, and evidence associations only.',
       'If caution_signals exist for an item, include one hedging sentence.',
+      'If signal_source_summary exists for an item, incorporate it in plain language so the user can tell whether the finding is based on reviewed nutrition, structured ingredients, or heuristic fallback.',
       'If medical_annotations exist for an item, incorporate context where relevant.',
       'Do not produce any text outside the per-item explanations.',
     ].join('\n'),
