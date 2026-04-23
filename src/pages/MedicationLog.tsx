@@ -272,7 +272,8 @@ export default function MedicationLog() {
               />
               <p className="field-help mt-2">
                 Search the live medication reference table first, then leave a custom name if the
-                exact product is not there yet.
+                exact product is not there yet. Custom medications that miss the current reference
+                table will be queued for review in Settings.
               </p>
             </div>
 
