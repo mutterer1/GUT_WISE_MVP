@@ -84,6 +84,21 @@ function pickBestMedicationReferenceMatch(
   return null;
 }
 
+function brandAliasMatchesMedicationReference(
+  medicationName: string,
+  candidate: MedicationReferenceItemRow
+): boolean {
+  const normalizedName = normalizeLookupKey(medicationName);
+  return candidate.brand_names.some((brand) => {
+    const normalizedBrand = normalizeLookupKey(brand);
+    return (
+      normalizedBrand === normalizedName ||
+      normalizedBrand.includes(normalizedName) ||
+      normalizedName.includes(normalizedBrand)
+    );
+  });
+}
+
 async function resolveMedicationReference(
   medicationName: string
 ): Promise<MedicationReferenceItemRow | null> {
@@ -105,10 +120,24 @@ async function resolveMedicationReference(
 
   if (error) throw error;
 
-  return pickBestMedicationReferenceMatch(
-    medicationName,
-    (data ?? []) as MedicationReferenceItemRow[]
-  );
+  let candidates = (data ?? []) as MedicationReferenceItemRow[];
+
+  if (candidates.length === 0) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('medication_reference_items')
+      .select('*')
+      .limit(300);
+
+    if (fallbackError) throw fallbackError;
+
+    candidates = ((fallbackData ?? []) as MedicationReferenceItemRow[])
+      .filter((candidate) =>
+        brandAliasMatchesMedicationReference(medicationName, candidate)
+      )
+      .slice(0, 12);
+  }
+
+  return pickBestMedicationReferenceMatch(medicationName, candidates);
 }
 
 export async function syncMedicationNormalizationForLog(params: {
