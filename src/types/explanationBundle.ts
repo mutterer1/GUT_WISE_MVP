@@ -24,6 +24,22 @@ export interface ExplanationEvidenceSummary {
   statistics?: Record<string, unknown>;
 }
 
+export type ExplanationSignalSourceKind =
+  | 'reviewed_nutrition'
+  | 'structured_ingredients'
+  | 'mixed_structured_and_nutrition'
+  | 'fallback_heuristic'
+  | 'generic_logs';
+
+export interface ExplanationSignalSourceSummary {
+  kind: ExplanationSignalSourceKind;
+  summary: string;
+  nutrition_coverage_ratio: number | null;
+  nutrition_confidence: number | null;
+  structured_food_coverage_ratio: number | null;
+  ingredient_signal_confidence: number | null;
+}
+
 export interface ExplanationInsightItem {
   insight_key: string;
   category: CandidateCategory;
@@ -41,6 +57,7 @@ export interface ExplanationInsightItem {
     from: string;
     to: string;
   };
+  signal_source: ExplanationSignalSourceSummary;
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   medical_context_score_delta: number;
