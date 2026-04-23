@@ -165,6 +165,8 @@ export interface FoodReferenceCandidateDetail {
   estimated_calories: number | null;
   portion_size: string | null;
   suggested_food_category: string | null;
+  suggested_brand_name: string | null;
+  suggested_common_aliases: string[];
   suggested_serving_label: string | null;
   suggested_calories_kcal: number | null;
   suggested_protein_g: number | null;
@@ -178,6 +180,9 @@ export interface FoodReferenceCandidateDetail {
   enrichment_source_label: string | null;
   enrichment_source_ref: string | null;
   enrichment_confidence: number | null;
+  enrichment_status: 'not_started' | 'enriched' | 'fallback' | 'failed';
+  enrichment_last_attempt_at: string | null;
+  enrichment_notes: string | null;
 }
 
 export interface MedicationReferenceCandidateDetail {
