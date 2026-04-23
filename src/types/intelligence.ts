@@ -22,12 +22,37 @@ export interface FoodReferenceItemRow {
   food_category: string | null;
   default_serving_amount: number | null;
   default_serving_unit: string | null;
+  reviewed_serving_label: string | null;
+  calories_kcal: number | null;
+  protein_g: number | null;
+  fat_g: number | null;
+  carbs_g: number | null;
+  fiber_g: number | null;
+  sugar_g: number | null;
+  sodium_mg: number | null;
+  nutrition_confidence: number | null;
+  nutrition_source_label: string | null;
+  nutrition_source_ref: string | null;
   common_aliases: string[];
   default_signals: string[];
   source_label: string;
   evidence_notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FoodNutritionSnapshot {
+  serving_label: string | null;
+  calories_kcal: number | null;
+  protein_g: number | null;
+  fat_g: number | null;
+  carbs_g: number | null;
+  fiber_g: number | null;
+  sugar_g: number | null;
+  sodium_mg: number | null;
+  confidence: number | null;
+  source_label: string | null;
+  source_ref: string | null;
 }
 
 export interface FoodReferenceIngredientRow {
@@ -139,6 +164,20 @@ export interface FoodReferenceCandidateDetail {
   tags: string[];
   estimated_calories: number | null;
   portion_size: string | null;
+  suggested_food_category: string | null;
+  suggested_serving_label: string | null;
+  suggested_calories_kcal: number | null;
+  suggested_protein_g: number | null;
+  suggested_fat_g: number | null;
+  suggested_carbs_g: number | null;
+  suggested_fiber_g: number | null;
+  suggested_sugar_g: number | null;
+  suggested_sodium_mg: number | null;
+  suggested_ingredient_names: string[];
+  suggested_default_signals: string[];
+  enrichment_source_label: string | null;
+  enrichment_source_ref: string | null;
+  enrichment_confidence: number | null;
 }
 
 export interface MedicationReferenceCandidateDetail {
