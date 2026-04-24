@@ -12,7 +12,9 @@ export type OutputValidationFlag =
   | 'missing_insight_key'
   | 'disallowed_field_present'
   | 'summary_empty'
-  | 'caution_without_annotation';
+  | 'caution_without_annotation'
+  | 'medication_detail_unused'
+  | 'medication_detail_invented';
 
 export type ValidationStatus = 'valid' | 'valid_with_warnings' | 'invalid';
 
