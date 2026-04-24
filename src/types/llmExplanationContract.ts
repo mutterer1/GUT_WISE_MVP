@@ -44,6 +44,9 @@ export interface LLMInsightItem {
     nutrition_confidence: number | null;
     structured_food_coverage_ratio: number | null;
     ingredient_signal_confidence: number | null;
+    medication_coverage_ratio: number | null;
+    medication_signal_confidence: number | null;
+    structured_medication_profile_ratio: number | null;
   };
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
