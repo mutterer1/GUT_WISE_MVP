@@ -25,7 +25,7 @@ import type {
 
 const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
 const DOCUMENT_EXTRACTION_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-medical-document-intake`;
-const DOCUMENT_EXTRACTION_TIMEOUT_MS = 30_000;
+const DOCUMENT_EXTRACTION_TIMEOUT_MS = 60_000;
 
 function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind {
   switch (category) {
