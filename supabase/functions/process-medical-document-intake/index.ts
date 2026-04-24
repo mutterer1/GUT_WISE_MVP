@@ -32,6 +32,19 @@ interface MedicalDocumentIntakeRow {
   updated_at: string;
 }
 
+interface MedicalDocumentEvidenceSegmentInsert {
+  user_id: string;
+  document_intake_id: string;
+  page_number: number | null;
+  section_label: string | null;
+  quoted_text: string;
+  normalized_text: string | null;
+  span_start: number | null;
+  span_end: number | null;
+  extractor_label: string | null;
+  confidence_score: number | null;
+}
+
 interface ExtractionResponseBody {
   success: boolean;
   intake?: MedicalDocumentIntakeRow;
@@ -43,6 +56,13 @@ interface ExtractionResponseBody {
 interface ExtractionResult {
   text: string;
   pageCount: number | null;
+  extractorLabel: string;
+  signalConfidence: number;
+}
+
+interface SectionChunk {
+  label: string | null;
+  text: string;
 }
 
 class ExtractionFailure extends Error {
@@ -68,6 +88,7 @@ const IMAGE_FILE_TYPES = new Set([
   "image/heic",
   "image/heif",
 ]);
+const AUTO_SEGMENT_LABEL_PREFIX = "auto_segment:";
 
 function jsonResponse(status: number, body: ExtractionResponseBody): Response {
   return new Response(JSON.stringify(body), {
@@ -133,6 +154,218 @@ function normalizeExtractedText(text: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
+
+function normalizeSectionLabel(value: string): string | null {
+  const cleaned = value
+    .replace(/[:\-\u2013\u2014]\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return null;
+  if (cleaned.length > 80) return null;
+
+  return cleaned;
+}
+
+function isLikelyHeading(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.length < 3 || trimmed.length > 80) return false;
+  if (/[.!?]$/.test(trimmed)) return false;
+
+  const words = trimmed.split(/\s+/);
+  if (words.length > 8) return false;
+
+  const alphaChars = trimmed.replace(/[^A-Za-z]/g, "");
+  if (alphaChars.length === 0) return false;
+
+  const uppercaseRatio =
+    alphaChars.split("").filter((char) => char === char.toUpperCase()).length / alphaChars.length;
+
+  return uppercaseRatio > 0.7 || /:$/.test(trimmed);
+}
+
+function splitIntoSections(text: string): SectionChunk[] {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length === 0) {
+    return [];
+  }
+
+  const sections: SectionChunk[] = [];
+  let currentLabel: string | null = null;
+  let currentParagraphs: string[] = [];
+
+  const flush = () => {
+    if (currentParagraphs.length === 0) return;
+    sections.push({
+      label: currentLabel,
+      text: currentParagraphs.join("\n\n").trim(),
+    });
+    currentParagraphs = [];
+  };
+
+  for (const paragraph of paragraphs) {
+    const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean);
+    const firstLine = lines[0] ?? "";
+
+    if (isLikelyHeading(firstLine)) {
+      flush();
+      currentLabel = normalizeSectionLabel(firstLine);
+      const remainder = lines.slice(1).join(" ").trim();
+      if (remainder) {
+        currentParagraphs.push(remainder);
+      }
+      continue;
+    }
+
+    currentParagraphs.push(paragraph);
+  }
+
+  flush();
+
+  if (sections.length === 0) {
+    return [{ label: null, text }];
+  }
+
+  return sections;
+}
+
+function splitTextIntoEvidenceChunks(text: string, maxLength = 650): string[] {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length === 0) return [];
+
+  const chunks: string[] = [];
+  let current = "";
+
+  const pushCurrent = () => {
+    const normalized = normalizeExtractedText(current);
+    if (normalized) {
+      chunks.push(normalized);
+    }
+    current = "";
+  };
+
+  for (const paragraph of paragraphs) {
+    if (!current) {
+      current = paragraph;
+      continue;
+    }
+
+    const candidate = `${current}\n\n${paragraph}`;
+    if (candidate.length <= maxLength) {
+      current = candidate;
+      continue;
+    }
+
+    pushCurrent();
+
+    if (paragraph.length <= maxLength) {
+      current = paragraph;
+      continue;
+    }
+
+    const sentences = paragraph.match(/[^.!?\n]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean)
+      ?? [paragraph];
+
+    for (const sentence of sentences) {
+      if (!current) {
+        current = sentence;
+        continue;
+      }
+
+      const sentenceCandidate = `${current} ${sentence}`.trim();
+      if (sentenceCandidate.length <= maxLength) {
+        current = sentenceCandidate;
+      } else {
+        pushCurrent();
+        current = sentence;
+      }
+    }
+  }
+
+  pushCurrent();
+  return chunks;
+}
+
+function buildEvidenceSegments(
+  intake: MedicalDocumentIntakeRow,
+  extraction: ExtractionResult
+): MedicalDocumentEvidenceSegmentInsert[] {
+  const sections = splitIntoSections(extraction.text);
+  const fullText = extraction.text;
+  let searchStart = 0;
+  const pageNumberForAll = extraction.pageCount === 1 ? 1 : null;
+
+  const segments: MedicalDocumentEvidenceSegmentInsert[] = [];
+
+  for (const section of sections) {
+    const chunks = splitTextIntoEvidenceChunks(section.text);
+
+    for (const chunk of chunks) {
+      const spanStart = fullText.indexOf(chunk, searchStart);
+      const resolvedSpanStart = spanStart >= 0 ? spanStart : fullText.indexOf(chunk);
+      const spanEnd =
+        resolvedSpanStart >= 0 ? resolvedSpanStart + chunk.length : null;
+
+      if (resolvedSpanStart >= 0) {
+        searchStart = resolvedSpanStart + chunk.length;
+      }
+
+      segments.push({
+        user_id: intake.user_id,
+        document_intake_id: intake.id,
+        page_number: pageNumberForAll,
+        section_label: section.label,
+        quoted_text: chunk,
+        normalized_text: chunk,
+        span_start: resolvedSpanStart >= 0 ? resolvedSpanStart : null,
+        span_end: spanEnd,
+        extractor_label: `${AUTO_SEGMENT_LABEL_PREFIX}${extraction.extractorLabel}`,
+        confidence_score: extraction.signalConfidence,
+      });
+    }
+  }
+
+  return segments;
+}
+
+async function persistEvidenceSegments(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  intake: MedicalDocumentIntakeRow,
+  extraction: ExtractionResult
+): Promise<number> {
+  const { data: existingSegments, error: existingError } = await supabaseAdmin
+    .from("medical_document_evidence_segments")
+    .select("id")
+    .eq("document_intake_id", intake.id)
+    .eq("user_id", intake.user_id)
+    .like("extractor_label", `${AUTO_SEGMENT_LABEL_PREFIX}%`);
+
+  if (existingError) throw existingError;
+
+  if ((existingSegments?.length ?? 0) > 0) {
+    return existingSegments?.length ?? 0;
+  }
+
+  const inserts = buildEvidenceSegments(intake, extraction);
+  if (inserts.length === 0) {
+    return 0;
+  }
+
+  const { error: insertError } = await supabaseAdmin
+    .from("medical_document_evidence_segments")
+    .insert(inserts);
+
+  if (insertError) throw insertError;
+  return inserts.length;
 }
 
 function countPdfPages(rawText: string): number | null {
@@ -333,6 +566,8 @@ async function extractPdfText(buffer: Uint8Array): Promise<ExtractionResult> {
   return {
     text,
     pageCount: countPdfPages(rawPdfText) ?? 1,
+    extractorLabel: "pdf_text_heuristic",
+    signalConfidence: 0.78,
   };
 }
 
@@ -405,6 +640,8 @@ async function extractDocxText(buffer: Uint8Array): Promise<ExtractionResult> {
   return {
     text,
     pageCount: readDocxPageCount(zipEntries) ?? 1,
+    extractorLabel: "docx_xml",
+    signalConfidence: 0.9,
   };
 }
 
@@ -421,6 +658,8 @@ async function extractPlainText(blob: Blob): Promise<ExtractionResult> {
   return {
     text,
     pageCount: 1,
+    extractorLabel: "plain_text",
+    signalConfidence: 0.98,
   };
 }
 
@@ -546,12 +785,46 @@ Deno.serve(async (req: Request) => {
 
   const intake = intakeData as MedicalDocumentIntakeRow;
 
-  if (intake.extraction_status === "completed" && intake.extracted_text) {
+  const { data: existingSegmentRows, error: existingSegmentError } = await supabaseAdmin
+    .from("medical_document_evidence_segments")
+    .select("id", { count: "exact" })
+    .eq("document_intake_id", intake.id)
+    .eq("user_id", user.id)
+    .like("extractor_label", `${AUTO_SEGMENT_LABEL_PREFIX}%`);
+
+  if (existingSegmentError) {
+    return jsonResponse(500, {
+      success: false,
+      error: existingSegmentError.message,
+    });
+  }
+
+  const existingSegmentCount = existingSegmentRows?.length ?? 0;
+
+  if (intake.extraction_status === "completed" && intake.extracted_text && existingSegmentCount > 0) {
     return jsonResponse(200, {
       success: true,
       intake,
       extraction_supported: true,
-      message: "Document already extracted",
+      message: "Document extraction and evidence segments are already available",
+    });
+  }
+
+  if (intake.extraction_status === "completed" && intake.extracted_text && existingSegmentCount === 0) {
+    const backfillExtraction: ExtractionResult = {
+      text: intake.extracted_text,
+      pageCount: intake.page_count ?? 1,
+      extractorLabel: "backfill_existing_text",
+      signalConfidence: 0.88,
+    };
+
+    await persistEvidenceSegments(supabaseAdmin, intake, backfillExtraction);
+
+    return jsonResponse(200, {
+      success: true,
+      intake,
+      extraction_supported: true,
+      message: "Evidence segments were built from the existing extracted text",
     });
   }
 
@@ -598,6 +871,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const extraction = await extractMedicalDocument(processingIntake, fileBlob);
+    await persistEvidenceSegments(supabaseAdmin, processingIntake, extraction);
+
     const completedIntake = await updateIntake(supabaseAdmin, intake.id, {
       intake_status: "review_ready",
       extraction_status: "completed",
@@ -611,7 +886,7 @@ Deno.serve(async (req: Request) => {
       success: true,
       intake: completedIntake,
       extraction_supported: true,
-      message: "Document extraction completed and the intake is ready for review",
+      message: "Document extraction completed and evidence segments are ready for review",
     });
   } catch (error) {
     const extractionSupported =
