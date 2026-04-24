@@ -1,9 +1,18 @@
 import type { LLMExplanationInput } from '../types/llmExplanationContract';
 import type { ExplanationInvocationResponse } from '../types/explanationInvocation';
+import type { ValidationResult } from '../types/llmExplanationOutput';
+import {
+  buildMedicationValidationRetryInput,
+} from '../lib/insightCandidates/buildLLMExplanationInput';
+import { validateLLMExplanationOutput } from '../lib/insightCandidates/validateLLMExplanationOutput';
 import { withRetry } from '../utils/retryHelper';
 
 const EDGE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-insight-explanations`;
 const REQUEST_TIMEOUT_MS = 30_000;
+const MEDICATION_RETRY_FLAG_TYPES = new Set([
+  'medication_detail_unused',
+  'medication_detail_invented',
+]);
 
 function shouldRetryEdgeFunction(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
@@ -52,14 +61,97 @@ async function attemptInvocation(
   }
 }
 
-export async function invokeExplanationGeneration(
+function normalizeInvocationResponse(
+  llmInput: LLMExplanationInput,
+  response: ExplanationInvocationResponse
+): ExplanationInvocationResponse {
+  if (!response.explanation_output) {
+    return response;
+  }
+
+  const localValidation = validateLLMExplanationOutput(llmInput, response.explanation_output);
+
+  return {
+    ...response,
+    validation: localValidation,
+    success: response.success && localValidation.is_safe_to_use,
+  };
+}
+
+function countMedicationValidationFlags(validation: ValidationResult): number {
+  return validation.flags.filter(flag => MEDICATION_RETRY_FLAG_TYPES.has(flag.type)).length;
+}
+
+function shouldAttemptMedicationRetry(response: ExplanationInvocationResponse): boolean {
+  return (
+    response.success &&
+    !!response.explanation_output &&
+    countMedicationValidationFlags(response.validation) > 0
+  );
+}
+
+function choosePreferredInvocationResponse(
+  initial: ExplanationInvocationResponse,
+  retried: ExplanationInvocationResponse
+): ExplanationInvocationResponse {
+  if (!retried.success || !retried.explanation_output) {
+    return initial;
+  }
+
+  const initialMedicationFlags = countMedicationValidationFlags(initial.validation);
+  const retriedMedicationFlags = countMedicationValidationFlags(retried.validation);
+
+  if (retriedMedicationFlags < initialMedicationFlags) {
+    return retried;
+  }
+
+  if (
+    retriedMedicationFlags === initialMedicationFlags &&
+    retried.validation.flags.length < initial.validation.flags.length
+  ) {
+    return retried;
+  }
+
+  return initial;
+}
+
+async function invokeWithTransportRetry(
   llmInput: LLMExplanationInput,
   accessToken: string,
 ): Promise<ExplanationInvocationResponse> {
-  return withRetry(() => attemptInvocation(llmInput, accessToken), {
+  const response = await withRetry(() => attemptInvocation(llmInput, accessToken), {
     maxRetries: 2,
     initialDelay: 1500,
     maxDelay: 6000,
     shouldRetry: shouldRetryEdgeFunction,
   });
+
+  return normalizeInvocationResponse(llmInput, response);
+}
+
+export async function invokeExplanationGeneration(
+  llmInput: LLMExplanationInput,
+  accessToken: string,
+): Promise<ExplanationInvocationResponse> {
+  const initialResponse = await invokeWithTransportRetry(llmInput, accessToken);
+
+  if (!shouldAttemptMedicationRetry(initialResponse)) {
+    return initialResponse;
+  }
+
+  const retryInput = buildMedicationValidationRetryInput(
+    llmInput,
+    initialResponse.validation
+  );
+
+  if (!retryInput) {
+    return initialResponse;
+  }
+
+  try {
+    const retriedResponse = await invokeWithTransportRetry(retryInput, accessToken);
+    return choosePreferredInvocationResponse(initialResponse, retriedResponse);
+  } catch {
+    return initialResponse;
+  }
 }
