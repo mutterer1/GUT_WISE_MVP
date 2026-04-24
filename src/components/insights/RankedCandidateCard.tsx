@@ -116,6 +116,12 @@ const subtypeLabels: Record<string, string> = {
 
   medication_any_bm_shift: 'GI-relevant medication timing linked to bowel changes',
   medication_any_symptom_burden: 'GI-relevant medication timing associated with symptom patterns',
+  medication_as_needed_antidiarrheal_next_day_hard_stool:
+    'As-needed antidiarrheal linked to harder stool the next day',
+  medication_before_meal_iron_same_day_nausea:
+    'Before-meal iron linked to same-day nausea',
+  medication_oral_magnesium_same_day_loose_stool:
+    'Quantified oral magnesium linked to same-day loose stool',
 
   multifactor_stress_sleep_hydration_risk: 'Combined stress, poor sleep, and low hydration',
   compound_risk_day: 'Combined stress, poor sleep, and low hydration',
