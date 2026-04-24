@@ -213,6 +213,29 @@ function buildSourceCaution(item: ExplanationInsightItem): string | null {
   return null;
 }
 
+function buildMedicationInterpretationNote(item: ExplanationInsightItem): string | null {
+  if (item.category !== 'medication') {
+    return null;
+  }
+
+  if (item.signal_source.kind === 'fallback_medication_heuristic') {
+    return 'Interpret this as a broad medication association only. It is not backed by a reviewed medication reference with structured route, timing, regimen, or dose detail.';
+  }
+
+  if (
+    item.signal_source.kind === 'reviewed_medication_reference' &&
+    item.medication_reference_detail
+  ) {
+    return 'This report card is anchored to the reviewed medication context shown above rather than to medication-name heuristics alone.';
+  }
+
+  if (item.signal_source.kind === 'reviewed_medication_reference') {
+    return 'This report card is backed by a reviewed medication reference, but the structured medication profile is still broader than a single route, timing, regimen, or dose pattern.';
+  }
+
+  return null;
+}
+
 function summarizeSourceMix(items: ExplanationInsightItem[]): Array<{
   kind: ExplanationSignalSourceKind;
   count: number;
@@ -236,6 +259,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
   const title = subtypeLabels[item.subtype] ?? formatSubtypeFallback(item.subtype);
   const trustMetrics = buildTrustMetrics(item.signal_source);
   const medicationDetail = item.medication_reference_detail;
+  const medicationInterpretationNote = buildMedicationInterpretationNote(item);
   const relationshipSummary =
     triggerSummary.length > 0 && outcomeSummary.length > 0
       ? { trigger: triggerSummary, outcome: outcomeSummary }
@@ -343,6 +367,17 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
         </div>
       )}
 
+      {medicationInterpretationNote && (
+        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.05)] px-4 py-3">
+          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+            Interpretation guardrail
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-gray-700 dark:text-gray-300">
+            {medicationInterpretationNote}
+          </p>
+        </div>
+      )}
+
       {trustMetrics.length > 0 && (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {trustMetrics.map((metric) => (
@@ -422,7 +457,9 @@ export default function PatternEvidenceSection({
                   GutWise should say when a finding is backed by reviewed nutrition, structured
                   ingredient matching, reviewed medication references with dose or timing context,
                   and when it is still leaning on fallback heuristics. These cards now also carry
-                  the medication detail used by the rule into print and PDF export.
+                  the medication detail used by the rule into print and PDF export, together with
+                  a guardrail that distinguishes reviewed medication context from broad heuristic
+                  medication matching.
                 </p>
               </div>
             </div>
