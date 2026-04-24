@@ -21,6 +21,7 @@ import type {
   CandidateMedicalFactEvidenceRow,
   CandidateEvidenceKind,
   DocumentExtractionOrchestrationResponse,
+  CandidateReviewEvidenceItem,
 } from '../types/medicalContext';
 
 const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
@@ -701,6 +702,62 @@ export async function fetchCandidateEvidence(
 
   if (error) throw error;
   return (data ?? []) as CandidateMedicalFactEvidenceRow[];
+}
+
+async function fetchDocumentIntakeById(
+  userId: string,
+  intakeId: string
+): Promise<MedicalDocumentIntakeRow | null> {
+  const { data, error } = await supabase
+    .from('medical_document_intakes')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('id', intakeId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as MedicalDocumentIntakeRow | null;
+}
+
+export async function fetchCandidateReviewEvidenceItems(
+  userId: string,
+  candidate: Pick<CandidateMedicalFactRow, 'id' | 'source_document_id'>
+): Promise<CandidateReviewEvidenceItem[]> {
+  const evidenceRows = await fetchCandidateEvidence(userId, candidate.id);
+  const resolvedIntakeId =
+    candidate.source_document_id ?? evidenceRows[0]?.document_intake_id ?? null;
+
+  if (!resolvedIntakeId) {
+    return evidenceRows.map((evidence) => ({
+      evidence,
+      segment: null,
+      intake: null,
+    }));
+  }
+
+  const [segmentRows, intake] = await Promise.all([
+    fetchDocumentEvidenceSegments(userId, resolvedIntakeId),
+    fetchDocumentIntakeById(userId, resolvedIntakeId),
+  ]);
+
+  const segmentMap = new Map(segmentRows.map((segment) => [segment.id, segment]));
+
+  return evidenceRows
+    .map((evidence) => ({
+      evidence,
+      segment: evidence.evidence_segment_id
+        ? segmentMap.get(evidence.evidence_segment_id) ?? null
+        : null,
+      intake,
+    }))
+    .sort((left, right) => {
+      const leftPage = left.segment?.page_number ?? left.evidence.page_number ?? Number.MAX_SAFE_INTEGER;
+      const rightPage =
+        right.segment?.page_number ?? right.evidence.page_number ?? Number.MAX_SAFE_INTEGER;
+
+      if (leftPage !== rightPage) return leftPage - rightPage;
+      return left.evidence.created_at.localeCompare(right.evidence.created_at);
+    });
 }
 
 export async function fetchAllCandidates(
