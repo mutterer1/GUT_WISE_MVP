@@ -9,7 +9,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { generateAllInsights, saveInsights, getUserInsights, Insight } from '../utils/insightEngine';
 import { useRankedInsights } from '../hooks/useRankedInsights';
 import type { ExplanationInsightItem } from '../types/explanationBundle';
-import type { LLMPerItemExplanation } from '../types/llmExplanationOutput';
+import type {
+  ExplanationGenerationMeta,
+  LLMPerItemExplanation,
+} from '../types/llmExplanationOutput';
 
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -27,6 +30,47 @@ type InsightSource =
   | 'ranked_primary'
   | 'ranked_empty'
   | 'legacy_error_fallback';
+
+function buildMedicationRetrySummary(
+  generationMeta: ExplanationGenerationMeta | null
+): { tone: 'positive' | 'warning'; message: string } | null {
+  if (!generationMeta?.medication_validation_retry_attempted) {
+    return null;
+  }
+
+  const targetCount = generationMeta.retry_target_insight_keys.length;
+  const targetLabel =
+    targetCount === 0
+      ? 'the medication findings reviewed for wording quality'
+      : targetCount === 1
+        ? '1 medication finding'
+        : `${targetCount} medication findings`;
+
+  if (
+    generationMeta.medication_validation_retry_applied &&
+    generationMeta.medication_validation_retry_improved
+  ) {
+    return {
+      tone: 'positive',
+      message: `GutWise tightened explanation wording for ${targetLabel} after medication-detail validation so the final wording uses the reviewed medication context more directly.`,
+    };
+  }
+
+  if (
+    generationMeta.medication_validation_retry_attempted &&
+    generationMeta.remaining_medication_warning_keys.length > 0
+  ) {
+    return {
+      tone: 'warning',
+      message: `GutWise checked medication wording against structured medication detail for ${targetLabel}, but some medication-detail cautions still remain. Use the medication detail chips on each card as the source of truth.`,
+    };
+  }
+
+  return {
+    tone: 'positive',
+    message: `GutWise checked medication wording against structured medication detail for ${targetLabel} and kept the version that validated best.`,
+  };
+}
 
 export default function Insights() {
   const { user } = useAuth();
@@ -124,6 +168,8 @@ export default function Insights() {
   const validation = explanationResult?.validation ?? null;
   const isSafeToUse = validation?.is_safe_to_use === true;
   const validationStatus = validation?.status ?? null;
+  const generationMeta = explanationResult?.explanation_output?.meta.generation_meta ?? null;
+  const medicationRetrySummary = buildMedicationRetrySummary(generationMeta);
 
   const distinctWarningFlags =
     validationStatus === 'valid_with_warnings'
@@ -258,7 +304,40 @@ export default function Insights() {
                 <div className="flex items-start gap-3 rounded-2xl border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.08)] p-4">
                   <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-warning)]" />
                   <p className="text-sm text-[var(--color-warning)]">
-                    Some explanations may be incomplete. Patterns are still shown below.
+                    {distinctWarningFlags.some(
+                      (flag) =>
+                        flag === 'medication_detail_unused' ||
+                        flag === 'medication_detail_invented'
+                    )
+                      ? 'Some medication explanations still have wording cautions. Patterns are still shown below with structured medication context surfaced on the cards.'
+                      : 'Some explanations may be incomplete. Patterns are still shown below.'}
+                  </p>
+                </div>
+              )}
+
+              {medicationRetrySummary && (
+                <div
+                  className={`flex items-start gap-3 rounded-2xl p-4 ${
+                    medicationRetrySummary.tone === 'positive'
+                      ? 'border border-[rgba(76,174,124,0.24)] bg-[rgba(76,174,124,0.08)]'
+                      : 'border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.08)]'
+                  }`}
+                >
+                  <AlertCircle
+                    className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
+                      medicationRetrySummary.tone === 'positive'
+                        ? 'text-[#2F7A57] dark:text-[#9DE2BC]'
+                        : 'text-[var(--color-warning)]'
+                    }`}
+                  />
+                  <p
+                    className={`text-sm ${
+                      medicationRetrySummary.tone === 'positive'
+                        ? 'text-[#2F7A57] dark:text-[#D7F8E5]'
+                        : 'text-[var(--color-warning)]'
+                    }`}
+                  >
+                    {medicationRetrySummary.message}
                   </p>
                 </div>
               )}
@@ -279,6 +358,7 @@ export default function Insights() {
                     candidate={candidate}
                     bundleItem={bundleItemMap.get(candidate.insight_key)}
                     explanation={exMap.get(candidate.insight_key)}
+                    explanationGenerationMeta={generationMeta}
                     rank={index + 1}
                   />
                 ))}
