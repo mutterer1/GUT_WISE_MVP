@@ -41,6 +41,21 @@ function serializeItem(item: LLMInsightItem, index: number): string {
     }
   }
 
+  if (item.medication_reference_detail) {
+    const detail = item.medication_reference_detail;
+    const detailParts = [
+      `label=${detail.label}`,
+      `family=${detail.family ?? 'null'}`,
+      `route=${detail.route ?? 'null'}`,
+      `timing=${detail.timing_context ?? 'null'}`,
+      `regimen=${detail.regimen_status ?? 'null'}`,
+      `dose=${detail.dose_context ?? 'null'}`,
+    ].join(' ');
+
+    lines.push(`medication_reference_detail: ${detailParts}`);
+    lines.push(`medication_reference_summary: ${detail.summary}`);
+  }
+
   if (item.medical_context_modifier_applied && item.medical_context_annotations.length > 0) {
     lines.push(`medical_annotations: ${item.medical_context_annotations.join('; ')}`);
   }
@@ -78,6 +93,8 @@ function buildSystemPrompt(input: LLMExplanationInput): string {
     '  - If signal_source is present, explicitly reflect whether the item is driven by reviewed nutrition, structured ingredients, reviewed medication references, mixed evidence, or fallback heuristics.',
     '  - Do not imply reviewed nutrition coverage when signal_source.kind is fallback_heuristic.',
     '  - Do not imply reviewed medication reference coverage when signal_source.kind is fallback_medication_heuristic.',
+    '  - If medication_reference_detail is present, use that exact family, route, timing, regimen, or dose context in the explanation when relevant.',
+    '  - Do not invent medication detail beyond medication_reference_detail.',
     '  - Prioritize highest-scored items first in the output.',
     '  - Output only per-item explanations. No preamble. No summary section unless items are empty.',
   ].join('\n');
@@ -142,6 +159,7 @@ function buildUserPrompt(input: LLMExplanationInput): string {
       'Reference trigger_factors, target_outcomes, and evidence associations only.',
       'If caution_signals exist for an item, include one hedging sentence.',
       'If signal_source_summary exists for an item, incorporate it in plain language so the user can tell whether the finding is based on reviewed nutrition, structured ingredients, reviewed medication references, or heuristic fallback.',
+      'If medication_reference_detail exists for an item, use that detail in plain language so the user sees the specific medication context, such as before-meal oral iron or as-needed antidiarrheal rescue use.',
       'If medical_annotations exist for an item, incorporate context where relevant.',
       'Do not produce any text outside the per-item explanations.',
     ].join('\n'),
