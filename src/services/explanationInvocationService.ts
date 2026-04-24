@@ -1,6 +1,10 @@
 import type { LLMExplanationInput } from '../types/llmExplanationContract';
 import type { ExplanationInvocationResponse } from '../types/explanationInvocation';
-import type { ValidationResult } from '../types/llmExplanationOutput';
+import type {
+  ExplanationGenerationMeta,
+  OutputValidationFlag,
+  ValidationResult,
+} from '../types/llmExplanationOutput';
 import {
   buildMedicationValidationRetryInput,
 } from '../lib/insightCandidates/buildLLMExplanationInput';
@@ -70,9 +74,19 @@ function normalizeInvocationResponse(
   }
 
   const localValidation = validateLLMExplanationOutput(llmInput, response.explanation_output);
+  const validationFlags = Array.from(
+    new Set(localValidation.flags.map(flag => flag.type))
+  ) as OutputValidationFlag[];
 
   return {
     ...response,
+    explanation_output: {
+      ...response.explanation_output,
+      meta: {
+        ...response.explanation_output.meta,
+        validation_flags: validationFlags,
+      },
+    },
     validation: localValidation,
     success: response.success && localValidation.is_safe_to_use,
   };
@@ -80,6 +94,36 @@ function normalizeInvocationResponse(
 
 function countMedicationValidationFlags(validation: ValidationResult): number {
   return validation.flags.filter(flag => MEDICATION_RETRY_FLAG_TYPES.has(flag.type)).length;
+}
+
+function extractMedicationWarningKeys(validation: ValidationResult): string[] {
+  return Array.from(
+    new Set(
+      validation.flags
+        .filter(flag => MEDICATION_RETRY_FLAG_TYPES.has(flag.type) && flag.insight_key)
+        .map(flag => flag.insight_key as string)
+    )
+  );
+}
+
+function applyGenerationMeta(
+  response: ExplanationInvocationResponse,
+  generationMeta: ExplanationGenerationMeta
+): ExplanationInvocationResponse {
+  if (!response.explanation_output) {
+    return response;
+  }
+
+  return {
+    ...response,
+    explanation_output: {
+      ...response.explanation_output,
+      meta: {
+        ...response.explanation_output.meta,
+        generation_meta: generationMeta,
+      },
+    },
+  };
 }
 
 function shouldAttemptMedicationRetry(response: ExplanationInvocationResponse): boolean {
@@ -134,9 +178,20 @@ export async function invokeExplanationGeneration(
   accessToken: string,
 ): Promise<ExplanationInvocationResponse> {
   const initialResponse = await invokeWithTransportRetry(llmInput, accessToken);
+  const initialMedicationWarningCount = countMedicationValidationFlags(initialResponse.validation);
+  const initialMedicationWarningKeys = extractMedicationWarningKeys(initialResponse.validation);
 
   if (!shouldAttemptMedicationRetry(initialResponse)) {
-    return initialResponse;
+    return applyGenerationMeta(initialResponse, {
+      generation_path: 'single_pass',
+      medication_validation_retry_attempted: false,
+      medication_validation_retry_applied: false,
+      medication_validation_retry_improved: false,
+      initial_medication_validation_warning_count: initialMedicationWarningCount,
+      final_medication_validation_warning_count: initialMedicationWarningCount,
+      retry_target_insight_keys: initialMedicationWarningKeys,
+      remaining_medication_warning_keys: initialMedicationWarningKeys,
+    });
   }
 
   const retryInput = buildMedicationValidationRetryInput(
@@ -145,13 +200,48 @@ export async function invokeExplanationGeneration(
   );
 
   if (!retryInput) {
-    return initialResponse;
+    return applyGenerationMeta(initialResponse, {
+      generation_path: 'single_pass',
+      medication_validation_retry_attempted: false,
+      medication_validation_retry_applied: false,
+      medication_validation_retry_improved: false,
+      initial_medication_validation_warning_count: initialMedicationWarningCount,
+      final_medication_validation_warning_count: initialMedicationWarningCount,
+      retry_target_insight_keys: initialMedicationWarningKeys,
+      remaining_medication_warning_keys: initialMedicationWarningKeys,
+    });
   }
 
   try {
     const retriedResponse = await invokeWithTransportRetry(retryInput, accessToken);
-    return choosePreferredInvocationResponse(initialResponse, retriedResponse);
+    const chosenResponse = choosePreferredInvocationResponse(initialResponse, retriedResponse);
+    const finalMedicationWarningCount = countMedicationValidationFlags(chosenResponse.validation);
+    const finalMedicationWarningKeys = extractMedicationWarningKeys(chosenResponse.validation);
+    const retryApplied = chosenResponse === retriedResponse;
+
+    return applyGenerationMeta(chosenResponse, {
+      generation_path: retryApplied
+        ? 'medication_retry_selected'
+        : 'medication_retry_discarded',
+      medication_validation_retry_attempted: true,
+      medication_validation_retry_applied: retryApplied,
+      medication_validation_retry_improved:
+        finalMedicationWarningCount < initialMedicationWarningCount,
+      initial_medication_validation_warning_count: initialMedicationWarningCount,
+      final_medication_validation_warning_count: finalMedicationWarningCount,
+      retry_target_insight_keys: initialMedicationWarningKeys,
+      remaining_medication_warning_keys: finalMedicationWarningKeys,
+    });
   } catch {
-    return initialResponse;
+    return applyGenerationMeta(initialResponse, {
+      generation_path: 'medication_retry_discarded',
+      medication_validation_retry_attempted: true,
+      medication_validation_retry_applied: false,
+      medication_validation_retry_improved: false,
+      initial_medication_validation_warning_count: initialMedicationWarningCount,
+      final_medication_validation_warning_count: initialMedicationWarningCount,
+      retry_target_insight_keys: initialMedicationWarningKeys,
+      remaining_medication_warning_keys: initialMedicationWarningKeys,
+    });
   }
 }
