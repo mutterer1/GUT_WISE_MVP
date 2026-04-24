@@ -999,6 +999,7 @@ export default function MedicalDocumentIntake() {
                       </p>
                       <p>Add a detail only when you want it to enter structured review.</p>
                       <p>Accepted candidates become usable context only after your confirmation.</p>
+                      <p>When documents repeat the same fact, GutWise now merges corroborating overlaps and flags true conflicts for review instead of stacking duplicate queue items.</p>
                     </div>
                   </div>
                 </div>
