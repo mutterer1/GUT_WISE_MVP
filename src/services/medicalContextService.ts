@@ -20,9 +20,12 @@ import type {
   MedicalDocumentEvidenceSegmentRow,
   CandidateMedicalFactEvidenceRow,
   CandidateEvidenceKind,
+  DocumentExtractionOrchestrationResponse,
 } from '../types/medicalContext';
 
 const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
+const DOCUMENT_EXTRACTION_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-medical-document-intake`;
+const DOCUMENT_EXTRACTION_TIMEOUT_MS = 30_000;
 
 function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind {
   switch (category) {
@@ -43,6 +46,81 @@ async function computeFileSha256(file: File): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer))
     .map((value) => value.toString(16).padStart(2, '0'))
     .join('');
+}
+
+async function getAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    throw new Error(`Failed to authenticate document extraction request. ${error.message}`);
+  }
+
+  if (!session?.access_token) {
+    throw new Error('No active session found for document extraction');
+  }
+
+  return session.access_token;
+}
+
+async function invokeDocumentExtraction(
+  intakeId: string
+): Promise<DocumentExtractionOrchestrationResponse> {
+  const accessToken = await getAccessToken();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DOCUMENT_EXTRACTION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DOCUMENT_EXTRACTION_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ intake_id: intakeId }),
+      signal: controller.signal,
+    });
+
+    const responseText = await response.text();
+    let body:
+      | (Partial<DocumentExtractionOrchestrationResponse> & {
+          error?: string;
+        })
+      | null = null;
+
+    if (responseText) {
+      try {
+        body = JSON.parse(responseText) as Partial<DocumentExtractionOrchestrationResponse> & {
+          error?: string;
+        };
+      } catch {
+        body = { error: responseText };
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        body?.error || `Document extraction function responded with status ${response.status}`
+      );
+    }
+
+    if (!body?.success || !body.intake) {
+      throw new Error(body?.error || 'Document extraction did not return an updated intake');
+    }
+
+    return body as DocumentExtractionOrchestrationResponse;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Document extraction request timed out');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function uploadMedicalDocumentArtifact(params: {
@@ -417,6 +495,19 @@ export async function fetchDocumentIntakes(
 
   if (error) throw error;
   return (data ?? []) as MedicalDocumentIntakeRow[];
+}
+
+export async function startDocumentExtraction(
+  userId: string,
+  intakeId: string
+): Promise<DocumentExtractionOrchestrationResponse> {
+  const response = await invokeDocumentExtraction(intakeId);
+
+  if (response.intake.user_id !== userId) {
+    throw new Error('Document extraction returned an intake for the wrong user');
+  }
+
+  return response;
 }
 
 export async function updateIntakeStatus(
