@@ -6,12 +6,16 @@ import type {
   ExplanationSignalSourceKind,
   ExplanationSignalSourceSummary,
 } from '../../types/explanationBundle';
-import type { LLMPerItemExplanation } from '../../types/llmExplanationOutput';
+import type {
+  ExplanationGenerationMeta,
+  LLMPerItemExplanation,
+} from '../../types/llmExplanationOutput';
 
 interface RankedCandidateCardProps {
   candidate: MedicalContextAnnotatedCandidate;
   bundleItem?: ExplanationInsightItem;
   explanation?: LLMPerItemExplanation;
+  explanationGenerationMeta?: ExplanationGenerationMeta | null;
   rank: number;
 }
 
@@ -405,10 +409,35 @@ function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): strin
   return null;
 }
 
+function buildMedicationInterpretationNote(
+  category: string,
+  source: ExplanationSignalSourceSummary | null,
+  hasMedicationDetail: boolean
+): string | null {
+  if (category !== 'medication' || !source) {
+    return null;
+  }
+
+  if (source.kind === 'fallback_medication_heuristic') {
+    return 'Interpret this as a broad medication pattern only. It is not yet anchored to a reviewed medication reference with route, timing, regimen, or dose detail.';
+  }
+
+  if (source.kind === 'reviewed_medication_reference' && hasMedicationDetail) {
+    return 'This finding is anchored to the reviewed medication context shown above rather than to name-only medication matching.';
+  }
+
+  if (source.kind === 'reviewed_medication_reference') {
+    return 'This finding is backed by a reviewed medication reference, but the structured route, timing, regimen, or dose context is still broader than a single medication profile.';
+  }
+
+  return null;
+}
+
 export default function RankedCandidateCard({
   candidate,
   bundleItem,
   explanation,
+  explanationGenerationMeta,
   rank,
 }: RankedCandidateCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(rank <= 2);
@@ -435,7 +464,28 @@ export default function RankedCandidateCard({
   const medicationDetail = bundleItem?.medication_reference_detail ?? null;
   const signalSourceMeta = signalSource ? signalSourceConfig[signalSource.kind] : null;
   const signalSourceCaution = signalSource ? buildSignalSourceCaution(signalSource) : null;
+  const medicationInterpretationNote = buildMedicationInterpretationNote(
+    candidate.category,
+    signalSource,
+    medicationDetail !== null
+  );
   const trustMetrics = signalSource ? buildTrustMetrics(signalSource) : [];
+  const wasMedicationRetryTarget =
+    explanationGenerationMeta?.retry_target_insight_keys.includes(candidate.insight_key) ?? false;
+  const hasRemainingMedicationWarning =
+    explanationGenerationMeta?.remaining_medication_warning_keys.includes(candidate.insight_key) ??
+    false;
+  const medicationRetryTightened =
+    !!explanation &&
+    wasMedicationRetryTarget &&
+    explanationGenerationMeta?.medication_validation_retry_attempted === true &&
+    explanationGenerationMeta?.medication_validation_retry_applied === true &&
+    explanationGenerationMeta?.medication_validation_retry_improved === true &&
+    !hasRemainingMedicationWarning;
+  const medicationRetryChecked =
+    !!explanation &&
+    wasMedicationRetryTarget &&
+    explanationGenerationMeta?.medication_validation_retry_attempted === true;
 
   return (
     <div
@@ -558,6 +608,17 @@ export default function RankedCandidateCard({
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {medicationInterpretationNote && (
+        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.05)] px-3.5 py-3 dark:bg-[rgba(76,174,124,0.08)]">
+          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+            Interpretation guardrail
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[#295E46] dark:text-[#D7F8E5]">
+            {medicationInterpretationNote}
+          </p>
         </div>
       )}
 
@@ -720,6 +781,28 @@ export default function RankedCandidateCard({
               Pattern explanation
             </span>
           </div>
+
+          {medicationRetryChecked && (
+            <div
+              className={`rounded-xl px-3.5 py-3 ${
+                medicationRetryTightened
+                  ? 'border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.06)] dark:bg-[rgba(76,174,124,0.08)]'
+                  : 'border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] dark:bg-[rgba(255,170,92,0.1)]'
+              }`}
+            >
+              <p
+                className={`text-xs leading-relaxed ${
+                  medicationRetryTightened
+                    ? 'text-[#2F7A57] dark:text-[#D7F8E5]'
+                    : 'text-[var(--color-warning)]'
+                }`}
+              >
+                {medicationRetryTightened
+                  ? 'This explanation was tightened after medication-detail validation so the wording uses the structured medication context more directly.'
+                  : 'This explanation was checked against structured medication detail, but medication-detail cautions still remain. Use the medication detail block above as the source of truth.'}
+              </p>
+            </div>
+          )}
 
           <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
             {explanation.summary}
