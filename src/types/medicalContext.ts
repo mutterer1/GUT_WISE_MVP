@@ -294,3 +294,9 @@ export interface CandidateMedicalFactEvidenceRow {
   created_at: string;
   updated_at: string;
 }
+
+export interface CandidateReviewEvidenceItem {
+  evidence: CandidateMedicalFactEvidenceRow;
+  segment: MedicalDocumentEvidenceSegmentRow | null;
+  intake: MedicalDocumentIntakeRow | null;
+}
