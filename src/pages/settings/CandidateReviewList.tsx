@@ -110,6 +110,49 @@ function formatExtractorLabel(value: string | null | undefined): string {
     .trim();
 }
 
+function parseStructuredCandidateNotes(notes: string | null | undefined): {
+  generalNote: string | null;
+  mergeNotes: string[];
+  conflictNotes: string[];
+} {
+  if (!notes) {
+    return {
+      generalNote: null,
+      mergeNotes: [],
+      conflictNotes: [],
+    };
+  }
+
+  const lines = notes
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const generalLines: string[] = [];
+  const mergeNotes: string[] = [];
+  const conflictNotes: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith('auto_merge:')) {
+      mergeNotes.push(line.replace(/^auto_merge:\s*/, '').trim());
+      continue;
+    }
+
+    if (line.startsWith('auto_conflict:')) {
+      conflictNotes.push(line.replace(/^auto_conflict:\s*/, '').trim());
+      continue;
+    }
+
+    generalLines.push(line);
+  }
+
+  return {
+    generalNote: generalLines.length > 0 ? generalLines.join('\n') : null,
+    mergeNotes,
+    conflictNotes,
+  };
+}
+
 export default function CandidateReviewList({
   candidates,
   intakes,
@@ -210,6 +253,7 @@ export default function CandidateReviewList({
         const reviewEvidence = reviewEvidenceByCandidate[candidate.id] ?? [];
         const evidenceLoadError = reviewEvidenceErrorByCandidate[candidate.id] ?? '';
         const isEvidenceLoading = loadingEvidenceId === candidate.id;
+        const structuredNotes = parseStructuredCandidateNotes(candidate.extraction_notes);
         const sourceIntake =
           reviewEvidence[0]?.intake ??
           (candidate.source_document_id ? intakeById.get(candidate.source_document_id) ?? null : null);
@@ -257,6 +301,9 @@ export default function CandidateReviewList({
                         Evidence: {candidate.evidence_count ?? 0}{' '}
                         {(candidate.evidence_count ?? 0) === 1 ? 'link' : 'links'}
                       </span>
+                      {structuredNotes.conflictNotes.length > 0 && (
+                        <span className="text-[rgba(245,190,80,0.98)]">Conflict flagged</span>
+                      )}
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -468,11 +515,54 @@ export default function CandidateReviewList({
 
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
                       <div>
+                        {(structuredNotes.mergeNotes.length > 0 ||
+                          structuredNotes.conflictNotes.length > 0) && (
+                          <div className="mb-5 space-y-3">
+                            {structuredNotes.mergeNotes.map((note) => (
+                              <div
+                                key={`merge-${note}`}
+                                className="rounded-[20px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.08)] px-4 py-4"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                  <div>
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                                      Merge Resolution
+                                    </p>
+                                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-primary)]">
+                                      {note}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+
+                            {structuredNotes.conflictNotes.map((note) => (
+                              <div
+                                key={`conflict-${note}`}
+                                className="rounded-[20px] border border-[rgba(245,158,11,0.18)] bg-[rgba(245,158,11,0.08)] px-4 py-4"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[rgba(245,190,80,0.98)]" />
+                                  <div>
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[rgba(245,190,80,0.98)]">
+                                      Conflict Watch
+                                    </p>
+                                    <p className="mt-2 text-sm leading-6 text-[var(--color-text-primary)]">
+                                      {note}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
                             Extracted Fields
                           </p>
-                          {candidate.extraction_notes && (
+                          {structuredNotes.generalNote && (
                             <span className="hidden rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] sm:inline-flex">
                               Source note included
                             </span>
@@ -502,7 +592,7 @@ export default function CandidateReviewList({
                           })}
                         </dl>
 
-                        {candidate.extraction_notes && (
+                        {structuredNotes.generalNote && (
                           <div className="surface-panel-soft mt-4 rounded-[22px] px-4 py-4">
                             <div className="flex items-start gap-3">
                               <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
@@ -511,7 +601,7 @@ export default function CandidateReviewList({
                                   Extraction Note
                                 </p>
                                 <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                                  {candidate.extraction_notes}
+                                  {structuredNotes.generalNote}
                                 </p>
                               </div>
                             </div>
