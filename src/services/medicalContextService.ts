@@ -104,6 +104,109 @@ function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind
   }
 }
 
+function normalizeDateOnly(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function todayDateOnly(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastDate(value: string | null): boolean {
+  return Boolean(value && value < todayDateOnly());
+}
+
+function deriveMedicalFactTimeline(row: MedicalFactRow) {
+  if (!row.is_active) {
+    return {
+      status: 'inactive' as const,
+      effective_date: null,
+      end_date: row.deactivated_at?.slice(0, 10) ?? null,
+      currency_label: 'Removed',
+    };
+  }
+
+  const detail = row.detail as Record<string, unknown>;
+
+  switch (row.category) {
+    case 'diagnosis':
+      return {
+        status: 'current' as const,
+        effective_date: normalizeDateOnly(detail.diagnosed_date),
+        end_date: null,
+        currency_label: 'Current diagnosis',
+      };
+    case 'suspected_condition': {
+      const underInvestigation = Boolean(detail.under_investigation);
+      return {
+        status: underInvestigation ? ('under_investigation' as const) : ('historical' as const),
+        effective_date: null,
+        end_date: null,
+        currency_label: underInvestigation ? 'Under investigation' : 'Historical suspicion',
+      };
+    }
+    case 'medication': {
+      const startDate = normalizeDateOnly(detail.start_date);
+      const endDate = normalizeDateOnly(detail.end_date);
+      const isCurrent = detail.is_current !== false && !isPastDate(endDate);
+
+      return {
+        status: isCurrent ? ('current' as const) : ('historical' as const),
+        effective_date: startDate,
+        end_date: endDate,
+        currency_label: isCurrent ? 'Current medication' : 'Past medication',
+      };
+    }
+    case 'surgery_procedure':
+      return {
+        status: 'historical' as const,
+        effective_date: normalizeDateOnly(detail.procedure_date),
+        end_date: normalizeDateOnly(detail.procedure_date),
+        currency_label: 'Historical procedure',
+      };
+    case 'allergy_intolerance':
+      return {
+        status: 'current' as const,
+        effective_date: null,
+        end_date: null,
+        currency_label: 'Current context',
+      };
+    case 'diet_guidance': {
+      const prescribedDate = normalizeDateOnly(detail.prescribed_date);
+      const isCurrent = detail.is_current !== false;
+      return {
+        status: isCurrent ? ('current' as const) : ('historical' as const),
+        effective_date: prescribedDate,
+        end_date: null,
+        currency_label: isCurrent ? 'Current guidance' : 'Past guidance',
+      };
+    }
+    case 'red_flag_history': {
+      const occurrenceDate = normalizeDateOnly(detail.occurrence_date);
+      const resolved = Boolean(detail.resolved);
+      return {
+        status: resolved ? ('resolved' as const) : ('current' as const),
+        effective_date: occurrenceDate,
+        end_date: resolved ? occurrenceDate : null,
+        currency_label: resolved ? 'Resolved red flag' : 'Active red flag',
+      };
+    }
+    default:
+      return {
+        status: 'current' as const,
+        effective_date: null,
+        end_date: null,
+        currency_label: 'Current context',
+      };
+  }
+}
+
 async function computeFileSha256(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -221,6 +324,7 @@ export async function uploadMedicalDocumentArtifact(params: {
 }
 
 function rowToFact(row: MedicalFactRow): MedicalFact {
+  const timeline = deriveMedicalFactTimeline(row);
   const base = {
     id: row.id,
     user_id: row.user_id,
@@ -233,6 +337,7 @@ function rowToFact(row: MedicalFactRow): MedicalFact {
       source_document_id: row.provenance_source_document_id,
       notes: row.provenance_notes,
     },
+    timeline,
     is_active: row.is_active,
     deactivated_at: row.deactivated_at,
     created_at: row.created_at,
@@ -261,19 +366,26 @@ function categorizeFacts(
     surgeries_procedures: [] as SurgeryProcedureFact[],
     allergies_intolerances: [] as AllergyIntoleranceFact[],
     active_diet_guidance: [] as DietGuidanceFact[],
+    active_red_flags: [] as RedFlagHistoryFact[],
     red_flag_history: [] as RedFlagHistoryFact[],
   };
 
   for (const fact of facts) {
     switch (fact.category) {
       case 'diagnosis':
-        result.active_diagnoses.push(fact as DiagnosisFact);
+        if (fact.timeline.status === 'current') {
+          result.active_diagnoses.push(fact as DiagnosisFact);
+        }
         break;
       case 'suspected_condition':
-        result.suspected_conditions.push(fact as SuspectedConditionFact);
+        if (fact.timeline.status === 'under_investigation') {
+          result.suspected_conditions.push(fact as SuspectedConditionFact);
+        }
         break;
       case 'medication':
-        result.current_medications.push(fact as MedicationFact);
+        if (fact.timeline.status === 'current') {
+          result.current_medications.push(fact as MedicationFact);
+        }
         break;
       case 'surgery_procedure':
         result.surgeries_procedures.push(fact as SurgeryProcedureFact);
@@ -282,10 +394,15 @@ function categorizeFacts(
         result.allergies_intolerances.push(fact as AllergyIntoleranceFact);
         break;
       case 'diet_guidance':
-        result.active_diet_guidance.push(fact as DietGuidanceFact);
+        if (fact.timeline.status === 'current') {
+          result.active_diet_guidance.push(fact as DietGuidanceFact);
+        }
         break;
       case 'red_flag_history':
         result.red_flag_history.push(fact as RedFlagHistoryFact);
+        if (fact.timeline.status === 'current') {
+          result.active_red_flags.push(fact as RedFlagHistoryFact);
+        }
         break;
     }
   }
@@ -394,7 +511,9 @@ export async function syncProfileCounters(userId: string): Promise<void> {
   const activeCount = facts.filter(
     f => f.confirmation_state !== 'candidate'
   ).length;
-  const hasRedFlags = facts.some(f => f.category === 'red_flag_history');
+  const hasRedFlags = facts.some(
+    (fact) => fact.category === 'red_flag_history' && fact.timeline.status === 'current'
+  );
 
   let profileStatus: 'empty' | 'partial' | 'reviewed' = 'empty';
   if (activeCount > 0) profileStatus = 'partial';
@@ -427,7 +546,7 @@ export async function hasRedFlagHistory(userId: string): Promise<boolean> {
   if (profile) return profile.has_red_flags;
 
   const facts = await fetchFactsByCategory(userId, 'red_flag_history');
-  return facts.length > 0;
+  return facts.some((fact) => fact.timeline.status === 'current');
 }
 
 export async function fetchPendingCandidatesCount(userId: string): Promise<number> {
