@@ -250,6 +250,13 @@ export interface MedicalDocumentIntakeRow {
   updated_at: string;
 }
 
+export interface DocumentExtractionOrchestrationResponse {
+  success: boolean;
+  intake: MedicalDocumentIntakeRow;
+  extraction_supported: boolean;
+  message: string | null;
+}
+
 export type CandidateEvidenceKind =
   | 'quote'
   | 'summary'
