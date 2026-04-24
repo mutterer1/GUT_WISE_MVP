@@ -19,12 +19,12 @@ const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
   insights: {
     title: 'How GutWise builds and labels insights',
     subtitle:
-      'Insights are stronger when reviewed nutrition and structured ingredients back the pattern, and weaker when GutWise has to fall back to heuristics.',
+      'Insights are stronger when reviewed nutrition, structured ingredients, or reviewed medication references with dose and timing context back the pattern, and weaker when GutWise has to fall back to heuristics.',
     points: [
-      'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, mixed evidence, or fallback heuristics.',
-      'Confidence improves when the same signal appears across multiple days with better food coverage and more complete structure.',
+      'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, reviewed medication references, mixed evidence, or fallback heuristics.',
+      'Confidence improves when the same signal appears across multiple days with better food coverage, stronger medication reference coverage, and more complete structure.',
     ],
-    note: 'If coverage is partial or heuristic fallback is doing most of the work, GutWise should say that clearly.',
+    note: 'If coverage is partial or heuristic fallback is doing most of the work, GutWise should say that clearly for both food and medication findings.',
   },
   reports: {
     title: 'How to use this report',
