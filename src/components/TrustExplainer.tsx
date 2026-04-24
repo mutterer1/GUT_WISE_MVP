@@ -23,17 +23,19 @@ const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
     points: [
       'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, reviewed medication references, mixed evidence, or fallback heuristics.',
       'Confidence improves when the same signal appears across multiple days with better food coverage, stronger medication reference coverage, and more complete structure.',
+      'When reviewed medication detail exists, GutWise can now tighten explanation wording after validation so route, timing, regimen, or dose context is used more directly.',
     ],
-    note: 'If coverage is partial or heuristic fallback is doing most of the work, GutWise should say that clearly for both food and medication findings.',
+    note: 'If coverage is partial, heuristic fallback is doing most of the work, or medication wording still needed caution, GutWise should say that clearly and keep the structured medication detail visible as the source of truth.',
   },
   reports: {
     title: 'How to use this report',
     subtitle: 'Use the report as a structured conversation aid for clinical review.',
     points: [
       'Observed data appears first, followed by plain-language interpretation.',
+      'Medication report cards now distinguish reviewed medication context from broader heuristic medication matching.',
       'Treat the report as a timeline and discussion tool, not a conclusion.',
     ],
-    note: 'GutWise does not diagnose conditions or replace professional care.',
+    note: 'GutWise does not diagnose conditions or replace professional care. Give more weight to findings backed by reviewed medication references than to findings still labeled as medication heuristic.',
   },
   documents: {
     title: 'How document review works',
