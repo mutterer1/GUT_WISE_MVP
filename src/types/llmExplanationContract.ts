@@ -1,6 +1,7 @@
 import type { CandidateCategory, CandidateStatus, DataSufficiency, PriorityTier } from './insightCandidates';
 import type {
   ContradictionLevel,
+  ExplanationMedicationReferenceDetail,
   ExplanationSignalSourceKind,
 } from './explanationBundle';
 
@@ -48,6 +49,7 @@ export interface LLMInsightItem {
     medication_signal_confidence: number | null;
     structured_medication_profile_ratio: number | null;
   };
+  medication_reference_detail: ExplanationMedicationReferenceDetail | null;
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   caution_signals: string[];
