@@ -777,9 +777,14 @@ export default function MedicalDocumentIntake() {
                       !!intake.storage_path &&
                       (extractionStatus === 'failed' ||
                         extractionStatus === 'queued' ||
-                        extractionStatus === 'not_started');
+                        extractionStatus === 'not_started' ||
+                        extractionStatus === 'completed');
                     const extractionActionLabel =
-                      extractionStatus === 'failed' ? 'Retry Extraction' : 'Start Extraction';
+                      extractionStatus === 'failed'
+                        ? 'Retry Extraction'
+                        : extractionStatus === 'completed'
+                          ? 'Refresh Extraction'
+                          : 'Start Extraction';
 
                     return (
                       <div
