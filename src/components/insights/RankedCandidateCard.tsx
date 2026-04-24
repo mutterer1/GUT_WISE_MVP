@@ -217,6 +217,24 @@ const signalSourceConfig: Record<
     labelClass: 'text-[#7C5CFF] dark:text-[#B8A8FF]',
     bodyClass: 'text-[#6246D9] dark:text-[#D5CCFF]',
   },
+  reviewed_medication_reference: {
+    label: 'Reviewed medication',
+    badgeClass:
+      'border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] text-[#2F7A57] dark:text-[#9DE2BC]',
+    panelClass:
+      'border border-[rgba(76,174,124,0.16)] bg-[rgba(76,174,124,0.07)] dark:bg-[rgba(76,174,124,0.1)]',
+    labelClass: 'text-[#2F7A57] dark:text-[#9DE2BC]',
+    bodyClass: 'text-[#295E46] dark:text-[#D7F8E5]',
+  },
+  fallback_medication_heuristic: {
+    label: 'Medication heuristic',
+    badgeClass:
+      'border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] text-[var(--color-warning)]',
+    panelClass:
+      'border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] dark:bg-[rgba(255,170,92,0.1)]',
+    labelClass: 'text-[var(--color-warning)]',
+    bodyClass: 'text-[#8A5A16] dark:text-[rgba(255,220,181,0.88)]',
+  },
   fallback_heuristic: {
     label: 'Heuristic fallback',
     badgeClass:
@@ -260,6 +278,64 @@ function formatPercent(value: number | null | undefined): string {
   return `${Math.round(value * 100)}%`;
 }
 
+function buildTrustMetrics(source: ExplanationSignalSourceSummary): Array<{
+  label: string;
+  value: string;
+}> {
+  const metrics: Array<{ label: string; value: string }> = [];
+
+  if (source.nutrition_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Nutrition coverage',
+      value: formatPercent(source.nutrition_coverage_ratio),
+    });
+  }
+
+  if (source.nutrition_confidence !== null) {
+    metrics.push({
+      label: 'Nutrition confidence',
+      value: formatPercent(source.nutrition_confidence),
+    });
+  }
+
+  if (source.structured_food_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Ingredient coverage',
+      value: formatPercent(source.structured_food_coverage_ratio),
+    });
+  }
+
+  if (source.ingredient_signal_confidence !== null) {
+    metrics.push({
+      label: 'Ingredient confidence',
+      value: formatPercent(source.ingredient_signal_confidence),
+    });
+  }
+
+  if (source.medication_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Medication coverage',
+      value: formatPercent(source.medication_coverage_ratio),
+    });
+  }
+
+  if (source.medication_signal_confidence !== null) {
+    metrics.push({
+      label: 'Medication confidence',
+      value: formatPercent(source.medication_signal_confidence),
+    });
+  }
+
+  if (source.structured_medication_profile_ratio !== null) {
+    metrics.push({
+      label: 'Profile structure',
+      value: formatPercent(source.structured_medication_profile_ratio),
+    });
+  }
+
+  return metrics;
+}
+
 function formatDateRange(start: string, end: string): string {
   return `${new Date(start).toLocaleDateString('en-US', {
     month: 'short',
@@ -273,6 +349,10 @@ function formatDateRange(start: string, end: string): string {
 function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): string | null {
   if (source.kind === 'fallback_heuristic') {
     return 'This card is still relying mostly on fallback heuristics because reviewed nutrition or structured ingredient coverage is limited.';
+  }
+
+  if (source.kind === 'fallback_medication_heuristic') {
+    return 'This card is still relying mostly on medication family or name heuristics because reviewed medication reference coverage is limited.';
   }
 
   if (
@@ -293,6 +373,29 @@ function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): strin
     source.ingredient_signal_confidence < 0.6
   ) {
     return 'Structured ingredients are present here, but ingredient confidence is still limited.';
+  }
+
+  if (
+    source.medication_coverage_ratio !== null &&
+    source.structured_medication_profile_ratio !== null &&
+    source.medication_coverage_ratio < 0.65 &&
+    source.structured_medication_profile_ratio < 0.65
+  ) {
+    return 'Reviewed medication coverage is still partial here. Accepting more reviewed medications with clear dose, route, timing, and regimen detail would strengthen this signal.';
+  }
+
+  if (
+    source.medication_signal_confidence !== null &&
+    source.medication_signal_confidence < 0.6
+  ) {
+    return 'Reviewed medication matches are present here, but medication signal confidence is still limited.';
+  }
+
+  if (
+    source.structured_medication_profile_ratio !== null &&
+    source.structured_medication_profile_ratio < 0.6
+  ) {
+    return 'Medication profile structure is still partial here, so dose, route, timing, or regimen context is incomplete.';
   }
 
   return null;
@@ -327,6 +430,7 @@ export default function RankedCandidateCard({
   const signalSource = bundleItem?.signal_source ?? null;
   const signalSourceMeta = signalSource ? signalSourceConfig[signalSource.kind] : null;
   const signalSourceCaution = signalSource ? buildSignalSourceCaution(signalSource) : null;
+  const trustMetrics = signalSource ? buildTrustMetrics(signalSource) : [];
 
   return (
     <div
@@ -464,24 +568,17 @@ export default function RankedCandidateCard({
                 <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
                   Trust framing
                 </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Metric
-                    label="Nutrition coverage"
-                    value={formatPercent(signalSource.nutrition_coverage_ratio)}
-                  />
-                  <Metric
-                    label="Nutrition confidence"
-                    value={formatPercent(signalSource.nutrition_confidence)}
-                  />
-                  <Metric
-                    label="Ingredient coverage"
-                    value={formatPercent(signalSource.structured_food_coverage_ratio)}
-                  />
-                  <Metric
-                    label="Ingredient confidence"
-                    value={formatPercent(signalSource.ingredient_signal_confidence)}
-                  />
-                </div>
+                {trustMetrics.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {trustMetrics.map((metric) => (
+                      <Metric
+                        key={`${candidate.insight_key}-${metric.label}`}
+                        label={metric.label}
+                        value={metric.value}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 <p className="mt-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                   {signalSource.summary}
