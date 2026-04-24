@@ -38,6 +38,18 @@ const signalSourceConfig: Record<
       'border-[rgba(124,92,255,0.22)] bg-[rgba(124,92,255,0.1)] text-[#7C5CFF] dark:text-[#B8A8FF]',
     accentClass: 'text-[#7C5CFF] dark:text-[#B8A8FF]',
   },
+  reviewed_medication_reference: {
+    label: 'Reviewed medication',
+    badgeClass:
+      'border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] text-[#2F7A57] dark:text-[#9DE2BC]',
+    accentClass: 'text-[#2F7A57] dark:text-[#9DE2BC]',
+  },
+  fallback_medication_heuristic: {
+    label: 'Medication heuristic',
+    badgeClass:
+      'border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] text-[var(--color-warning)]',
+    accentClass: 'text-[var(--color-warning)]',
+  },
   fallback_heuristic: {
     label: 'Heuristic fallback',
     badgeClass:
@@ -73,6 +85,64 @@ function formatPercent(value: number | null): string {
   return `${Math.round(value * 100)}%`;
 }
 
+function buildTrustMetrics(source: ExplanationInsightItem['signal_source']): Array<{
+  label: string;
+  value: string;
+}> {
+  const metrics: Array<{ label: string; value: string }> = [];
+
+  if (source.nutrition_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Nutrition coverage',
+      value: formatPercent(source.nutrition_coverage_ratio),
+    });
+  }
+
+  if (source.nutrition_confidence !== null) {
+    metrics.push({
+      label: 'Nutrition confidence',
+      value: formatPercent(source.nutrition_confidence),
+    });
+  }
+
+  if (source.structured_food_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Ingredient coverage',
+      value: formatPercent(source.structured_food_coverage_ratio),
+    });
+  }
+
+  if (source.ingredient_signal_confidence !== null) {
+    metrics.push({
+      label: 'Ingredient confidence',
+      value: formatPercent(source.ingredient_signal_confidence),
+    });
+  }
+
+  if (source.medication_coverage_ratio !== null) {
+    metrics.push({
+      label: 'Medication coverage',
+      value: formatPercent(source.medication_coverage_ratio),
+    });
+  }
+
+  if (source.medication_signal_confidence !== null) {
+    metrics.push({
+      label: 'Medication confidence',
+      value: formatPercent(source.medication_signal_confidence),
+    });
+  }
+
+  if (source.structured_medication_profile_ratio !== null) {
+    metrics.push({
+      label: 'Profile structure',
+      value: formatPercent(source.structured_medication_profile_ratio),
+    });
+  }
+
+  return metrics;
+}
+
 function formatLift(value: number | null): string {
   if (value === null) return 'N/A';
   return `${value.toFixed(1)}x`;
@@ -101,6 +171,10 @@ function buildSourceCaution(item: ExplanationInsightItem): string | null {
     return 'This finding still relies more on fallback heuristics than on reviewed nutrition or structured ingredient coverage.';
   }
 
+  if (source.kind === 'fallback_medication_heuristic') {
+    return 'This finding still relies more on medication family or name heuristics than on reviewed medication reference coverage.';
+  }
+
   if (
     source.nutrition_coverage_ratio !== null &&
     source.nutrition_coverage_ratio < 0.65
@@ -113,6 +187,20 @@ function buildSourceCaution(item: ExplanationInsightItem): string | null {
     source.structured_food_coverage_ratio < 0.65
   ) {
     return 'Structured ingredient coverage is still partial for this finding.';
+  }
+
+  if (
+    source.medication_coverage_ratio !== null &&
+    source.medication_coverage_ratio < 0.65
+  ) {
+    return 'Reviewed medication coverage is still partial for this finding.';
+  }
+
+  if (
+    source.structured_medication_profile_ratio !== null &&
+    source.structured_medication_profile_ratio < 0.65
+  ) {
+    return 'Structured medication dose, route, timing, or regimen context is still partial for this finding.';
   }
 
   return null;
@@ -139,6 +227,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
   const triggerSummary = item.trigger_factors.map(formatFactorLabel).join(', ');
   const outcomeSummary = item.target_outcomes.map(formatFactorLabel).join(', ');
   const title = subtypeLabels[item.subtype] ?? formatSubtypeFallback(item.subtype);
+  const trustMetrics = buildTrustMetrics(item.signal_source);
   const relationshipSummary =
     triggerSummary.length > 0 && outcomeSummary.length > 0
       ? { trigger: triggerSummary, outcome: outcomeSummary }
@@ -197,24 +286,17 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat
-          label="Nutrition coverage"
-          value={formatPercent(item.signal_source.nutrition_coverage_ratio)}
-        />
-        <Stat
-          label="Nutrition confidence"
-          value={formatPercent(item.signal_source.nutrition_confidence)}
-        />
-        <Stat
-          label="Ingredient coverage"
-          value={formatPercent(item.signal_source.structured_food_coverage_ratio)}
-        />
-        <Stat
-          label="Ingredient confidence"
-          value={formatPercent(item.signal_source.ingredient_signal_confidence)}
-        />
-      </div>
+      {trustMetrics.length > 0 && (
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {trustMetrics.map((metric) => (
+            <Stat
+              key={`${item.insight_key}-${metric.label}`}
+              label={metric.label}
+              value={metric.value}
+            />
+          ))}
+        </div>
+      )}
 
       {item.medical_context_annotations.length > 0 && (
         <div className="mt-4 rounded-xl border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3">
@@ -263,8 +345,8 @@ export default function PatternEvidenceSection({
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           These report patterns use the same ranked insight pipeline as the live Insights screen and
-          now carry explicit provenance about reviewed nutrition, structured ingredients, or
-          heuristic fallback.
+          now carry explicit provenance about reviewed nutrition, structured ingredients, reviewed
+          medication references, or heuristic fallback.
         </p>
       </div>
 
@@ -278,9 +360,10 @@ export default function PatternEvidenceSection({
                   Report trust standard
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                  GutWise should say when a finding is backed by reviewed nutrition, when it is
-                  backed by structured ingredient matching, and when it is still leaning on fallback
-                  heuristics. These cards carry that framing directly into print and PDF export.
+                  GutWise should say when a finding is backed by reviewed nutrition, structured
+                  ingredient matching, reviewed medication references with dose or timing context,
+                  and when it is still leaning on fallback heuristics. These cards carry that
+                  framing directly into print and PDF export.
                 </p>
               </div>
             </div>
@@ -352,8 +435,8 @@ export default function PatternEvidenceSection({
           <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#7C5CFF]" />
           <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
             Report exports should preserve the difference between reviewed evidence and fallback
-            heuristics. That helps keep the clinical conversation grounded in what GutWise actually
-            knows versus what it is still inferring.
+            heuristics across both food and medication findings. That helps keep the clinical
+            conversation grounded in what GutWise actually knows versus what it is still inferring.
           </p>
         </div>
       </div>
