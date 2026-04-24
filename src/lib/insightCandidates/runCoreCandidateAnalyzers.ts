@@ -15,6 +15,9 @@ import { analyzeCyclePhaseBmShiftCandidate } from './cyclePhaseBmShiftCandidate'
 import { analyzeCyclePhaseRecurrentSymptomBurdenCandidate } from './cyclePhaseRecurrentSymptomBurdenCandidate';
 import { analyzeMedicationAnyBmShiftCandidate } from './medicationAnyBmShiftCandidate';
 import { analyzeMedicationAnySymptomBurdenCandidate } from './medicationAnySymptomBurdenCandidate';
+import { analyzeMedicationAsNeededAntidiarrhealNextDayHardStoolCandidate } from './medicationAsNeededAntidiarrhealNextDayHardStoolCandidate';
+import { analyzeMedicationBeforeMealIronSameDayNauseaCandidate } from './medicationBeforeMealIronSameDayNauseaCandidate';
+import { analyzeMedicationOralMagnesiumSameDayLooseStoolCandidate } from './medicationOralMagnesiumSameDayLooseStoolCandidate';
 import { analyzeMultifactorStressSleepHydrationRiskCandidate } from './multifactorStressSleepHydrationRiskCandidate';
 import { analyzeFlareSymptomBurdenEpisodeCandidate } from './flareSymptomBurdenEpisodeCandidate';
 import { analyzeFlareRecoveryPatternCandidate } from './flareRecoveryPatternCandidate';
@@ -48,6 +51,9 @@ const CORE_ANALYZERS: CandidateAnalyzer[] = [
   analyzeCyclePhaseSymptomShiftCandidate,
   analyzeCyclePhaseBmShiftCandidate,
   analyzeCyclePhaseRecurrentSymptomBurdenCandidate,
+  analyzeMedicationAsNeededAntidiarrhealNextDayHardStoolCandidate,
+  analyzeMedicationBeforeMealIronSameDayNauseaCandidate,
+  analyzeMedicationOralMagnesiumSameDayLooseStoolCandidate,
   analyzeMedicationAnyBmShiftCandidate,
   analyzeMedicationAnySymptomBurdenCandidate,
   analyzeMultifactorStressSleepHydrationRiskCandidate,
