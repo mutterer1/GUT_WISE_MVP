@@ -1,5 +1,8 @@
 import type { CanonicalEvent } from '../types/canonicalEvents';
-import type { UserDailyFeatures } from '../types/dailyFeatures';
+import type {
+  MedicationExposureProfile,
+  UserDailyFeatures,
+} from '../types/dailyFeatures';
 
 // ---------------------------------------------------------------------------
 // Helper utilities
@@ -42,6 +45,15 @@ function payloadNum(payload: Record<string, unknown>, key: string): number | nul
 
 function payloadBool(payload: Record<string, unknown>, key: string): boolean {
   return payload[key] === true;
+}
+
+function payloadOptionalBool(
+  payload: Record<string, unknown>,
+  key: string
+): boolean | null {
+  const v = payload[key];
+  if (typeof v === 'boolean') return v;
+  return null;
 }
 
 function payloadStr(payload: Record<string, unknown>, key: string): string | null {
@@ -420,8 +432,26 @@ function aggregateStress(events: CanonicalEvent[]) {
 
 function aggregateMedication(events: CanonicalEvent[]) {
   const names: string[] = [];
+  const matchedMedicationIds: string[] = [];
   const families: string[] = [];
   const gutEffects: string[] = [];
+  const routes: string[] = [];
+  const regimenStatuses: string[] = [];
+  const timingContexts: string[] = [];
+  const doseUnits: string[] = [];
+  const exposureProfiles: MedicationExposureProfile[] = [];
+  const structuredMatchConfidenceValues: number[] = [];
+  let structuredMedicationEventCount = 0;
+  let oralMedicationCount = 0;
+  let scheduledMedicationCount = 0;
+  let asNeededMedicationCount = 0;
+  let oneTimeMedicationCount = 0;
+  let offPlanMedicationCount = 0;
+  let withFoodMedicationCount = 0;
+  let beforeMealMedicationCount = 0;
+  let afterMealMedicationCount = 0;
+  let bedtimeMedicationCount = 0;
+  let knownDoseMedicationCount = 0;
   let giRiskMedicationCount = 0;
   let motilitySlowingMedicationCount = 0;
   let motilitySpeedingMedicationCount = 0;
@@ -430,10 +460,27 @@ function aggregateMedication(events: CanonicalEvent[]) {
 
   for (const e of events) {
     const name = payloadStr(e.payload, 'medication_name');
-    if (name) names.push(name);
+    const normalizedMedicationId = payloadStr(e.payload, 'normalized_medication_id');
+    const matchedIds = payloadStrArray(e.payload, 'matched_medication_ids');
+    const medicationFamilies = payloadStrArray(e.payload, 'medication_families');
+    const medicationGutEffects = payloadStrArray(e.payload, 'medication_gut_effects');
+    const route = payloadStr(e.payload, 'route');
+    const regimenStatus = payloadStr(e.payload, 'regimen_status');
+    const timingContext = payloadStr(e.payload, 'timing_context');
+    const doseValue = payloadNum(e.payload, 'dose_value');
+    const doseUnit = payloadStr(e.payload, 'dose_unit');
+    const takenAsPrescribed = payloadOptionalBool(e.payload, 'taken_as_prescribed');
+    const structuredMatch =
+      normalizedMedicationId !== null || matchedIds.length > 0;
 
-    families.push(...payloadStrArray(e.payload, 'medication_families'));
-    gutEffects.push(...payloadStrArray(e.payload, 'medication_gut_effects'));
+    if (name) names.push(name);
+    matchedMedicationIds.push(...matchedIds);
+    families.push(...medicationFamilies);
+    gutEffects.push(...medicationGutEffects);
+    if (route) routes.push(route);
+    if (regimenStatus) regimenStatuses.push(regimenStatus);
+    if (timingContext) timingContexts.push(timingContext);
+    if (doseUnit) doseUnits.push(doseUnit);
     giRiskMedicationCount += payloadNum(e.payload, 'gi_risk_medication_count') ?? 0;
     motilitySlowingMedicationCount +=
       payloadNum(e.payload, 'motility_slowing_medication_count') ?? 0;
@@ -443,13 +490,65 @@ function aggregateMedication(events: CanonicalEvent[]) {
       payloadNum(e.payload, 'acid_suppression_medication_count') ?? 0;
     microbiomeDisruptionMedicationCount +=
       payloadNum(e.payload, 'microbiome_disruption_medication_count') ?? 0;
+
+    if (structuredMatch) {
+      structuredMedicationEventCount += 1;
+    }
+
+    structuredMatchConfidenceValues.push(structuredMatch ? 0.88 : 0.42);
+
+    if (route === 'oral') oralMedicationCount += 1;
+    if (regimenStatus === 'scheduled') scheduledMedicationCount += 1;
+    if (regimenStatus === 'as_needed') asNeededMedicationCount += 1;
+    if (regimenStatus === 'one_time') oneTimeMedicationCount += 1;
+    if (takenAsPrescribed === false) offPlanMedicationCount += 1;
+    if (timingContext === 'with_food') withFoodMedicationCount += 1;
+    if (timingContext === 'before_meal') beforeMealMedicationCount += 1;
+    if (timingContext === 'after_meal') afterMealMedicationCount += 1;
+    if (timingContext === 'bedtime') bedtimeMedicationCount += 1;
+    if (doseValue !== null) knownDoseMedicationCount += 1;
+
+    exposureProfiles.push({
+      medication_name: name ?? 'Unnamed medication',
+      normalized_medication_id: normalizedMedicationId,
+      matched_medication_ids: matchedIds,
+      medication_families: medicationFamilies,
+      medication_gut_effects: medicationGutEffects,
+      route,
+      regimen_status: regimenStatus,
+      timing_context: timingContext,
+      dose_value: doseValue,
+      dose_unit: doseUnit,
+      taken_as_prescribed: takenAsPrescribed,
+      structured_match: structuredMatch,
+    });
   }
 
   return {
     medication_event_count: events.length,
     medications_taken: uniqueSorted(names),
+    matched_medication_ids: uniqueSorted(matchedMedicationIds),
     medication_families: uniqueSorted(families),
     medication_gut_effects: uniqueSorted(gutEffects),
+    medication_routes: uniqueSorted(routes),
+    medication_regimen_statuses: uniqueSorted(regimenStatuses),
+    medication_timing_contexts: uniqueSorted(timingContexts),
+    medication_dose_units: uniqueSorted(doseUnits),
+    medication_exposure_profiles: exposureProfiles,
+    structured_medication_event_count: structuredMedicationEventCount,
+    structured_medication_coverage_ratio:
+      events.length > 0 ? structuredMedicationEventCount / events.length : null,
+    medication_signal_confidence_avg: numericAvg(structuredMatchConfidenceValues),
+    oral_medication_count: oralMedicationCount,
+    scheduled_medication_count: scheduledMedicationCount,
+    as_needed_medication_count: asNeededMedicationCount,
+    one_time_medication_count: oneTimeMedicationCount,
+    off_plan_medication_count: offPlanMedicationCount,
+    with_food_medication_count: withFoodMedicationCount,
+    before_meal_medication_count: beforeMealMedicationCount,
+    after_meal_medication_count: afterMealMedicationCount,
+    bedtime_medication_count: bedtimeMedicationCount,
+    known_dose_medication_count: knownDoseMedicationCount,
     gi_risk_medication_count: giRiskMedicationCount,
     motility_slowing_medication_count: motilitySlowingMedicationCount,
     motility_speeding_medication_count: motilitySpeedingMedicationCount,
@@ -807,11 +906,19 @@ export function dailyFeaturesDemo(): UserDailyFeatures[] {
       timezone: 'America/New_York',
       source_table: 'medication_logs',
       payload: {
-        medication_name: 'Probiotic',
-        medication_families: ['probiotic'],
-        medication_gut_effects: ['microbiome_disruption'],
+        medication_name: 'Ferrous Sulfate',
+        normalized_medication_id: 'med-iron-001',
+        matched_medication_ids: ['iron'],
+        medication_families: ['iron'],
+        medication_gut_effects: ['motility_slowing', 'constipation_risk', 'nausea_risk'],
+        route: 'oral',
+        regimen_status: 'scheduled',
+        timing_context: 'before_meal',
+        dose_value: 65,
+        dose_unit: 'mg',
+        taken_as_prescribed: true,
         gi_risk_medication_count: 1,
-        microbiome_disruption_medication_count: 1,
+        motility_slowing_medication_count: 1,
       },
       completeness_score: 1.0,
     },
