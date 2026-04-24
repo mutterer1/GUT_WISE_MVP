@@ -4,6 +4,7 @@ import {
 } from '../data/ingredientCatalog';
 import { supabase } from '../lib/supabase';
 import { fetchFoodEnrichment } from './foodEnrichmentService';
+import { fetchMedicationEnrichment } from './medicationEnrichmentService';
 import type {
   FoodReferenceCandidateDetail,
   FoodReferenceCandidateIngredient,
@@ -12,6 +13,7 @@ import type {
   FoodLogItemRow,
   IngredientFodmapLevel,
   IngredientReferenceItemRow,
+  MedicationGutRelevance,
   MedicationReferenceCandidateDetail,
   MedicationReferenceItemRow,
   MedicationReferenceType,
@@ -47,6 +49,12 @@ interface UpdateFoodReferenceCandidateDetailInput {
   userId: string;
   candidateId: string;
   detail: FoodReferenceCandidateDetail;
+}
+
+interface UpdateMedicationReferenceCandidateDetailInput {
+  userId: string;
+  candidateId: string;
+  detail: MedicationReferenceCandidateDetail;
 }
 
 const FOOD_TAG_TO_SIGNAL: Record<string, string[]> = {
@@ -358,31 +366,131 @@ export function readFoodCandidateDetail(
   };
 }
 
-function readMedicationCandidateDetail(
+function parseMedicationType(value: unknown): MedicationReferenceType | null {
+  return value === 'prescription' ||
+    value === 'otc' ||
+    value === 'supplement' ||
+    value === 'unknown'
+    ? value
+    : null;
+}
+
+function parseMedicationRegimenStatus(value: unknown): MedicationRegimenStatus | null {
+  return value === 'scheduled' ||
+    value === 'as_needed' ||
+    value === 'one_time' ||
+    value === 'unknown'
+    ? value
+    : null;
+}
+
+function parseMedicationGutRelevance(value: unknown): MedicationGutRelevance | null {
+  return value === 'primary' ||
+    value === 'secondary' ||
+    value === 'indirect' ||
+    value === 'unknown'
+    ? value
+    : null;
+}
+
+function parseMedicationEnrichmentStatus(
+  value: unknown
+): MedicationReferenceCandidateDetail['enrichment_status'] {
+  return value === 'enriched' ||
+    value === 'fallback' ||
+    value === 'failed' ||
+    value === 'not_started'
+    ? value
+    : 'not_started';
+}
+
+export function readMedicationCandidateDetail(
   detail: Record<string, unknown>
 ): MedicationReferenceCandidateDetail {
   return {
     dosage: cleanOptionalText(typeof detail.dosage === 'string' ? detail.dosage : null),
-    medication_type:
-      detail.medication_type === 'prescription' ||
-      detail.medication_type === 'otc' ||
-      detail.medication_type === 'supplement' ||
-      detail.medication_type === 'unknown'
-        ? detail.medication_type
-        : null,
+    medication_type: parseMedicationType(detail.medication_type),
     route: cleanOptionalText(typeof detail.route === 'string' ? detail.route : null),
     reason_for_use: cleanOptionalText(
       typeof detail.reason_for_use === 'string' ? detail.reason_for_use : null
     ),
-    regimen_status:
-      detail.regimen_status === 'scheduled' ||
-      detail.regimen_status === 'as_needed' ||
-      detail.regimen_status === 'one_time' ||
-      detail.regimen_status === 'unknown'
-        ? detail.regimen_status
-        : null,
+    regimen_status: parseMedicationRegimenStatus(detail.regimen_status),
     timing_context: cleanOptionalText(
       typeof detail.timing_context === 'string' ? detail.timing_context : null
+    ),
+    suggested_generic_name: cleanOptionalText(
+      typeof detail.suggested_generic_name === 'string' ? detail.suggested_generic_name : null
+    ),
+    suggested_brand_names: Array.isArray(detail.suggested_brand_names)
+      ? dedupeStrings(
+          detail.suggested_brand_names.filter(
+            (brand): brand is string => typeof brand === 'string'
+          )
+        )
+      : [],
+    suggested_medication_class: cleanOptionalText(
+      typeof detail.suggested_medication_class === 'string'
+        ? detail.suggested_medication_class
+        : null
+    ),
+    suggested_medication_family: cleanOptionalText(
+      typeof detail.suggested_medication_family === 'string'
+        ? detail.suggested_medication_family
+        : null
+    ),
+    suggested_rxnorm_code: cleanOptionalText(
+      typeof detail.suggested_rxnorm_code === 'string' ? detail.suggested_rxnorm_code : null
+    ),
+    suggested_gut_relevance: parseMedicationGutRelevance(detail.suggested_gut_relevance),
+    suggested_common_gut_effects: Array.isArray(detail.suggested_common_gut_effects)
+      ? dedupeStrings(
+          detail.suggested_common_gut_effects.filter(
+            (effect): effect is string => typeof effect === 'string'
+          )
+        )
+      : [],
+    suggested_interaction_flags: Array.isArray(detail.suggested_interaction_flags)
+      ? dedupeStrings(
+          detail.suggested_interaction_flags.filter(
+            (flag): flag is string => typeof flag === 'string'
+          )
+        )
+      : [],
+    suggested_active_ingredients: Array.isArray(detail.suggested_active_ingredients)
+      ? dedupeStrings(
+          detail.suggested_active_ingredients.filter(
+            (ingredient): ingredient is string => typeof ingredient === 'string'
+          )
+        )
+      : [],
+    suggested_common_dose_units: Array.isArray(detail.suggested_common_dose_units)
+      ? dedupeStrings(
+          detail.suggested_common_dose_units.filter(
+            (unit): unit is string => typeof unit === 'string'
+          )
+        )
+      : [],
+    suggested_dosage_form: cleanOptionalText(
+      typeof detail.suggested_dosage_form === 'string' ? detail.suggested_dosage_form : null
+    ),
+    suggested_route: cleanOptionalText(
+      typeof detail.suggested_route === 'string' ? detail.suggested_route : null
+    ),
+    enrichment_source_label: cleanOptionalText(
+      typeof detail.enrichment_source_label === 'string' ? detail.enrichment_source_label : null
+    ),
+    enrichment_source_ref: cleanOptionalText(
+      typeof detail.enrichment_source_ref === 'string' ? detail.enrichment_source_ref : null
+    ),
+    enrichment_confidence: cleanOptionalConfidence(detail.enrichment_confidence),
+    enrichment_status: parseMedicationEnrichmentStatus(detail.enrichment_status),
+    enrichment_last_attempt_at: cleanOptionalText(
+      typeof detail.enrichment_last_attempt_at === 'string'
+        ? detail.enrichment_last_attempt_at
+        : null
+    ),
+    enrichment_notes: cleanOptionalText(
+      typeof detail.enrichment_notes === 'string' ? detail.enrichment_notes : null
     ),
   };
 }
@@ -494,20 +602,122 @@ function applyFoodEnrichmentResult(
   };
 }
 
+function applyMedicationEnrichmentResult(
+  existing: MedicationReferenceCandidateDetail,
+  enriched: MedicationReferenceCandidateDetail
+): MedicationReferenceCandidateDetail {
+  return {
+    ...existing,
+    suggested_generic_name:
+      enriched.suggested_generic_name ?? existing.suggested_generic_name ?? null,
+    suggested_brand_names: dedupeStrings([
+      ...existing.suggested_brand_names,
+      ...enriched.suggested_brand_names,
+    ]),
+    suggested_medication_class:
+      enriched.suggested_medication_class ?? existing.suggested_medication_class ?? null,
+    suggested_medication_family:
+      enriched.suggested_medication_family ?? existing.suggested_medication_family ?? null,
+    suggested_rxnorm_code:
+      enriched.suggested_rxnorm_code ?? existing.suggested_rxnorm_code ?? null,
+    suggested_gut_relevance:
+      enriched.suggested_gut_relevance ?? existing.suggested_gut_relevance ?? null,
+    suggested_common_gut_effects: dedupeStrings([
+      ...existing.suggested_common_gut_effects,
+      ...enriched.suggested_common_gut_effects,
+    ]),
+    suggested_interaction_flags: dedupeStrings([
+      ...existing.suggested_interaction_flags,
+      ...enriched.suggested_interaction_flags,
+    ]),
+    suggested_active_ingredients: dedupeStrings([
+      ...existing.suggested_active_ingredients,
+      ...enriched.suggested_active_ingredients,
+    ]),
+    suggested_common_dose_units: dedupeStrings([
+      ...existing.suggested_common_dose_units,
+      ...enriched.suggested_common_dose_units,
+    ]),
+    suggested_dosage_form:
+      enriched.suggested_dosage_form ?? existing.suggested_dosage_form ?? null,
+    suggested_route: enriched.suggested_route ?? existing.suggested_route ?? existing.route,
+    enrichment_source_label:
+      enriched.enrichment_source_label ?? existing.enrichment_source_label ?? null,
+    enrichment_source_ref:
+      enriched.enrichment_source_ref ?? existing.enrichment_source_ref ?? null,
+    enrichment_confidence:
+      enriched.enrichment_confidence ?? existing.enrichment_confidence ?? null,
+    enrichment_status:
+      enriched.enrichment_status !== 'not_started'
+        ? enriched.enrichment_status
+        : existing.enrichment_status,
+    enrichment_last_attempt_at:
+      enriched.enrichment_last_attempt_at ?? existing.enrichment_last_attempt_at ?? null,
+    enrichment_notes: enriched.enrichment_notes ?? existing.enrichment_notes ?? null,
+  };
+}
+
 function mergeMedicationCandidateDetails(
   existing: Record<string, unknown>,
   incoming: MedicationReferenceCandidateDetail
 ): MedicationReferenceCandidateDetail {
   const existingDetail = readMedicationCandidateDetail(existing);
 
-  return {
+  return applyMedicationEnrichmentResult(existingDetail, {
     dosage: existingDetail.dosage ?? incoming.dosage ?? null,
     medication_type: existingDetail.medication_type ?? incoming.medication_type ?? null,
     route: existingDetail.route ?? incoming.route ?? null,
     reason_for_use: existingDetail.reason_for_use ?? incoming.reason_for_use ?? null,
     regimen_status: existingDetail.regimen_status ?? incoming.regimen_status ?? null,
     timing_context: existingDetail.timing_context ?? incoming.timing_context ?? null,
-  };
+    suggested_generic_name:
+      existingDetail.suggested_generic_name ?? incoming.suggested_generic_name ?? null,
+    suggested_brand_names: dedupeStrings([
+      ...existingDetail.suggested_brand_names,
+      ...incoming.suggested_brand_names,
+    ]),
+    suggested_medication_class:
+      existingDetail.suggested_medication_class ?? incoming.suggested_medication_class ?? null,
+    suggested_medication_family:
+      existingDetail.suggested_medication_family ?? incoming.suggested_medication_family ?? null,
+    suggested_rxnorm_code:
+      existingDetail.suggested_rxnorm_code ?? incoming.suggested_rxnorm_code ?? null,
+    suggested_gut_relevance:
+      existingDetail.suggested_gut_relevance ?? incoming.suggested_gut_relevance ?? null,
+    suggested_common_gut_effects: dedupeStrings([
+      ...existingDetail.suggested_common_gut_effects,
+      ...incoming.suggested_common_gut_effects,
+    ]),
+    suggested_interaction_flags: dedupeStrings([
+      ...existingDetail.suggested_interaction_flags,
+      ...incoming.suggested_interaction_flags,
+    ]),
+    suggested_active_ingredients: dedupeStrings([
+      ...existingDetail.suggested_active_ingredients,
+      ...incoming.suggested_active_ingredients,
+    ]),
+    suggested_common_dose_units: dedupeStrings([
+      ...existingDetail.suggested_common_dose_units,
+      ...incoming.suggested_common_dose_units,
+    ]),
+    suggested_dosage_form:
+      existingDetail.suggested_dosage_form ?? incoming.suggested_dosage_form ?? null,
+    suggested_route: existingDetail.suggested_route ?? incoming.suggested_route ?? null,
+    enrichment_source_label:
+      existingDetail.enrichment_source_label ?? incoming.enrichment_source_label ?? null,
+    enrichment_source_ref:
+      existingDetail.enrichment_source_ref ?? incoming.enrichment_source_ref ?? null,
+    enrichment_confidence:
+      existingDetail.enrichment_confidence ?? incoming.enrichment_confidence ?? null,
+    enrichment_status:
+      existingDetail.enrichment_status !== 'not_started'
+        ? existingDetail.enrichment_status
+        : incoming.enrichment_status,
+    enrichment_last_attempt_at:
+      existingDetail.enrichment_last_attempt_at ?? incoming.enrichment_last_attempt_at ?? null,
+    enrichment_notes:
+      existingDetail.enrichment_notes ?? incoming.enrichment_notes ?? null,
+  });
 }
 
 function buildFoodEvidenceNotes(detail: FoodReferenceCandidateDetail): string | null {
@@ -571,9 +781,37 @@ function buildMedicationEvidenceNotes(detail: MedicationReferenceCandidateDetail
   const parts: string[] = ['Accepted from reference review queue'];
 
   if (detail.dosage) parts.push(`Observed dosage: ${detail.dosage}`);
+  if (detail.route) parts.push(`Observed route: ${detail.route}`);
   if (detail.reason_for_use) parts.push(`Observed reason: ${detail.reason_for_use}`);
   if (detail.regimen_status) parts.push(`Observed regimen: ${detail.regimen_status}`);
   if (detail.timing_context) parts.push(`Observed timing: ${detail.timing_context}`);
+  if (detail.suggested_generic_name) {
+    parts.push(`Suggested generic: ${detail.suggested_generic_name}`);
+  }
+  if (detail.suggested_brand_names.length > 0) {
+    parts.push(`Suggested brands: ${detail.suggested_brand_names.join(', ')}`);
+  }
+  if (detail.suggested_medication_class) {
+    parts.push(`Suggested class: ${detail.suggested_medication_class}`);
+  }
+  if (detail.suggested_medication_family) {
+    parts.push(`Suggested family: ${detail.suggested_medication_family}`);
+  }
+  if (detail.suggested_common_dose_units.length > 0) {
+    parts.push(`Common dose units: ${detail.suggested_common_dose_units.join(', ')}`);
+  }
+  if (detail.suggested_active_ingredients.length > 0) {
+    parts.push(`Active ingredients: ${detail.suggested_active_ingredients.join(', ')}`);
+  }
+  if (detail.suggested_common_gut_effects.length > 0) {
+    parts.push(`Gut effects: ${detail.suggested_common_gut_effects.join(', ')}`);
+  }
+  if (detail.enrichment_source_label) {
+    parts.push(`Enrichment source: ${detail.enrichment_source_label}`);
+  }
+  if (detail.enrichment_notes) {
+    parts.push(`Enrichment notes: ${detail.enrichment_notes}`);
+  }
 
   return parts.join(' | ');
 }
@@ -1279,14 +1517,74 @@ export async function queueMedicationReferenceCandidate(
   const normalizedNameKey = normalizeLookupKey(displayName);
   if (!normalizedNameKey) return;
 
-  const detail: MedicationReferenceCandidateDetail = {
+  let detail: MedicationReferenceCandidateDetail = {
     dosage: cleanOptionalText(input.dosage),
     medication_type: input.medicationType ?? null,
     route: cleanOptionalText(input.route),
     reason_for_use: cleanOptionalText(input.reasonForUse),
     regimen_status: input.regimenStatus ?? null,
     timing_context: cleanOptionalText(input.timingContext),
+    suggested_generic_name: null,
+    suggested_brand_names: [],
+    suggested_medication_class: null,
+    suggested_medication_family: null,
+    suggested_rxnorm_code: null,
+    suggested_gut_relevance: null,
+    suggested_common_gut_effects: [],
+    suggested_interaction_flags: [],
+    suggested_active_ingredients: [],
+    suggested_common_dose_units: [],
+    suggested_dosage_form: null,
+    suggested_route: cleanOptionalText(input.route),
+    enrichment_source_label: null,
+    enrichment_source_ref: null,
+    enrichment_confidence: null,
+    enrichment_status: 'not_started',
+    enrichment_last_attempt_at: null,
+    enrichment_notes: null,
   };
+
+  try {
+    const enriched = await fetchMedicationEnrichment({
+      displayName,
+      observedMedicationType: detail.medication_type,
+      observedRoute: detail.route,
+      observedDosage: detail.dosage,
+      reasonForUse: detail.reason_for_use,
+    });
+
+    detail = applyMedicationEnrichmentResult(detail, {
+      ...detail,
+      suggested_generic_name: enriched.suggestedGenericName,
+      suggested_brand_names: enriched.suggestedBrandNames,
+      suggested_medication_class: enriched.suggestedMedicationClass,
+      suggested_medication_family: enriched.suggestedMedicationFamily,
+      suggested_rxnorm_code: enriched.suggestedRxnormCode,
+      suggested_gut_relevance: enriched.suggestedGutRelevance,
+      suggested_common_gut_effects: enriched.suggestedCommonGutEffects,
+      suggested_interaction_flags: enriched.suggestedInteractionFlags,
+      suggested_active_ingredients: enriched.suggestedActiveIngredients,
+      suggested_common_dose_units: enriched.suggestedCommonDoseUnits,
+      suggested_dosage_form: enriched.suggestedDosageForm,
+      suggested_route: enriched.suggestedRoute,
+      enrichment_source_label: enriched.enrichmentSourceLabel,
+      enrichment_source_ref: enriched.enrichmentSourceRef,
+      enrichment_confidence: enriched.enrichmentConfidence,
+      enrichment_status: enriched.enrichmentStatus,
+      enrichment_last_attempt_at: enriched.enrichmentLastAttemptAt,
+      enrichment_notes: enriched.enrichmentNotes,
+    });
+  } catch (error) {
+    detail = {
+      ...detail,
+      enrichment_status: 'failed',
+      enrichment_last_attempt_at: new Date().toISOString(),
+      enrichment_notes:
+        error instanceof Error
+          ? error.message
+          : 'Medication enrichment failed before the candidate entered review.',
+    };
+  }
 
   const existing = await findPendingCandidate({
     userId: input.userId,
@@ -1442,6 +1740,93 @@ export async function updateFoodReferenceCandidateDetail(
 
   if (error) throw error;
   if (!data) throw new Error('Food reference candidate update did not return a row.');
+
+  return data as ReferenceReviewCandidateRow;
+}
+
+export async function refreshMedicationReferenceCandidateEnrichment(
+  userId: string,
+  candidateId: string
+): Promise<ReferenceReviewCandidateRow> {
+  const candidate = await fetchReferenceReviewCandidateById(userId, candidateId);
+  if (candidate.candidate_kind !== 'medication') {
+    throw new Error('Only medication reference candidates can be enriched with medication knowledge.');
+  }
+
+  const existingDetail = readMedicationCandidateDetail(candidate.detail);
+  const enriched = await fetchMedicationEnrichment({
+    displayName: candidate.display_name,
+    observedMedicationType: existingDetail.medication_type,
+    observedRoute: existingDetail.route,
+    observedDosage: existingDetail.dosage,
+    reasonForUse: existingDetail.reason_for_use,
+    forceRefresh: true,
+  });
+
+  const enrichedDetail = applyMedicationEnrichmentResult(existingDetail, {
+    ...existingDetail,
+    suggested_generic_name: enriched.suggestedGenericName,
+    suggested_brand_names: enriched.suggestedBrandNames,
+    suggested_medication_class: enriched.suggestedMedicationClass,
+    suggested_medication_family: enriched.suggestedMedicationFamily,
+    suggested_rxnorm_code: enriched.suggestedRxnormCode,
+    suggested_gut_relevance: enriched.suggestedGutRelevance,
+    suggested_common_gut_effects: enriched.suggestedCommonGutEffects,
+    suggested_interaction_flags: enriched.suggestedInteractionFlags,
+    suggested_active_ingredients: enriched.suggestedActiveIngredients,
+    suggested_common_dose_units: enriched.suggestedCommonDoseUnits,
+    suggested_dosage_form: enriched.suggestedDosageForm,
+    suggested_route: enriched.suggestedRoute,
+    enrichment_source_label: enriched.enrichmentSourceLabel,
+    enrichment_source_ref: enriched.enrichmentSourceRef,
+    enrichment_confidence: enriched.enrichmentConfidence,
+    enrichment_status: enriched.enrichmentStatus,
+    enrichment_last_attempt_at: enriched.enrichmentLastAttemptAt,
+    enrichment_notes: enriched.enrichmentNotes,
+  });
+
+  const { data, error } = await supabase
+    .from('reference_review_candidates')
+    .update({
+      detail: enrichedDetail,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', candidateId)
+    .eq('user_id', userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error('Medication enrichment update did not return the refreshed candidate.');
+  }
+
+  return data as ReferenceReviewCandidateRow;
+}
+
+export async function updateMedicationReferenceCandidateDetail(
+  input: UpdateMedicationReferenceCandidateDetailInput
+): Promise<ReferenceReviewCandidateRow> {
+  const candidate = await fetchReferenceReviewCandidateById(input.userId, input.candidateId);
+  if (candidate.candidate_kind !== 'medication') {
+    throw new Error('Only medication reference candidates can be edited with medication enrichment fields.');
+  }
+
+  const normalizedDetail = readMedicationCandidateDetail(input.detail);
+
+  const { data, error } = await supabase
+    .from('reference_review_candidates')
+    .update({
+      detail: normalizedDetail,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.candidateId)
+    .eq('user_id', input.userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Medication reference candidate update did not return a row.');
 
   return data as ReferenceReviewCandidateRow;
 }
@@ -1602,13 +1987,25 @@ async function promoteMedicationCandidate(
   userId: string,
   candidate: ReferenceReviewCandidateRow
 ): Promise<{ status: ReferenceCandidateReviewStatus; promotedReferenceId: string }> {
-  const existingReference = await resolveExistingMedicationReference(candidate.display_name);
+  const detail = readMedicationCandidateDetail(candidate.detail);
+  const lookupNames = [
+    candidate.display_name,
+    detail.suggested_generic_name,
+    ...detail.suggested_brand_names,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  let existingReference: MedicationReferenceItemRow | null = null;
+  for (const lookupName of lookupNames) {
+    existingReference = await resolveExistingMedicationReference(lookupName);
+    if (existingReference) break;
+  }
+
   if (existingReference) {
     const { error: updateMedicationLogsError } = await supabase
       .from('medication_logs')
       .update({
         normalized_medication_id: existingReference.id,
-        route: existingReference.route,
+        route: detail.suggested_route ?? detail.route ?? existingReference.route,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
@@ -1623,21 +2020,34 @@ async function promoteMedicationCandidate(
     };
   }
 
-  const detail = readMedicationCandidateDetail(candidate.detail);
-
   const { data, error } = await supabase
     .from('medication_reference_items')
     .insert({
-      generic_name: candidate.display_name,
+      generic_name: detail.suggested_generic_name ?? candidate.display_name,
       display_name: candidate.display_name,
-      brand_names: [],
-      rxnorm_code: null,
-      medication_class: null,
-      route: detail.route,
+      brand_names: dedupeStrings(
+        [
+          ...detail.suggested_brand_names,
+          detail.suggested_generic_name &&
+          normalizeLookupKey(detail.suggested_generic_name) !== normalizeLookupKey(candidate.display_name)
+            ? candidate.display_name
+            : '',
+        ].filter((brand) => brand.length > 0)
+      ),
+      rxnorm_code: detail.suggested_rxnorm_code,
+      medication_class: detail.suggested_medication_class,
+      medication_family: detail.suggested_medication_family,
+      route: detail.suggested_route ?? detail.route,
+      dosage_form: detail.suggested_dosage_form,
       medication_type: detail.medication_type ?? 'unknown',
-      gut_relevance: 'unknown',
-      common_gut_effects: [],
-      interaction_flags: [],
+      gut_relevance: detail.suggested_gut_relevance ?? 'unknown',
+      common_gut_effects: detail.suggested_common_gut_effects,
+      interaction_flags: detail.suggested_interaction_flags,
+      active_ingredients: detail.suggested_active_ingredients,
+      common_dose_units: detail.suggested_common_dose_units,
+      source_label: detail.enrichment_source_label ?? 'user_review',
+      source_ref: detail.enrichment_source_ref,
+      source_confidence: detail.enrichment_confidence,
       evidence_notes: buildMedicationEvidenceNotes(detail),
     })
     .select('*')
@@ -1651,7 +2061,7 @@ async function promoteMedicationCandidate(
     .from('medication_logs')
     .update({
       normalized_medication_id: promoted.id,
-      route: detail.route ?? promoted.route,
+      route: detail.suggested_route ?? detail.route ?? promoted.route,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId)
