@@ -4,7 +4,6 @@ import type {
   ContradictionSummary,
   ExplanationEvidenceSummary,
   ExplanationInsightItem,
-  ExplanationMedicationReferenceDetail,
   ExplanationSignalSourceSummary,
   RankedExplanationBundle,
   RankedExplanationBundleMeta,
@@ -70,111 +69,12 @@ function formatPercent(value: number | null): string {
   return `${Math.round(value * 100)}%`;
 }
 
-function formatDose(value: number | null): string | null {
-  if (value === null) return null;
-  if (value >= 100) return `${Math.round(value)} mg`;
-  return `${Math.round(value * 10) / 10} mg`;
-}
-
 function appendCoverageDetail(
   label: string,
   value: number | null
 ): string {
   if (value === null) return `${label} was not quantified in the current evidence.`;
   return `${label} was about ${formatPercent(value)} on exposed days.`;
-}
-
-function buildMedicationReferenceDetail(
-  candidate: MedicalContextAnnotatedCandidate
-): ExplanationMedicationReferenceDetail | null {
-  if (candidate.category !== 'medication') return null;
-
-  const statistics = candidate.evidence.statistics;
-  const averageIronDoseMg = readStatisticNumber(statistics, 'average_exposed_iron_dose_mg');
-  const averageMagnesiumDoseMg = readStatisticNumber(
-    statistics,
-    'average_exposed_magnesium_dose_mg'
-  );
-  const minimumExposureDoseMg = readStatisticNumber(statistics, 'minimum_exposure_dose_mg');
-
-  switch (candidate.subtype) {
-    case 'medication_as_needed_antidiarrheal_next_day_hard_stool':
-      return {
-        label: 'Antidiarrheal rescue use',
-        family: 'Antidiarrheal',
-        route: 'Oral or route not specified',
-        timing_context: null,
-        regimen_status: 'As needed',
-        dose_context: null,
-        summary:
-          'This rule isolates rescue antidiarrheal use from general medication days and compares those exposures with next-day harder-stool patterns.',
-      };
-
-    case 'medication_before_meal_iron_same_day_nausea':
-      return {
-        label: 'Before-meal iron',
-        family: 'Iron',
-        route: 'Oral or route not specified',
-        timing_context: 'Before meal',
-        regimen_status: null,
-        dose_context:
-          averageIronDoseMg !== null
-            ? `Average exposed dose about ${formatDose(averageIronDoseMg)}`
-            : 'Dose detail was not consistent enough to summarize',
-        summary:
-          'This rule targets before-meal oral iron exposures so the report can separate timing-related GI irritation from general iron use.',
-      };
-
-    case 'medication_oral_magnesium_same_day_loose_stool': {
-      const averageDose = formatDose(averageMagnesiumDoseMg);
-      const minimumDose = formatDose(minimumExposureDoseMg);
-      const doseContextParts = [
-        averageDose ? `Average exposed dose about ${averageDose}` : null,
-        minimumDose ? `qualifying doses were at least ${minimumDose}` : null,
-      ].filter(Boolean);
-
-      return {
-        label: 'Oral magnesium',
-        family: 'Magnesium',
-        route: 'Oral',
-        timing_context: null,
-        regimen_status: null,
-        dose_context:
-          doseContextParts.length > 0
-            ? doseContextParts.join('; ')
-            : 'Dose detail was not consistent enough to summarize',
-        summary:
-          'This rule limits exposure to quantified oral magnesium doses so the report can distinguish dose-aware loose-stool patterns from generic magnesium mentions.',
-      };
-    }
-
-    case 'medication_any_bm_shift':
-      return {
-        label: 'GI-relevant medication group',
-        family: 'GI-relevant medications',
-        route: null,
-        timing_context: null,
-        regimen_status: null,
-        dose_context: null,
-        summary:
-          'This rule combines GI-relevant medication families and gut-effect flags when a single medication class was not isolated strongly enough.',
-      };
-
-    case 'medication_any_symptom_burden':
-      return {
-        label: 'GI-relevant medication group',
-        family: 'GI-relevant medications',
-        route: null,
-        timing_context: null,
-        regimen_status: null,
-        dose_context: null,
-        summary:
-          'This rule combines GI-relevant medication families and gut-effect flags when symptom burden appears to move with broader medication exposure rather than one reviewed medication profile.',
-      };
-
-    default:
-      return null;
-  }
 }
 
 function derivesNutritionSignal(candidate: MedicalContextAnnotatedCandidate): boolean {
@@ -210,25 +110,6 @@ function derivesStructuredIngredientSignal(
   );
 }
 
-function derivesMedicationSignal(
-  candidate: MedicalContextAnnotatedCandidate
-): boolean {
-  return candidate.category === 'medication' || candidate.trigger_factors.some((factor) =>
-    [
-      'matched_medication_ids',
-      'medication_families',
-      'medication_gut_effects',
-      'route',
-      'regimen_status',
-      'timing_context',
-      'dose_value',
-      'dose_unit',
-      'structured_medication_coverage_ratio',
-      'medication_signal_confidence_avg',
-    ].includes(factor)
-  );
-}
-
 function buildSignalSourceSummary(
   candidate: MedicalContextAnnotatedCandidate
 ): ExplanationSignalSourceSummary {
@@ -245,61 +126,12 @@ function buildSignalSourceSummary(
   const ingredientSignalConfidence =
     readStatisticNumber(statistics, 'average_exposed_signal_confidence') ??
     readStatisticNumber(statistics, 'avg_exposed_signal_confidence');
-  const medicationCoverage =
-    readStatisticNumber(statistics, 'average_exposed_medication_coverage_ratio') ??
-    readStatisticNumber(statistics, 'avg_exposed_medication_coverage_ratio');
-  const medicationSignalConfidence =
-    readStatisticNumber(statistics, 'average_exposed_medication_signal_confidence') ??
-    readStatisticNumber(statistics, 'avg_exposed_medication_signal_confidence');
-  const structuredMedicationProfileRatio =
-    readStatisticNumber(statistics, 'average_exposed_structured_profile_share') ??
-    readStatisticNumber(statistics, 'avg_exposed_structured_profile_share');
 
   const usesNutrition = derivesNutritionSignal(candidate) || nutritionCoverage !== null;
   const usesStructuredIngredients =
     derivesStructuredIngredientSignal(candidate) ||
     structuredCoverage !== null ||
     ingredientSignalConfidence !== null;
-  const usesMedication =
-    derivesMedicationSignal(candidate) ||
-    medicationCoverage !== null ||
-    medicationSignalConfidence !== null ||
-    structuredMedicationProfileRatio !== null;
-
-  if (candidate.category === 'medication' && usesMedication) {
-    return {
-      kind: 'reviewed_medication_reference',
-      summary:
-        `This finding is mainly driven by reviewed medication reference matches with structured dose, route, timing, or regimen context. ` +
-        `${appendCoverageDetail('Reviewed medication coverage', medicationCoverage)} ` +
-        `${appendCoverageDetail(
-          'Structured medication profile coverage',
-          structuredMedicationProfileRatio
-        )}`,
-      nutrition_coverage_ratio: nutritionCoverage,
-      nutrition_confidence: nutritionConfidence,
-      structured_food_coverage_ratio: structuredCoverage,
-      ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
-    };
-  }
-
-  if (candidate.category === 'medication') {
-    return {
-      kind: 'fallback_medication_heuristic',
-      summary:
-        'This finding relies more on medication family or name heuristics than on reviewed medication reference matches with structured dose, route, timing, or regimen coverage.',
-      nutrition_coverage_ratio: nutritionCoverage,
-      nutrition_confidence: nutritionConfidence,
-      structured_food_coverage_ratio: structuredCoverage,
-      ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
-    };
-  }
 
   if (usesNutrition && usesStructuredIngredients) {
     return {
@@ -312,9 +144,6 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -328,9 +157,6 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -344,9 +170,6 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -359,9 +182,6 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
-      medication_coverage_ratio: medicationCoverage,
-      medication_signal_confidence: medicationSignalConfidence,
-      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -372,9 +192,6 @@ function buildSignalSourceSummary(
     nutrition_confidence: nutritionConfidence,
     structured_food_coverage_ratio: structuredCoverage,
     ingredient_signal_confidence: ingredientSignalConfidence,
-    medication_coverage_ratio: medicationCoverage,
-    medication_signal_confidence: medicationSignalConfidence,
-    structured_medication_profile_ratio: structuredMedicationProfileRatio,
   };
 }
 
@@ -397,7 +214,6 @@ function toExplanationItem(c: MedicalContextAnnotatedCandidate): ExplanationInsi
       to: c.created_from_end_date,
     },
     signal_source: buildSignalSourceSummary(c),
-    medication_reference_detail: buildMedicationReferenceDetail(c),
     medical_context_annotations: c.medical_context_annotations,
     medical_context_modifier_applied: c.medical_context_modifier_applied,
     medical_context_score_delta: c.medical_context_score_delta,

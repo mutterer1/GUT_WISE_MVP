@@ -3,11 +3,6 @@ import { MedicationCorrelation } from '../../utils/clinicalReportQueries';
 
 interface MedicationCorrelationSectionProps {
   correlations: MedicationCorrelation[];
-  evidenceSummary?: {
-    totalMedicationFindings: number;
-    reviewedMedicationCount: number;
-    heuristicMedicationCount: number;
-  } | null;
 }
 
 type ResponseType = 'positive' | 'negative' | 'neutral' | 'unknown';
@@ -39,13 +34,9 @@ function groupByMedication(correlations: MedicationCorrelation[]) {
 
 export default function MedicationCorrelationSection({
   correlations,
-  evidenceSummary = null,
 }: MedicationCorrelationSectionProps) {
   const hasData = correlations.length > 0;
   const medicationGroups = groupByMedication(correlations);
-  const reviewedMedicationCount = evidenceSummary?.reviewedMedicationCount ?? 0;
-  const heuristicMedicationCount = evidenceSummary?.heuristicMedicationCount ?? 0;
-  const totalMedicationFindings = evidenceSummary?.totalMedicationFindings ?? 0;
 
   return (
     <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-6 print:border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.04]">
@@ -58,43 +49,9 @@ export default function MedicationCorrelationSection({
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           This section compares symptom severity before and after logged medication events where
-          surrounding symptom data was available. Read it alongside the ranked medication cards
-          above, which separately label reviewed medication references versus heuristic medication
-          matches.
+          surrounding symptom data was available.
         </p>
       </div>
-
-      {(reviewedMedicationCount > 0 || heuristicMedicationCount > 0) && (
-        <div className="mb-4 rounded-xl border border-[#4A8FA8]/18 bg-[#4A8FA8]/06 p-4 dark:bg-[#4A8FA8]/10">
-          <div className="flex items-start gap-3">
-            <Pill className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#4A8FA8]" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#2C617D] dark:text-[#8EBFD8]">
-                Medication evidence framing
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                {totalMedicationFindings > 0
-                  ? `The ranked pattern layer highlighted ${totalMedicationFindings} medication finding${
-                      totalMedicationFindings === 1 ? '' : 's'
-                    } in this report window.`
-                  : 'No ranked medication pattern was strong enough to surface in this report window.'}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {reviewedMedicationCount > 0 && (
-                  <span className="rounded-full border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] px-2.5 py-1 text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-                    {reviewedMedicationCount} reviewed medication
-                  </span>
-                )}
-                {heuristicMedicationCount > 0 && (
-                  <span className="rounded-full border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] px-2.5 py-1 text-xs font-medium text-[var(--color-warning)]">
-                    {heuristicMedicationCount} medication heuristic
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {!hasData ? (
         <p className="text-sm italic text-gray-500 dark:text-gray-400">
@@ -270,9 +227,7 @@ export default function MedicationCorrelationSection({
               <span className="font-medium text-gray-600 dark:text-gray-300">Method:</span>{' '}
               Pre-dose severity reflects nearby symptom logs before a medication entry. Post-dose
               severity reflects nearby symptom logs after that entry. These comparisons are useful for
-              review, but they do not establish treatment effect. Ranked medication findings
-              elsewhere in this report should carry more weight when they are backed by reviewed
-              medication references than when they still rely on heuristic matching.
+              review, but they do not establish treatment effect.
             </p>
           </div>
         </>

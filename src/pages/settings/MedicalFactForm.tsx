@@ -226,7 +226,6 @@ export default function MedicalFactForm({
                   <p>Prefer precise facts over broad summaries.</p>
                   <p>Leave uncertain values blank rather than estimating.</p>
                   <p>Use notes for nuance that may matter later during review.</p>
-                  <p>Date, current-use, and resolved fields now drive whether GutWise treats this as current, historical, or resolved context.</p>
                 </div>
               </Card>
 

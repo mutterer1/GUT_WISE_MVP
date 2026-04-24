@@ -8,7 +8,6 @@ import type {
   LLMSafetyNote,
   LLMStyleGuidance,
 } from '../../types/llmExplanationContract';
-import type { ValidationResult } from '../../types/llmExplanationOutput';
 
 const OBJECTIVE: LLMExplanationInput['objective'] = {
   mode: 'structured_findings_only',
@@ -53,11 +52,6 @@ const STYLE_GUIDANCE: LLMStyleGuidance = {
   ],
 };
 
-const MEDICATION_RETRY_FLAG_TYPES = new Set([
-  'medication_detail_unused',
-  'medication_detail_invented',
-]);
-
 function buildEvidenceSummary(item: ExplanationInsightItem): LLMEvidenceSummary {
   return {
     support_count: item.evidence.support_count,
@@ -87,9 +81,6 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
   if (item.signal_source.kind === 'fallback_heuristic') {
     signals.push('heuristic_food_signal');
   }
-  if (item.signal_source.kind === 'fallback_medication_heuristic') {
-    signals.push('heuristic_medication_signal');
-  }
   if (
     item.signal_source.nutrition_coverage_ratio !== null &&
     item.signal_source.nutrition_coverage_ratio < 0.65
@@ -114,24 +105,6 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
   ) {
     signals.push('ingredient_signal_confidence_low');
   }
-  if (
-    item.signal_source.medication_coverage_ratio !== null &&
-    item.signal_source.medication_coverage_ratio < 0.65
-  ) {
-    signals.push('medication_coverage_partial');
-  }
-  if (
-    item.signal_source.medication_signal_confidence !== null &&
-    item.signal_source.medication_signal_confidence < 0.6
-  ) {
-    signals.push('medication_signal_confidence_low');
-  }
-  if (
-    item.signal_source.structured_medication_profile_ratio !== null &&
-    item.signal_source.structured_medication_profile_ratio < 0.65
-  ) {
-    signals.push('medication_profile_structure_partial');
-  }
   return signals;
 }
 
@@ -151,7 +124,6 @@ function toInsightItem(item: ExplanationInsightItem): LLMInsightItem {
     evidence: buildEvidenceSummary(item),
     analysis_window: item.analysis_window,
     signal_source: item.signal_source,
-    medication_reference_detail: item.medication_reference_detail,
     medical_context_annotations: item.medical_context_annotations,
     medical_context_modifier_applied: item.medical_context_modifier_applied,
     caution_signals: deriveCautionSignals(item),
@@ -191,113 +163,5 @@ export function buildLLMExplanationInput(bundle: RankedExplanationBundle): LLMEx
     constraints: CONSTRAINTS,
     style_guidance: STYLE_GUIDANCE,
     safety_notes: buildSafetyNotes(bundle.items),
-  };
-}
-
-function formatMedicationRetryDetail(
-  detail: NonNullable<LLMInsightItem['medication_reference_detail']>
-): string {
-  return [
-    `label=${detail.label}`,
-    `family=${detail.family ?? 'unspecified'}`,
-    `route=${detail.route ?? 'unspecified'}`,
-    `timing=${detail.timing_context ?? 'unspecified'}`,
-    `regimen=${detail.regimen_status ?? 'unspecified'}`,
-    `dose=${detail.dose_context ?? 'unspecified'}`,
-  ].join('; ');
-}
-
-function buildMedicationRetryNote(
-  item: LLMInsightItem,
-  flagTypes: Set<string>
-): string | null {
-  const detail = item.medication_reference_detail;
-  if (!detail) return null;
-
-  const instructions: string[] = [];
-
-  if (flagTypes.has('medication_detail_unused')) {
-    instructions.push(
-      'Use the available medication_reference_detail directly in plain language instead of generic medication wording.'
-    );
-  }
-
-  if (flagTypes.has('medication_detail_invented')) {
-    instructions.push(
-      'Do not mention any medication route, timing, regimen, or dose that is not present in medication_reference_detail.'
-    );
-  }
-
-  instructions.push(
-    `Allowed medication detail for this item: ${formatMedicationRetryDetail(detail)}.`
-  );
-
-  return `Retry requirement: ${instructions.join(' ')}`;
-}
-
-export function buildMedicationValidationRetryInput(
-  input: LLMExplanationInput,
-  validation: ValidationResult
-): LLMExplanationInput | null {
-  const flaggedByKey = new Map<string, Set<string>>();
-
-  for (const flag of validation.flags) {
-    if (!flag.insight_key || !MEDICATION_RETRY_FLAG_TYPES.has(flag.type)) continue;
-
-    const existing = flaggedByKey.get(flag.insight_key) ?? new Set<string>();
-    existing.add(flag.type);
-    flaggedByKey.set(flag.insight_key, existing);
-  }
-
-  if (flaggedByKey.size === 0) {
-    return null;
-  }
-
-  const safetyNotesByKey = new Map(input.safety_notes.map(note => [note.insight_key, note.note]));
-  let changed = false;
-
-  for (const item of input.insight_items) {
-    const flagTypes = flaggedByKey.get(item.insight_key);
-    if (!flagTypes) continue;
-
-    const retryNote = buildMedicationRetryNote(item, flagTypes);
-    if (!retryNote) continue;
-
-    const existing = safetyNotesByKey.get(item.insight_key);
-    safetyNotesByKey.set(
-      item.insight_key,
-      existing ? `${existing} ${retryNote}` : retryNote
-    );
-    changed = true;
-  }
-
-  if (!changed) {
-    return null;
-  }
-
-  const updatedSafetyNotes: LLMSafetyNote[] = [];
-  for (const item of input.insight_items) {
-    const note = safetyNotesByKey.get(item.insight_key);
-    if (note) {
-      updatedSafetyNotes.push({
-        insight_key: item.insight_key,
-        note,
-      });
-    }
-  }
-
-  return {
-    ...input,
-    style_guidance: {
-      ...input.style_guidance,
-      avoid: Array.from(
-        new Set([
-          ...input.style_guidance.avoid,
-          'generic_medication_wording',
-          'unsupported_medication_detail',
-        ])
-      ),
-    },
-    safety_notes: updatedSafetyNotes,
   };
 }

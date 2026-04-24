@@ -6,16 +6,12 @@ import type {
   ExplanationSignalSourceKind,
   ExplanationSignalSourceSummary,
 } from '../../types/explanationBundle';
-import type {
-  ExplanationGenerationMeta,
-  LLMPerItemExplanation,
-} from '../../types/llmExplanationOutput';
+import type { LLMPerItemExplanation } from '../../types/llmExplanationOutput';
 
 interface RankedCandidateCardProps {
   candidate: MedicalContextAnnotatedCandidate;
   bundleItem?: ExplanationInsightItem;
   explanation?: LLMPerItemExplanation;
-  explanationGenerationMeta?: ExplanationGenerationMeta | null;
   rank: number;
 }
 
@@ -120,12 +116,6 @@ const subtypeLabels: Record<string, string> = {
 
   medication_any_bm_shift: 'GI-relevant medication timing linked to bowel changes',
   medication_any_symptom_burden: 'GI-relevant medication timing associated with symptom patterns',
-  medication_as_needed_antidiarrheal_next_day_hard_stool:
-    'As-needed antidiarrheal linked to harder stool the next day',
-  medication_before_meal_iron_same_day_nausea:
-    'Before-meal iron linked to same-day nausea',
-  medication_oral_magnesium_same_day_loose_stool:
-    'Quantified oral magnesium linked to same-day loose stool',
 
   multifactor_stress_sleep_hydration_risk: 'Combined stress, poor sleep, and low hydration',
   compound_risk_day: 'Combined stress, poor sleep, and low hydration',
@@ -221,24 +211,6 @@ const signalSourceConfig: Record<
     labelClass: 'text-[#7C5CFF] dark:text-[#B8A8FF]',
     bodyClass: 'text-[#6246D9] dark:text-[#D5CCFF]',
   },
-  reviewed_medication_reference: {
-    label: 'Reviewed medication',
-    badgeClass:
-      'border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] text-[#2F7A57] dark:text-[#9DE2BC]',
-    panelClass:
-      'border border-[rgba(76,174,124,0.16)] bg-[rgba(76,174,124,0.07)] dark:bg-[rgba(76,174,124,0.1)]',
-    labelClass: 'text-[#2F7A57] dark:text-[#9DE2BC]',
-    bodyClass: 'text-[#295E46] dark:text-[#D7F8E5]',
-  },
-  fallback_medication_heuristic: {
-    label: 'Medication heuristic',
-    badgeClass:
-      'border border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] text-[var(--color-warning)]',
-    panelClass:
-      'border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] dark:bg-[rgba(255,170,92,0.1)]',
-    labelClass: 'text-[var(--color-warning)]',
-    bodyClass: 'text-[#8A5A16] dark:text-[rgba(255,220,181,0.88)]',
-  },
   fallback_heuristic: {
     label: 'Heuristic fallback',
     badgeClass:
@@ -277,71 +249,9 @@ function formatSubtypeFallback(raw: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-function formatMedicationDetailLabel(raw: string): string {
-  return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
-}
-
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return 'N/A';
   return `${Math.round(value * 100)}%`;
-}
-
-function buildTrustMetrics(source: ExplanationSignalSourceSummary): Array<{
-  label: string;
-  value: string;
-}> {
-  const metrics: Array<{ label: string; value: string }> = [];
-
-  if (source.nutrition_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Nutrition coverage',
-      value: formatPercent(source.nutrition_coverage_ratio),
-    });
-  }
-
-  if (source.nutrition_confidence !== null) {
-    metrics.push({
-      label: 'Nutrition confidence',
-      value: formatPercent(source.nutrition_confidence),
-    });
-  }
-
-  if (source.structured_food_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Ingredient coverage',
-      value: formatPercent(source.structured_food_coverage_ratio),
-    });
-  }
-
-  if (source.ingredient_signal_confidence !== null) {
-    metrics.push({
-      label: 'Ingredient confidence',
-      value: formatPercent(source.ingredient_signal_confidence),
-    });
-  }
-
-  if (source.medication_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Medication coverage',
-      value: formatPercent(source.medication_coverage_ratio),
-    });
-  }
-
-  if (source.medication_signal_confidence !== null) {
-    metrics.push({
-      label: 'Medication confidence',
-      value: formatPercent(source.medication_signal_confidence),
-    });
-  }
-
-  if (source.structured_medication_profile_ratio !== null) {
-    metrics.push({
-      label: 'Profile structure',
-      value: formatPercent(source.structured_medication_profile_ratio),
-    });
-  }
-
-  return metrics;
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -357,10 +267,6 @@ function formatDateRange(start: string, end: string): string {
 function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): string | null {
   if (source.kind === 'fallback_heuristic') {
     return 'This card is still relying mostly on fallback heuristics because reviewed nutrition or structured ingredient coverage is limited.';
-  }
-
-  if (source.kind === 'fallback_medication_heuristic') {
-    return 'This card is still relying mostly on medication family or name heuristics because reviewed medication reference coverage is limited.';
   }
 
   if (
@@ -383,53 +289,6 @@ function buildSignalSourceCaution(source: ExplanationSignalSourceSummary): strin
     return 'Structured ingredients are present here, but ingredient confidence is still limited.';
   }
 
-  if (
-    source.medication_coverage_ratio !== null &&
-    source.structured_medication_profile_ratio !== null &&
-    source.medication_coverage_ratio < 0.65 &&
-    source.structured_medication_profile_ratio < 0.65
-  ) {
-    return 'Reviewed medication coverage is still partial here. Accepting more reviewed medications with clear dose, route, timing, and regimen detail would strengthen this signal.';
-  }
-
-  if (
-    source.medication_signal_confidence !== null &&
-    source.medication_signal_confidence < 0.6
-  ) {
-    return 'Reviewed medication matches are present here, but medication signal confidence is still limited.';
-  }
-
-  if (
-    source.structured_medication_profile_ratio !== null &&
-    source.structured_medication_profile_ratio < 0.6
-  ) {
-    return 'Medication profile structure is still partial here, so dose, route, timing, or regimen context is incomplete.';
-  }
-
-  return null;
-}
-
-function buildMedicationInterpretationNote(
-  category: string,
-  source: ExplanationSignalSourceSummary | null,
-  hasMedicationDetail: boolean
-): string | null {
-  if (category !== 'medication' || !source) {
-    return null;
-  }
-
-  if (source.kind === 'fallback_medication_heuristic') {
-    return 'Interpret this as a broad medication pattern only. It is not yet anchored to a reviewed medication reference with route, timing, regimen, or dose detail.';
-  }
-
-  if (source.kind === 'reviewed_medication_reference' && hasMedicationDetail) {
-    return 'This finding is anchored to the reviewed medication context shown above rather than to name-only medication matching.';
-  }
-
-  if (source.kind === 'reviewed_medication_reference') {
-    return 'This finding is backed by a reviewed medication reference, but the structured route, timing, regimen, or dose context is still broader than a single medication profile.';
-  }
-
   return null;
 }
 
@@ -437,7 +296,6 @@ export default function RankedCandidateCard({
   candidate,
   bundleItem,
   explanation,
-  explanationGenerationMeta,
   rank,
 }: RankedCandidateCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(rank <= 2);
@@ -461,31 +319,8 @@ export default function RankedCandidateCard({
   const contradictionRate = candidate.evidence.contradiction_rate;
   const medicalContextApplied = candidate.medical_context_modifier_applied;
   const signalSource = bundleItem?.signal_source ?? null;
-  const medicationDetail = bundleItem?.medication_reference_detail ?? null;
   const signalSourceMeta = signalSource ? signalSourceConfig[signalSource.kind] : null;
   const signalSourceCaution = signalSource ? buildSignalSourceCaution(signalSource) : null;
-  const medicationInterpretationNote = buildMedicationInterpretationNote(
-    candidate.category,
-    signalSource,
-    medicationDetail !== null
-  );
-  const trustMetrics = signalSource ? buildTrustMetrics(signalSource) : [];
-  const wasMedicationRetryTarget =
-    explanationGenerationMeta?.retry_target_insight_keys.includes(candidate.insight_key) ?? false;
-  const hasRemainingMedicationWarning =
-    explanationGenerationMeta?.remaining_medication_warning_keys.includes(candidate.insight_key) ??
-    false;
-  const medicationRetryTightened =
-    !!explanation &&
-    wasMedicationRetryTarget &&
-    explanationGenerationMeta?.medication_validation_retry_attempted === true &&
-    explanationGenerationMeta?.medication_validation_retry_applied === true &&
-    explanationGenerationMeta?.medication_validation_retry_improved === true &&
-    !hasRemainingMedicationWarning;
-  const medicationRetryChecked =
-    !!explanation &&
-    wasMedicationRetryTarget &&
-    explanationGenerationMeta?.medication_validation_retry_attempted === true;
 
   return (
     <div
@@ -562,66 +397,6 @@ export default function RankedCandidateCard({
         </div>
       )}
 
-      {medicationDetail && (
-        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.08)] px-3.5 py-3 dark:bg-[rgba(76,174,124,0.1)]">
-          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-            {signalSource?.kind === 'reviewed_medication_reference'
-              ? 'Reviewed medication detail'
-              : 'Medication context used'}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-[#295E46] dark:text-[#D7F8E5]">
-            {medicationDetail.summary}
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] px-2.5 py-1 text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-              {medicationDetail.label}
-            </span>
-
-            {medicationDetail.family && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Family: {formatMedicationDetailLabel(medicationDetail.family)}
-              </span>
-            )}
-
-            {medicationDetail.route && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Route: {formatMedicationDetailLabel(medicationDetail.route)}
-              </span>
-            )}
-
-            {medicationDetail.timing_context && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Timing: {formatMedicationDetailLabel(medicationDetail.timing_context)}
-              </span>
-            )}
-
-            {medicationDetail.regimen_status && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Regimen: {formatMedicationDetailLabel(medicationDetail.regimen_status)}
-              </span>
-            )}
-
-            {medicationDetail.dose_context && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Dose: {medicationDetail.dose_context}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {medicationInterpretationNote && (
-        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.05)] px-3.5 py-3 dark:bg-[rgba(76,174,124,0.08)]">
-          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-            Interpretation guardrail
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-[#295E46] dark:text-[#D7F8E5]">
-            {medicationInterpretationNote}
-          </p>
-        </div>
-      )}
-
       {candidate.medical_context_annotations.length > 0 && (
         <div className="mt-4 rounded-xl border border-[#4A8FA8]/12 bg-[#4A8FA8]/04 px-3.5 py-3 dark:bg-[#4A8FA8]/08">
           <p className="mb-1 text-xs font-medium text-[#2C617D] dark:text-[#8EBFD8]">
@@ -683,17 +458,24 @@ export default function RankedCandidateCard({
                 <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
                   Trust framing
                 </p>
-                {trustMetrics.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {trustMetrics.map((metric) => (
-                      <Metric
-                        key={`${candidate.insight_key}-${metric.label}`}
-                        label={metric.label}
-                        value={metric.value}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Metric
+                    label="Nutrition coverage"
+                    value={formatPercent(signalSource.nutrition_coverage_ratio)}
+                  />
+                  <Metric
+                    label="Nutrition confidence"
+                    value={formatPercent(signalSource.nutrition_confidence)}
+                  />
+                  <Metric
+                    label="Ingredient coverage"
+                    value={formatPercent(signalSource.structured_food_coverage_ratio)}
+                  />
+                  <Metric
+                    label="Ingredient confidence"
+                    value={formatPercent(signalSource.ingredient_signal_confidence)}
+                  />
+                </div>
 
                 <p className="mt-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                   {signalSource.summary}
@@ -781,28 +563,6 @@ export default function RankedCandidateCard({
               Pattern explanation
             </span>
           </div>
-
-          {medicationRetryChecked && (
-            <div
-              className={`rounded-xl px-3.5 py-3 ${
-                medicationRetryTightened
-                  ? 'border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.06)] dark:bg-[rgba(76,174,124,0.08)]'
-                  : 'border border-[rgba(255,170,92,0.18)] bg-[rgba(255,170,92,0.07)] dark:bg-[rgba(255,170,92,0.1)]'
-              }`}
-            >
-              <p
-                className={`text-xs leading-relaxed ${
-                  medicationRetryTightened
-                    ? 'text-[#2F7A57] dark:text-[#D7F8E5]'
-                    : 'text-[var(--color-warning)]'
-                }`}
-              >
-                {medicationRetryTightened
-                  ? 'This explanation was tightened after medication-detail validation so the wording uses the structured medication context more directly.'
-                  : 'This explanation was checked against structured medication detail, but medication-detail cautions still remain. Use the medication detail block above as the source of truth.'}
-              </p>
-            </div>
-          )}
 
           <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
             {explanation.summary}

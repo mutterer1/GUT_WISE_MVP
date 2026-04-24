@@ -61,7 +61,6 @@ function hasAnyActiveMedicalContext(summary: MedicalContextSummary): boolean {
     summary.surgeries_procedures.length > 0 ||
     summary.allergies_intolerances.length > 0 ||
     summary.active_diet_guidance.length > 0 ||
-    summary.active_red_flags.length > 0 ||
     summary.red_flag_history.length > 0 ||
     summary.pending_candidates_count > 0
   );
@@ -148,7 +147,7 @@ function applyMedicationModifiers(
 
 function applyRedFlagModifiers(
   c: PrioritizedInsightCandidate,
-  redFlags: MedicalContextSummary['active_red_flags']
+  redFlags: MedicalContextSummary['red_flag_history']
 ): Modifier[] {
   if (redFlags.length === 0) return [];
   if (c.priority_tier === 'low') return [];
@@ -214,7 +213,7 @@ function annotateOne(
     ...applyDiagnosisModifiers(c, summary.active_diagnoses),
     ...applyAllergyModifiers(c, summary.allergies_intolerances),
     ...applyMedicationModifiers(c, summary.current_medications),
-    ...applyRedFlagModifiers(c, summary.active_red_flags),
+    ...applyRedFlagModifiers(c, summary.red_flag_history),
     ...applyDietGuidanceModifiers(c, summary),
     ...applyPendingCandidateModifiers(summary),
   ];

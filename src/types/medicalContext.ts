@@ -25,27 +25,12 @@ export interface FactProvenance {
   notes: string | null;
 }
 
-export type MedicalFactTimelineStatus =
-  | 'current'
-  | 'historical'
-  | 'resolved'
-  | 'under_investigation'
-  | 'inactive';
-
-export interface MedicalFactTimeline {
-  status: MedicalFactTimelineStatus;
-  effective_date: string | null;
-  end_date: string | null;
-  currency_label: string;
-}
-
 export interface MedicalFactBase {
   id: string;
   user_id: string;
   category: MedicalFactCategory;
   confirmation_state: ConfirmationState;
   provenance: FactProvenance;
-  timeline: MedicalFactTimeline;
   is_active: boolean;
   deactivated_at: string | null;
   created_at: string;
@@ -168,7 +153,6 @@ export interface MedicalContextSummary {
   surgeries_procedures: SurgeryProcedureFact[];
   allergies_intolerances: AllergyIntoleranceFact[];
   active_diet_guidance: DietGuidanceFact[];
-  active_red_flags: RedFlagHistoryFact[];
   red_flag_history: RedFlagHistoryFact[];
   has_confirmed_facts: boolean;
   confirmed_document_backed_fact_count: number;
@@ -266,13 +250,6 @@ export interface MedicalDocumentIntakeRow {
   updated_at: string;
 }
 
-export interface DocumentExtractionOrchestrationResponse {
-  success: boolean;
-  intake: MedicalDocumentIntakeRow;
-  extraction_supported: boolean;
-  message: string | null;
-}
-
 export type CandidateEvidenceKind =
   | 'quote'
   | 'summary'
@@ -309,10 +286,4 @@ export interface CandidateMedicalFactEvidenceRow {
   confidence_score: number | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface CandidateReviewEvidenceItem {
-  evidence: CandidateMedicalFactEvidenceRow;
-  segment: MedicalDocumentEvidenceSegmentRow | null;
-  intake: MedicalDocumentIntakeRow | null;
 }

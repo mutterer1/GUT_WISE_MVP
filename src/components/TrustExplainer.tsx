@@ -19,23 +19,21 @@ const content: Record<TrustExplainerVariant, TrustExplainerContent> = {
   insights: {
     title: 'How GutWise builds and labels insights',
     subtitle:
-      'Insights are stronger when reviewed nutrition, structured ingredients, or reviewed medication references with dose and timing context back the pattern, and weaker when GutWise has to fall back to heuristics.',
+      'Insights are stronger when reviewed nutrition and structured ingredients back the pattern, and weaker when GutWise has to fall back to heuristics.',
     points: [
-      'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, reviewed medication references, mixed evidence, or fallback heuristics.',
-      'Confidence improves when the same signal appears across multiple days with better food coverage, stronger medication reference coverage, and more complete structure.',
-      'When reviewed medication detail exists, GutWise can now tighten explanation wording after validation so route, timing, regimen, or dose context is used more directly.',
+      'Each insight now shows whether it is driven by reviewed nutrition, structured ingredients, mixed evidence, or fallback heuristics.',
+      'Confidence improves when the same signal appears across multiple days with better food coverage and more complete structure.',
     ],
-    note: 'If coverage is partial, heuristic fallback is doing most of the work, or medication wording still needed caution, GutWise should say that clearly and keep the structured medication detail visible as the source of truth.',
+    note: 'If coverage is partial or heuristic fallback is doing most of the work, GutWise should say that clearly.',
   },
   reports: {
     title: 'How to use this report',
     subtitle: 'Use the report as a structured conversation aid for clinical review.',
     points: [
       'Observed data appears first, followed by plain-language interpretation.',
-      'Medication report cards now distinguish reviewed medication context from broader heuristic medication matching.',
       'Treat the report as a timeline and discussion tool, not a conclusion.',
     ],
-    note: 'GutWise does not diagnose conditions or replace professional care. Give more weight to findings backed by reviewed medication references than to findings still labeled as medication heuristic.',
+    note: 'GutWise does not diagnose conditions or replace professional care.',
   },
   documents: {
     title: 'How document review works',

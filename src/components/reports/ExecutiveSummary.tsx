@@ -9,61 +9,6 @@ interface ExecutiveSummaryProps {
   avgPerWeek: number;
   criticalAlerts: ClinicalAlert[];
   primaryConcerns: string[];
-  evidenceSummary?: {
-    totalFindings: number;
-    reviewedNutritionCount: number;
-    structuredIngredientCount: number;
-    mixedEvidenceCount: number;
-    reviewedMedicationCount: number;
-    heuristicMedicationCount: number;
-    heuristicCount: number;
-  } | null;
-}
-
-function buildEvidenceSummaryLines(
-  evidenceSummary: ExecutiveSummaryProps['evidenceSummary']
-): string[] {
-  if (!evidenceSummary || evidenceSummary.totalFindings === 0) return [];
-
-  const lines: string[] = [];
-  const structuredFoodCount =
-    evidenceSummary.reviewedNutritionCount +
-    evidenceSummary.structuredIngredientCount +
-    evidenceSummary.mixedEvidenceCount;
-
-  if (structuredFoodCount > 0) {
-    lines.push(
-      `${structuredFoodCount} ranked food finding${
-        structuredFoodCount === 1 ? '' : 's'
-      } in this report ${structuredFoodCount === 1 ? 'was' : 'were'} backed by reviewed nutrition, structured ingredients, or both.`
-    );
-  }
-
-  if (evidenceSummary.reviewedMedicationCount > 0) {
-    lines.push(
-      `${evidenceSummary.reviewedMedicationCount} ranked medication finding${
-        evidenceSummary.reviewedMedicationCount === 1 ? '' : 's'
-      } ${evidenceSummary.reviewedMedicationCount === 1 ? 'was' : 'were'} backed by reviewed medication references with clearer dose, route, timing, or regimen context.`
-    );
-  }
-
-  if (evidenceSummary.heuristicMedicationCount > 0) {
-    lines.push(
-      `${evidenceSummary.heuristicMedicationCount} medication finding${
-        evidenceSummary.heuristicMedicationCount === 1 ? '' : 's'
-      } still relied on heuristic medication matching and should be read more cautiously.`
-    );
-  }
-
-  if (evidenceSummary.heuristicCount > 0) {
-    lines.push(
-      `${evidenceSummary.heuristicCount} non-medication finding${
-        evidenceSummary.heuristicCount === 1 ? '' : 's'
-      } still leaned on heuristic fallback because structured coverage was partial.`
-    );
-  }
-
-  return lines;
 }
 
 export default function ExecutiveSummary({
@@ -74,11 +19,9 @@ export default function ExecutiveSummary({
   avgPerWeek,
   criticalAlerts,
   primaryConcerns,
-  evidenceSummary = null,
 }: ExecutiveSummaryProps) {
   const hasFlags = criticalAlerts.length > 0 || primaryConcerns.length > 0;
   const totalFlagged = criticalAlerts.length + primaryConcerns.length;
-  const evidenceLines = buildEvidenceSummaryLines(evidenceSummary);
 
   return (
     <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-6 print:border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.04]">
@@ -157,29 +100,6 @@ export default function ExecutiveSummary({
           </div>
         </div>
       </div>
-
-      {evidenceLines.length > 0 && (
-        <div className="mb-5 rounded-xl border border-[#4A8FA8]/18 bg-[#4A8FA8]/06 p-4 dark:bg-[#4A8FA8]/10">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#4A8FA8]" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#2C617D] dark:text-[#8EBFD8]">
-                Evidence framing
-              </p>
-              <div className="mt-2 space-y-1.5">
-                {evidenceLines.map((line) => (
-                  <p
-                    key={line}
-                    className="text-sm leading-relaxed text-gray-700 dark:text-gray-300"
-                  >
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {criticalAlerts.length > 0 && (
         <div className="mb-5 rounded-xl border border-[#C28F94]/30 bg-[#C28F94]/10 p-4 dark:bg-[#C28F94]/10">

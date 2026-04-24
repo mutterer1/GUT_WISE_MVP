@@ -27,15 +27,12 @@ export async function loadPersistedExplanation(
   const ageMs = Date.now() - new Date(data.updated_at as string).getTime();
   if (ageMs > CACHE_MAX_AGE_MS) return null;
 
-  const explanationOutput = data.explanation_output as LLMExplanationOutput;
-  const restoredFlags = (explanationOutput.meta.validation_flags ?? []).map((type) => ({ type }));
-
   return {
     success: true,
-    explanation_output: explanationOutput,
+    explanation_output: data.explanation_output as LLMExplanationOutput,
     validation: {
       status,
-      flags: restoredFlags,
+      flags: [],
       is_safe_to_use: true,
     },
   };

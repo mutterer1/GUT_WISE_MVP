@@ -38,18 +38,6 @@ const signalSourceConfig: Record<
       'border-[rgba(124,92,255,0.22)] bg-[rgba(124,92,255,0.1)] text-[#7C5CFF] dark:text-[#B8A8FF]',
     accentClass: 'text-[#7C5CFF] dark:text-[#B8A8FF]',
   },
-  reviewed_medication_reference: {
-    label: 'Reviewed medication',
-    badgeClass:
-      'border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] text-[#2F7A57] dark:text-[#9DE2BC]',
-    accentClass: 'text-[#2F7A57] dark:text-[#9DE2BC]',
-  },
-  fallback_medication_heuristic: {
-    label: 'Medication heuristic',
-    badgeClass:
-      'border-[rgba(255,170,92,0.24)] bg-[rgba(255,170,92,0.1)] text-[var(--color-warning)]',
-    accentClass: 'text-[var(--color-warning)]',
-  },
   fallback_heuristic: {
     label: 'Heuristic fallback',
     badgeClass:
@@ -71,79 +59,9 @@ const statusLabels: Record<string, string> = {
   insufficient: 'Not enough data yet',
 };
 
-const subtypeLabels: Record<string, string> = {
-  medication_any_bm_shift: 'GI-relevant medication timing linked to bowel changes',
-  medication_any_symptom_burden:
-    'GI-relevant medication timing associated with symptom patterns',
-  medication_as_needed_antidiarrheal_next_day_hard_stool:
-    'As-needed antidiarrheal linked to harder stool the next day',
-  medication_before_meal_iron_same_day_nausea:
-    'Before-meal iron linked to same-day nausea',
-  medication_oral_magnesium_same_day_loose_stool:
-    'Quantified oral magnesium linked to same-day loose stool',
-};
-
 function formatPercent(value: number | null): string {
   if (value === null) return 'N/A';
   return `${Math.round(value * 100)}%`;
-}
-
-function buildTrustMetrics(source: ExplanationInsightItem['signal_source']): Array<{
-  label: string;
-  value: string;
-}> {
-  const metrics: Array<{ label: string; value: string }> = [];
-
-  if (source.nutrition_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Nutrition coverage',
-      value: formatPercent(source.nutrition_coverage_ratio),
-    });
-  }
-
-  if (source.nutrition_confidence !== null) {
-    metrics.push({
-      label: 'Nutrition confidence',
-      value: formatPercent(source.nutrition_confidence),
-    });
-  }
-
-  if (source.structured_food_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Ingredient coverage',
-      value: formatPercent(source.structured_food_coverage_ratio),
-    });
-  }
-
-  if (source.ingredient_signal_confidence !== null) {
-    metrics.push({
-      label: 'Ingredient confidence',
-      value: formatPercent(source.ingredient_signal_confidence),
-    });
-  }
-
-  if (source.medication_coverage_ratio !== null) {
-    metrics.push({
-      label: 'Medication coverage',
-      value: formatPercent(source.medication_coverage_ratio),
-    });
-  }
-
-  if (source.medication_signal_confidence !== null) {
-    metrics.push({
-      label: 'Medication confidence',
-      value: formatPercent(source.medication_signal_confidence),
-    });
-  }
-
-  if (source.structured_medication_profile_ratio !== null) {
-    metrics.push({
-      label: 'Profile structure',
-      value: formatPercent(source.structured_medication_profile_ratio),
-    });
-  }
-
-  return metrics;
 }
 
 function formatLift(value: number | null): string {
@@ -167,19 +85,11 @@ function formatCategoryLabel(raw: string): string {
   return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
 }
 
-function formatMedicationDetailLabel(raw: string): string {
-  return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
-}
-
 function buildSourceCaution(item: ExplanationInsightItem): string | null {
   const source = item.signal_source;
 
   if (source.kind === 'fallback_heuristic') {
     return 'This finding still relies more on fallback heuristics than on reviewed nutrition or structured ingredient coverage.';
-  }
-
-  if (source.kind === 'fallback_medication_heuristic') {
-    return 'This finding still relies more on medication family or name heuristics than on reviewed medication reference coverage.';
   }
 
   if (
@@ -194,43 +104,6 @@ function buildSourceCaution(item: ExplanationInsightItem): string | null {
     source.structured_food_coverage_ratio < 0.65
   ) {
     return 'Structured ingredient coverage is still partial for this finding.';
-  }
-
-  if (
-    source.medication_coverage_ratio !== null &&
-    source.medication_coverage_ratio < 0.65
-  ) {
-    return 'Reviewed medication coverage is still partial for this finding.';
-  }
-
-  if (
-    source.structured_medication_profile_ratio !== null &&
-    source.structured_medication_profile_ratio < 0.65
-  ) {
-    return 'Structured medication dose, route, timing, or regimen context is still partial for this finding.';
-  }
-
-  return null;
-}
-
-function buildMedicationInterpretationNote(item: ExplanationInsightItem): string | null {
-  if (item.category !== 'medication') {
-    return null;
-  }
-
-  if (item.signal_source.kind === 'fallback_medication_heuristic') {
-    return 'Interpret this as a broad medication association only. It is not backed by a reviewed medication reference with structured route, timing, regimen, or dose detail.';
-  }
-
-  if (
-    item.signal_source.kind === 'reviewed_medication_reference' &&
-    item.medication_reference_detail
-  ) {
-    return 'This report card is anchored to the reviewed medication context shown above rather than to medication-name heuristics alone.';
-  }
-
-  if (item.signal_source.kind === 'reviewed_medication_reference') {
-    return 'This report card is backed by a reviewed medication reference, but the structured medication profile is still broader than a single route, timing, regimen, or dose pattern.';
   }
 
   return null;
@@ -256,10 +129,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
   const sourceCaution = buildSourceCaution(item);
   const triggerSummary = item.trigger_factors.map(formatFactorLabel).join(', ');
   const outcomeSummary = item.target_outcomes.map(formatFactorLabel).join(', ');
-  const title = subtypeLabels[item.subtype] ?? formatSubtypeFallback(item.subtype);
-  const trustMetrics = buildTrustMetrics(item.signal_source);
-  const medicationDetail = item.medication_reference_detail;
-  const medicationInterpretationNote = buildMedicationInterpretationNote(item);
+  const title = formatSubtypeFallback(item.subtype);
   const relationshipSummary =
     triggerSummary.length > 0 && outcomeSummary.length > 0
       ? { trigger: triggerSummary, outcome: outcomeSummary }
@@ -318,77 +188,24 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
         </p>
       </div>
 
-      {medicationDetail && (
-        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.08)] px-4 py-3">
-          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-            {item.signal_source.kind === 'reviewed_medication_reference'
-              ? 'Reviewed medication detail'
-              : 'Medication context used'}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-            {medicationDetail.summary}
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] px-2.5 py-1 text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-              {medicationDetail.label}
-            </span>
-
-            {medicationDetail.family && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Family: {formatMedicationDetailLabel(medicationDetail.family)}
-              </span>
-            )}
-
-            {medicationDetail.route && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Route: {formatMedicationDetailLabel(medicationDetail.route)}
-              </span>
-            )}
-
-            {medicationDetail.timing_context && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Timing: {formatMedicationDetailLabel(medicationDetail.timing_context)}
-              </span>
-            )}
-
-            {medicationDetail.regimen_status && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Regimen: {formatMedicationDetailLabel(medicationDetail.regimen_status)}
-              </span>
-            )}
-
-            {medicationDetail.dose_context && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
-                Dose: {medicationDetail.dose_context}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {medicationInterpretationNote && (
-        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.05)] px-4 py-3">
-          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
-            Interpretation guardrail
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-gray-700 dark:text-gray-300">
-            {medicationInterpretationNote}
-          </p>
-        </div>
-      )}
-
-      {trustMetrics.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {trustMetrics.map((metric) => (
-            <Stat
-              key={`${item.insight_key}-${metric.label}`}
-              label={metric.label}
-              value={metric.value}
-            />
-          ))}
-        </div>
-      )}
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat
+          label="Nutrition coverage"
+          value={formatPercent(item.signal_source.nutrition_coverage_ratio)}
+        />
+        <Stat
+          label="Nutrition confidence"
+          value={formatPercent(item.signal_source.nutrition_confidence)}
+        />
+        <Stat
+          label="Ingredient coverage"
+          value={formatPercent(item.signal_source.structured_food_coverage_ratio)}
+        />
+        <Stat
+          label="Ingredient confidence"
+          value={formatPercent(item.signal_source.ingredient_signal_confidence)}
+        />
+      </div>
 
       {item.medical_context_annotations.length > 0 && (
         <div className="mt-4 rounded-xl border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3">
@@ -437,10 +254,8 @@ export default function PatternEvidenceSection({
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           These report patterns use the same ranked insight pipeline as the live Insights screen and
-          now carry explicit provenance about reviewed nutrition, structured ingredients, reviewed
-          medication references, or heuristic fallback. Medication findings now also expose the
-          concrete family, route, timing, regimen, and dose context used by the rule when that
-          detail exists.
+          now carry explicit provenance about reviewed nutrition, structured ingredients, or
+          heuristic fallback.
         </p>
       </div>
 
@@ -454,12 +269,9 @@ export default function PatternEvidenceSection({
                   Report trust standard
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                  GutWise should say when a finding is backed by reviewed nutrition, structured
-                  ingredient matching, reviewed medication references with dose or timing context,
-                  and when it is still leaning on fallback heuristics. These cards now also carry
-                  the medication detail used by the rule into print and PDF export, together with
-                  a guardrail that distinguishes reviewed medication context from broad heuristic
-                  medication matching.
+                  GutWise should say when a finding is backed by reviewed nutrition, when it is
+                  backed by structured ingredient matching, and when it is still leaning on fallback
+                  heuristics. These cards carry that framing directly into print and PDF export.
                 </p>
               </div>
             </div>
@@ -531,8 +343,8 @@ export default function PatternEvidenceSection({
           <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#7C5CFF]" />
           <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
             Report exports should preserve the difference between reviewed evidence and fallback
-            heuristics across both food and medication findings. That helps keep the clinical
-            conversation grounded in what GutWise actually knows versus what it is still inferring.
+            heuristics. That helps keep the clinical conversation grounded in what GutWise actually
+            knows versus what it is still inferring.
           </p>
         </div>
       </div>
