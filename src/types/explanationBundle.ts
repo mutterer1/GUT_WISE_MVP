@@ -28,6 +28,8 @@ export type ExplanationSignalSourceKind =
   | 'reviewed_nutrition'
   | 'structured_ingredients'
   | 'mixed_structured_and_nutrition'
+  | 'reviewed_medication_reference'
+  | 'fallback_medication_heuristic'
   | 'fallback_heuristic'
   | 'generic_logs';
 
@@ -38,6 +40,9 @@ export interface ExplanationSignalSourceSummary {
   nutrition_confidence: number | null;
   structured_food_coverage_ratio: number | null;
   ingredient_signal_confidence: number | null;
+  medication_coverage_ratio: number | null;
+  medication_signal_confidence: number | null;
+  structured_medication_profile_ratio: number | null;
 }
 
 export interface ExplanationInsightItem {
