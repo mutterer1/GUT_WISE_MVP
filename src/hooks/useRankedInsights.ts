@@ -173,6 +173,15 @@ export function useRankedInsights(options: UseRankedInsightsOptions = {}): Ranke
             item.signal_source.ingredient_signal_confidence !== null
               ? item.signal_source.ingredient_signal_confidence.toFixed(3)
               : 'null',
+            item.signal_source.medication_coverage_ratio !== null
+              ? item.signal_source.medication_coverage_ratio.toFixed(3)
+              : 'null',
+            item.signal_source.medication_signal_confidence !== null
+              ? item.signal_source.medication_signal_confidence.toFixed(3)
+              : 'null',
+            item.signal_source.structured_medication_profile_ratio !== null
+              ? item.signal_source.structured_medication_profile_ratio.toFixed(3)
+              : 'null',
             item.evidence.support_count,
             item.evidence.exposure_count,
             item.evidence.baseline_rate !== null
