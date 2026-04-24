@@ -970,6 +970,7 @@ export default function MedicalDocumentIntake() {
                 <div className="mt-5">
                   <CandidateReviewList
                     candidates={candidates}
+                    intakes={intakes}
                     onAccept={handleAccept}
                     onReject={handleReject}
                     processing={processing}
