@@ -110,6 +110,25 @@ function derivesStructuredIngredientSignal(
   );
 }
 
+function derivesMedicationSignal(
+  candidate: MedicalContextAnnotatedCandidate
+): boolean {
+  return candidate.category === 'medication' || candidate.trigger_factors.some((factor) =>
+    [
+      'matched_medication_ids',
+      'medication_families',
+      'medication_gut_effects',
+      'route',
+      'regimen_status',
+      'timing_context',
+      'dose_value',
+      'dose_unit',
+      'structured_medication_coverage_ratio',
+      'medication_signal_confidence_avg',
+    ].includes(factor)
+  );
+}
+
 function buildSignalSourceSummary(
   candidate: MedicalContextAnnotatedCandidate
 ): ExplanationSignalSourceSummary {
@@ -126,12 +145,61 @@ function buildSignalSourceSummary(
   const ingredientSignalConfidence =
     readStatisticNumber(statistics, 'average_exposed_signal_confidence') ??
     readStatisticNumber(statistics, 'avg_exposed_signal_confidence');
+  const medicationCoverage =
+    readStatisticNumber(statistics, 'average_exposed_medication_coverage_ratio') ??
+    readStatisticNumber(statistics, 'avg_exposed_medication_coverage_ratio');
+  const medicationSignalConfidence =
+    readStatisticNumber(statistics, 'average_exposed_medication_signal_confidence') ??
+    readStatisticNumber(statistics, 'avg_exposed_medication_signal_confidence');
+  const structuredMedicationProfileRatio =
+    readStatisticNumber(statistics, 'average_exposed_structured_profile_share') ??
+    readStatisticNumber(statistics, 'avg_exposed_structured_profile_share');
 
   const usesNutrition = derivesNutritionSignal(candidate) || nutritionCoverage !== null;
   const usesStructuredIngredients =
     derivesStructuredIngredientSignal(candidate) ||
     structuredCoverage !== null ||
     ingredientSignalConfidence !== null;
+  const usesMedication =
+    derivesMedicationSignal(candidate) ||
+    medicationCoverage !== null ||
+    medicationSignalConfidence !== null ||
+    structuredMedicationProfileRatio !== null;
+
+  if (candidate.category === 'medication' && usesMedication) {
+    return {
+      kind: 'reviewed_medication_reference',
+      summary:
+        `This finding is mainly driven by reviewed medication reference matches with structured dose, route, timing, or regimen context. ` +
+        `${appendCoverageDetail('Reviewed medication coverage', medicationCoverage)} ` +
+        `${appendCoverageDetail(
+          'Structured medication profile coverage',
+          structuredMedicationProfileRatio
+        )}`,
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
+    };
+  }
+
+  if (candidate.category === 'medication') {
+    return {
+      kind: 'fallback_medication_heuristic',
+      summary:
+        'This finding relies more on medication family or name heuristics than on reviewed medication reference matches with structured dose, route, timing, or regimen coverage.',
+      nutrition_coverage_ratio: nutritionCoverage,
+      nutrition_confidence: nutritionConfidence,
+      structured_food_coverage_ratio: structuredCoverage,
+      ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
+    };
+  }
 
   if (usesNutrition && usesStructuredIngredients) {
     return {
@@ -144,6 +212,9 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -157,6 +228,9 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -170,6 +244,9 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -182,6 +259,9 @@ function buildSignalSourceSummary(
       nutrition_confidence: nutritionConfidence,
       structured_food_coverage_ratio: structuredCoverage,
       ingredient_signal_confidence: ingredientSignalConfidence,
+      medication_coverage_ratio: medicationCoverage,
+      medication_signal_confidence: medicationSignalConfidence,
+      structured_medication_profile_ratio: structuredMedicationProfileRatio,
     };
   }
 
@@ -192,6 +272,9 @@ function buildSignalSourceSummary(
     nutrition_confidence: nutritionConfidence,
     structured_food_coverage_ratio: structuredCoverage,
     ingredient_signal_confidence: ingredientSignalConfidence,
+    medication_coverage_ratio: medicationCoverage,
+    medication_signal_confidence: medicationSignalConfidence,
+    structured_medication_profile_ratio: structuredMedicationProfileRatio,
   };
 }
 
