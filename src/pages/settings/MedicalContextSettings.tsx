@@ -29,6 +29,43 @@ type ViewState =
   | { mode: 'add'; category: MedicalFactCategory }
   | { mode: 'edit'; fact: MedicalFact };
 
+function getTimelineBadgeClasses(status: MedicalFact['timeline']['status']): string {
+  switch (status) {
+    case 'current':
+      return 'border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.12)] text-[rgba(110,231,183,0.98)]';
+    case 'under_investigation':
+      return 'border-[rgba(84,160,255,0.2)] bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]';
+    case 'resolved':
+      return 'border-[rgba(133,93,255,0.2)] bg-[rgba(133,93,255,0.12)] text-[var(--color-accent-secondary)]';
+    case 'historical':
+      return 'border-white/10 bg-white/[0.04] text-[var(--color-text-tertiary)]';
+    case 'inactive':
+      return 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[rgba(252,165,165,0.98)]';
+    default:
+      return 'border-white/10 bg-white/[0.04] text-[var(--color-text-tertiary)]';
+  }
+}
+
+function formatFactTimelineLine(fact: MedicalFact): string {
+  const label = fact.timeline.currency_label;
+  const effectiveDate = fact.timeline.effective_date;
+  const endDate = fact.timeline.end_date;
+
+  if (effectiveDate && endDate && effectiveDate !== endDate) {
+    return `${label} | ${effectiveDate} to ${endDate}`;
+  }
+
+  if (effectiveDate) {
+    return `${label} | ${effectiveDate}`;
+  }
+
+  if (endDate) {
+    return `${label} | ${endDate}`;
+  }
+
+  return label;
+}
+
 export default function MedicalContextSettings() {
   const { user } = useAuth();
   const [facts, setFacts] = useState<MedicalFact[]>([]);
@@ -131,7 +168,12 @@ export default function MedicalContextSettings() {
     facts.filter((fact) => fact.category === category);
 
   const totalFacts = facts.length;
-  const populatedCategories = CATEGORY_CONFIGS.filter((config) => factsByCategory(config.key).length > 0).length;
+  const currentOrMonitoredFacts = facts.filter((fact) =>
+    ['current', 'under_investigation'].includes(fact.timeline.status)
+  ).length;
+  const historicalOrResolvedFacts = facts.filter((fact) =>
+    ['historical', 'resolved'].includes(fact.timeline.status)
+  ).length;
 
   if (viewState.mode === 'add') {
     const config = getCategoryConfig(viewState.category);
@@ -207,15 +249,15 @@ export default function MedicalContextSettings() {
                     tone="primary"
                   />
                   <MetricTile
-                    label="Categories used"
-                    value={String(populatedCategories)}
-                    helper="Sections with at least one entry"
+                    label="Current or monitored"
+                    value={String(currentOrMonitoredFacts)}
+                    helper="Current, ongoing, or under investigation"
                     tone="secondary"
                   />
                   <MetricTile
-                    label="Control"
-                    value="100%"
-                    helper="Editable and removable by you"
+                    label="Historical or resolved"
+                    value={String(historicalOrResolvedFacts)}
+                    helper="Past procedures, ended meds, resolved flags"
                     tone="neutral"
                   />
                 </div>
@@ -290,7 +332,7 @@ export default function MedicalContextSettings() {
 
                   <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-[var(--color-text-tertiary)] sm:inline-flex">
                     <Stethoscope className="h-3.5 w-3.5" />
-                    {count === 0 ? 'No entries yet' : `${count} active ${count === 1 ? 'entry' : 'entries'}`}
+                    {count === 0 ? 'No entries yet' : `${count} ${count === 1 ? 'entry' : 'entries'}`}
                   </div>
                 </button>
 
@@ -310,8 +352,20 @@ export default function MedicalContextSettings() {
                             >
                               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                                    {displayValue || 'Unnamed entry'}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                                      {displayValue || 'Unnamed entry'}
+                                    </p>
+                                    <span
+                                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${getTimelineBadgeClasses(
+                                        fact.timeline.status
+                                      )}`}
+                                    >
+                                      {fact.timeline.currency_label}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                                    {formatFactTimelineLine(fact)}
                                   </p>
                                   {fact.provenance.notes ? (
                                     <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
