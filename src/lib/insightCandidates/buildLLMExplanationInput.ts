@@ -145,6 +145,7 @@ function toInsightItem(item: ExplanationInsightItem): LLMInsightItem {
     evidence: buildEvidenceSummary(item),
     analysis_window: item.analysis_window,
     signal_source: item.signal_source,
+    medication_reference_detail: item.medication_reference_detail,
     medical_context_annotations: item.medical_context_annotations,
     medical_context_modifier_applied: item.medical_context_modifier_applied,
     caution_signals: deriveCautionSignals(item),
