@@ -1,3 +1,18 @@
+export interface MedicationExposureProfile {
+  medication_name: string;
+  normalized_medication_id: string | null;
+  matched_medication_ids: string[];
+  medication_families: string[];
+  medication_gut_effects: string[];
+  route: string | null;
+  regimen_status: string | null;
+  timing_context: string | null;
+  dose_value: number | null;
+  dose_unit: string | null;
+  taken_as_prescribed: boolean | null;
+  structured_match: boolean;
+}
+
 export interface UserDailyFeatures {
   user_id: string;
   date: string;
@@ -91,8 +106,27 @@ export interface UserDailyFeatures {
 
   medication_event_count: number;
   medications_taken: string[];
+  matched_medication_ids?: string[];
   medication_families: string[];
   medication_gut_effects: string[];
+  medication_routes?: string[];
+  medication_regimen_statuses?: string[];
+  medication_timing_contexts?: string[];
+  medication_dose_units?: string[];
+  medication_exposure_profiles?: MedicationExposureProfile[];
+  structured_medication_event_count?: number;
+  structured_medication_coverage_ratio?: number | null;
+  medication_signal_confidence_avg?: number | null;
+  oral_medication_count?: number;
+  scheduled_medication_count?: number;
+  as_needed_medication_count?: number;
+  one_time_medication_count?: number;
+  off_plan_medication_count?: number;
+  with_food_medication_count?: number;
+  before_meal_medication_count?: number;
+  after_meal_medication_count?: number;
+  bedtime_medication_count?: number;
+  known_dose_medication_count?: number;
   gi_risk_medication_count: number;
   motility_slowing_medication_count: number;
   motility_speeding_medication_count: number;
