@@ -42,6 +42,57 @@ import {
   MedicationCorrelation,
   ClinicalAlert,
 } from '../utils/clinicalReportQueries';
+import type { ExplanationSignalSourceKind } from '../types/explanationBundle';
+
+interface ReportEvidenceSourceSummary {
+  totalFindings: number;
+  totalMedicationFindings: number;
+  reviewedNutritionCount: number;
+  structuredIngredientCount: number;
+  mixedEvidenceCount: number;
+  reviewedMedicationCount: number;
+  heuristicMedicationCount: number;
+  heuristicCount: number;
+  genericCount: number;
+}
+
+function summarizeReportEvidenceSources(
+  reportInsights: ReportInsightSummary | null
+): ReportEvidenceSourceSummary | null {
+  const items = reportInsights?.explanationBundle.items ?? [];
+  if (items.length === 0) return null;
+
+  const counts: Record<ExplanationSignalSourceKind, number> = {
+    reviewed_nutrition: 0,
+    structured_ingredients: 0,
+    mixed_structured_and_nutrition: 0,
+    reviewed_medication_reference: 0,
+    fallback_medication_heuristic: 0,
+    fallback_heuristic: 0,
+    generic_logs: 0,
+  };
+
+  let totalMedicationFindings = 0;
+
+  for (const item of items) {
+    counts[item.signal_source.kind] += 1;
+    if (item.category === 'medication') {
+      totalMedicationFindings += 1;
+    }
+  }
+
+  return {
+    totalFindings: items.length,
+    totalMedicationFindings,
+    reviewedNutritionCount: counts.reviewed_nutrition,
+    structuredIngredientCount: counts.structured_ingredients,
+    mixedEvidenceCount: counts.mixed_structured_and_nutrition,
+    reviewedMedicationCount: counts.reviewed_medication_reference,
+    heuristicMedicationCount: counts.fallback_medication_heuristic,
+    heuristicCount: counts.fallback_heuristic,
+    genericCount: counts.generic_logs,
+  };
+}
 
 export default function Reports() {
   const { user } = useAuth();
@@ -215,6 +266,7 @@ export default function Reports() {
 
   const primaryConcerns = getPrimaryConcerns();
   const reviewFlagCount = clinicalAlerts.length + primaryConcerns.length;
+  const reportEvidenceSummary = summarizeReportEvidenceSources(reportInsights);
 
   const observedDataRows = bmAnalytics
     ? [
@@ -283,8 +335,8 @@ export default function Reports() {
               <span className="badge-secondary mb-3 inline-flex">Clinical Report</span>
               <h1 className="page-title">Health Summary Report</h1>
               <p className="page-subtitle mt-2 max-w-2xl">
-                A structured review of tracked bowel, symptom, trigger, and medication data for
-                private review or clinician discussion.
+                A structured review of tracked bowel, symptom, trigger, and medication data with
+                provenance-aware pattern framing for private review or clinician discussion.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2.5">
@@ -388,9 +440,9 @@ export default function Reports() {
                   <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                     Lead with observed data, then use the flagged patterns and notes below to guide
                     a focused clinical conversation. Ranked pattern cards below now also show
-                    whether a finding is backed by reviewed nutrition, structured ingredients, or
-                    heuristic fallback. GutWise summarizes patient-reported logs and does not
-                    diagnose conditions.
+                    whether a finding is backed by reviewed nutrition, structured ingredients,
+                    reviewed medication references, or heuristic fallback. GutWise summarizes
+                    patient-reported logs and does not diagnose conditions.
                   </p>
                 </div>
                 <div className="surface-panel-quiet rounded-[20px] px-4 py-3 text-sm text-[var(--color-text-secondary)] sm:max-w-[16rem]">
@@ -416,6 +468,7 @@ export default function Reports() {
                 (a) => a.severity === 'critical' || a.severity === 'high'
               )}
               primaryConcerns={primaryConcerns}
+              evidenceSummary={reportEvidenceSummary}
             />
 
             <ObservedDataTable rows={observedDataRows} />
@@ -437,7 +490,10 @@ export default function Reports() {
             <SymptomProgressionSection trends={symptomTrends} />
             <HealthMarkersSection correlations={healthMarkers} />
             <TriggerPatternsSection triggers={triggerPatterns} />
-            <MedicationCorrelationSection correlations={medicationCorrelations} />
+            <MedicationCorrelationSection
+              correlations={medicationCorrelations}
+              evidenceSummary={reportEvidenceSummary}
+            />
 
             <SectionGroupLabel label="Patient Perspective" />
 
@@ -478,7 +534,9 @@ export default function Reports() {
                   </p>
                   <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
                     Treat food or medication correlations as patterns to investigate, not direct
-                    proof of cause.
+                    proof of cause. Give more weight to findings labeled as reviewed nutrition,
+                    structured ingredients, or reviewed medication references than to heuristic
+                    fallback.
                   </p>
                 </div>
 
