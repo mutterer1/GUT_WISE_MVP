@@ -20,14 +20,20 @@ import {
   acceptReferenceReviewCandidate,
   fetchReferenceReviewCandidates,
   readFoodCandidateDetail,
+  readMedicationCandidateDetail,
   refreshFoodReferenceCandidateEnrichment,
+  refreshMedicationReferenceCandidateEnrichment,
   rejectReferenceReviewCandidate,
   updateFoodReferenceCandidateDetail,
+  updateMedicationReferenceCandidateDetail,
 } from '../../services/referenceReviewService';
 import type {
   FoodReferenceCandidateDetail,
   FoodReferenceCandidateIngredient,
+  MedicationGutRelevance,
   MedicationReferenceCandidateDetail,
+  MedicationReferenceType,
+  MedicationRegimenStatus,
   ReferenceReviewCandidateRow,
 } from '../../types/intelligence';
 
@@ -103,6 +109,64 @@ interface FoodIngredientDraft {
   suggested_signals: string;
   notes: string;
 }
+
+interface MedicationDetailDraft {
+  dosage: string;
+  medication_type: MedicationReferenceType | '';
+  route: string;
+  reason_for_use: string;
+  regimen_status: MedicationRegimenStatus | '';
+  timing_context: string;
+  suggested_generic_name: string;
+  suggested_brand_names: string;
+  suggested_medication_class: string;
+  suggested_medication_family: string;
+  suggested_rxnorm_code: string;
+  suggested_gut_relevance: MedicationGutRelevance | '';
+  suggested_common_gut_effects: string;
+  suggested_interaction_flags: string;
+  suggested_active_ingredients: string;
+  suggested_common_dose_units: string;
+  suggested_dosage_form: string;
+  suggested_route: string;
+  enrichment_source_label: string;
+  enrichment_source_ref: string;
+  enrichment_confidence: string;
+  enrichment_notes: string;
+}
+
+const MEDICATION_TYPE_OPTIONS: Array<{
+  value: MedicationReferenceType | '';
+  label: string;
+}> = [
+  { value: '', label: 'Unspecified' },
+  { value: 'prescription', label: 'Prescription' },
+  { value: 'otc', label: 'OTC' },
+  { value: 'supplement', label: 'Supplement' },
+  { value: 'unknown', label: 'Unknown' },
+];
+
+const REGIMEN_STATUS_OPTIONS: Array<{
+  value: MedicationRegimenStatus | '';
+  label: string;
+}> = [
+  { value: '', label: 'Unspecified' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'as_needed', label: 'As needed' },
+  { value: 'one_time', label: 'One time' },
+  { value: 'unknown', label: 'Unknown' },
+];
+
+const GUT_RELEVANCE_OPTIONS: Array<{
+  value: MedicationGutRelevance | '';
+  label: string;
+}> = [
+  { value: '', label: 'Unspecified' },
+  { value: 'primary', label: 'Primary GI relevance' },
+  { value: 'secondary', label: 'Secondary GI relevance' },
+  { value: 'indirect', label: 'Indirect GI relevance' },
+  { value: 'unknown', label: 'Unknown' },
+];
 
 function numberToDraft(value: number | null): string {
   return typeof value === 'number' ? String(value) : '';
@@ -287,6 +351,66 @@ function applyFoodDetailDraft(
   };
 }
 
+function createMedicationDetailDraft(
+  detail: MedicationReferenceCandidateDetail
+): MedicationDetailDraft {
+  return {
+    dosage: detail.dosage ?? '',
+    medication_type: detail.medication_type ?? '',
+    route: detail.route ?? '',
+    reason_for_use: detail.reason_for_use ?? '',
+    regimen_status: detail.regimen_status ?? '',
+    timing_context: detail.timing_context ?? '',
+    suggested_generic_name: detail.suggested_generic_name ?? '',
+    suggested_brand_names: toCommaSeparated(detail.suggested_brand_names),
+    suggested_medication_class: detail.suggested_medication_class ?? '',
+    suggested_medication_family: detail.suggested_medication_family ?? '',
+    suggested_rxnorm_code: detail.suggested_rxnorm_code ?? '',
+    suggested_gut_relevance: detail.suggested_gut_relevance ?? '',
+    suggested_common_gut_effects: toCommaSeparated(detail.suggested_common_gut_effects),
+    suggested_interaction_flags: toCommaSeparated(detail.suggested_interaction_flags),
+    suggested_active_ingredients: toCommaSeparated(detail.suggested_active_ingredients),
+    suggested_common_dose_units: toCommaSeparated(detail.suggested_common_dose_units),
+    suggested_dosage_form: detail.suggested_dosage_form ?? '',
+    suggested_route: detail.suggested_route ?? '',
+    enrichment_source_label: detail.enrichment_source_label ?? '',
+    enrichment_source_ref: detail.enrichment_source_ref ?? '',
+    enrichment_confidence: numberToDraft(detail.enrichment_confidence),
+    enrichment_notes: detail.enrichment_notes ?? '',
+  };
+}
+
+function applyMedicationDetailDraft(
+  base: MedicationReferenceCandidateDetail,
+  draft: MedicationDetailDraft
+): MedicationReferenceCandidateDetail {
+  return {
+    ...base,
+    dosage: draft.dosage.trim() || null,
+    medication_type: draft.medication_type || null,
+    route: draft.route.trim() || null,
+    reason_for_use: draft.reason_for_use.trim() || null,
+    regimen_status: draft.regimen_status || null,
+    timing_context: draft.timing_context.trim() || null,
+    suggested_generic_name: draft.suggested_generic_name.trim() || null,
+    suggested_brand_names: parseCommaSeparated(draft.suggested_brand_names),
+    suggested_medication_class: draft.suggested_medication_class.trim() || null,
+    suggested_medication_family: draft.suggested_medication_family.trim() || null,
+    suggested_rxnorm_code: draft.suggested_rxnorm_code.trim() || null,
+    suggested_gut_relevance: draft.suggested_gut_relevance || null,
+    suggested_common_gut_effects: parseCommaSeparated(draft.suggested_common_gut_effects),
+    suggested_interaction_flags: parseCommaSeparated(draft.suggested_interaction_flags),
+    suggested_active_ingredients: parseCommaSeparated(draft.suggested_active_ingredients),
+    suggested_common_dose_units: parseCommaSeparated(draft.suggested_common_dose_units),
+    suggested_dosage_form: draft.suggested_dosage_form.trim() || null,
+    suggested_route: draft.suggested_route.trim() || null,
+    enrichment_source_label: draft.enrichment_source_label.trim() || null,
+    enrichment_source_ref: draft.enrichment_source_ref.trim() || null,
+    enrichment_confidence: parseDraftNumber(draft.enrichment_confidence),
+    enrichment_notes: draft.enrichment_notes.trim() || null,
+  };
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return 'Recently';
   return new Date(value).toLocaleDateString(undefined, {
@@ -408,7 +532,7 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
     return rows;
   }
 
-  const detail = candidate.detail as unknown as MedicationReferenceCandidateDetail;
+  const detail = readMedicationCandidateDetail(candidate.detail);
   const rows: Array<{ label: string; value: string }> = [];
 
   if (detail.dosage) rows.push({ label: 'Observed dosage', value: detail.dosage });
@@ -422,6 +546,78 @@ function renderDetailList(candidate: ReferenceReviewCandidateRow): Array<{ label
   }
   if (detail.timing_context) {
     rows.push({ label: 'Timing context', value: detail.timing_context.replace(/_/g, ' ') });
+  }
+  if (detail.suggested_generic_name) {
+    rows.push({ label: 'Suggested generic', value: detail.suggested_generic_name });
+  }
+  if (detail.suggested_brand_names.length > 0) {
+    rows.push({ label: 'Suggested brands', value: detail.suggested_brand_names.join(', ') });
+  }
+  if (detail.suggested_medication_class) {
+    rows.push({ label: 'Suggested class', value: detail.suggested_medication_class });
+  }
+  if (detail.suggested_medication_family) {
+    rows.push({ label: 'Suggested family', value: detail.suggested_medication_family });
+  }
+  if (detail.suggested_dosage_form) {
+    rows.push({ label: 'Suggested dosage form', value: detail.suggested_dosage_form });
+  }
+  if (detail.suggested_route) {
+    rows.push({ label: 'Suggested route', value: detail.suggested_route });
+  }
+  if (detail.suggested_common_dose_units.length > 0) {
+    rows.push({
+      label: 'Common dose units',
+      value: detail.suggested_common_dose_units.join(', '),
+    });
+  }
+  if (detail.suggested_active_ingredients.length > 0) {
+    rows.push({
+      label: 'Active ingredients',
+      value: detail.suggested_active_ingredients.join(', '),
+    });
+  }
+  if (detail.suggested_common_gut_effects.length > 0) {
+    rows.push({
+      label: 'Common gut effects',
+      value: detail.suggested_common_gut_effects.join(', '),
+    });
+  }
+  if (detail.suggested_interaction_flags.length > 0) {
+    rows.push({
+      label: 'Interaction flags',
+      value: detail.suggested_interaction_flags.join(', '),
+    });
+  }
+  if (detail.suggested_gut_relevance) {
+    rows.push({
+      label: 'Gut relevance',
+      value: detail.suggested_gut_relevance.replace(/_/g, ' '),
+    });
+  }
+  if (detail.suggested_rxnorm_code) {
+    rows.push({ label: 'RxNorm code', value: detail.suggested_rxnorm_code });
+  }
+  if (detail.enrichment_source_label) {
+    const value = detail.enrichment_source_ref
+      ? `${detail.enrichment_source_label} | ${detail.enrichment_source_ref}`
+      : detail.enrichment_source_label;
+    rows.push({ label: 'Knowledge source', value });
+  }
+  if (typeof detail.enrichment_confidence === 'number') {
+    rows.push({
+      label: 'Enrichment confidence',
+      value: `${Math.round(detail.enrichment_confidence * 100)}%`,
+    });
+  }
+  if (detail.enrichment_last_attempt_at) {
+    rows.push({
+      label: 'Last lookup',
+      value: formatDate(detail.enrichment_last_attempt_at),
+    });
+  }
+  if (detail.enrichment_notes) {
+    rows.push({ label: 'Lookup note', value: detail.enrichment_notes });
   }
 
   return rows;
@@ -439,6 +635,7 @@ export default function ReferenceReview() {
   const [statusFilter, setStatusFilter] = useState<'pending_review' | 'all'>('pending_review');
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
   const [foodDraft, setFoodDraft] = useState<FoodDetailDraft | null>(null);
+  const [medicationDraft, setMedicationDraft] = useState<MedicationDetailDraft | null>(null);
 
   const loadCandidates = useCallback(async () => {
     if (!user?.id) return;
@@ -499,15 +696,32 @@ export default function ReferenceReview() {
     const detail = readFoodCandidateDetail(candidate.detail);
     setEditingCandidateId(candidate.id);
     setFoodDraft(createFoodDetailDraft(detail));
+    setMedicationDraft(null);
   };
 
-  const cancelFoodEditing = () => {
+  const beginMedicationEditing = (candidate: ReferenceReviewCandidateRow) => {
+    if (candidate.candidate_kind !== 'medication') return;
+    const detail = readMedicationCandidateDetail(candidate.detail);
+    setFoodDraft(null);
+    setEditingCandidateId(candidate.id);
+    setMedicationDraft(createMedicationDetailDraft(detail));
+  };
+
+  const cancelEditing = () => {
     setEditingCandidateId(null);
     setFoodDraft(null);
+    setMedicationDraft(null);
   };
 
   const handleFoodDraftChange = (field: keyof FoodDetailDraft, value: string) => {
     setFoodDraft((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handleMedicationDraftChange = (
+    field: keyof MedicationDetailDraft,
+    value: string
+  ) => {
+    setMedicationDraft((current) => (current ? { ...current, [field]: value } : current));
   };
 
   const handleFoodIngredientDraftChange = (
@@ -600,6 +814,28 @@ export default function ReferenceReview() {
     }
   };
 
+  const handleRefreshMedicationCandidate = async (candidateId: string) => {
+    if (!user?.id) return;
+
+    setProcessing({ candidateId, action: 'refresh' });
+    setError('');
+
+    try {
+      const refreshed = await refreshMedicationReferenceCandidateEnrichment(user.id, candidateId);
+      setCandidates((current) =>
+        current.map((candidate) => (candidate.id === refreshed.id ? refreshed : candidate))
+      );
+
+      if (editingCandidateId === candidateId) {
+        setMedicationDraft(createMedicationDetailDraft(readMedicationCandidateDetail(refreshed.detail)));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh medication enrichment.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const handleSaveFoodDraft = async (candidate: ReferenceReviewCandidateRow) => {
     if (!user?.id || !foodDraft) return;
 
@@ -617,10 +853,34 @@ export default function ReferenceReview() {
       setCandidates((current) =>
         current.map((entry) => (entry.id === updated.id ? updated : entry))
       );
-      setEditingCandidateId(null);
-      setFoodDraft(null);
+      cancelEditing();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save food suggestion.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleSaveMedicationDraft = async (candidate: ReferenceReviewCandidateRow) => {
+    if (!user?.id || !medicationDraft) return;
+
+    setProcessing({ candidateId: candidate.id, action: 'save' });
+    setError('');
+
+    try {
+      const baseDetail = readMedicationCandidateDetail(candidate.detail);
+      const updated = await updateMedicationReferenceCandidateDetail({
+        userId: user.id,
+        candidateId: candidate.id,
+        detail: applyMedicationDetailDraft(baseDetail, medicationDraft),
+      });
+
+      setCandidates((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry))
+      );
+      cancelEditing();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save medication suggestion.');
     } finally {
       setProcessing(null);
     }
@@ -777,9 +1037,19 @@ export default function ReferenceReview() {
                   candidate.candidate_kind === 'food'
                     ? readFoodCandidateDetail(candidate.detail)
                     : null;
+                const medicationDetail =
+                  candidate.candidate_kind === 'medication'
+                    ? readMedicationCandidateDetail(candidate.detail)
+                    : null;
                 const enrichmentStatusMeta =
-                  foodDetail ? ENRICHMENT_STATUS_META[foodDetail.enrichment_status] : null;
+                  foodDetail
+                    ? ENRICHMENT_STATUS_META[foodDetail.enrichment_status]
+                    : medicationDetail
+                      ? ENRICHMENT_STATUS_META[medicationDetail.enrichment_status]
+                      : null;
                 const isEditingFood = editingCandidateId === candidate.id && foodDraft !== null;
+                const isEditingMedication =
+                  editingCandidateId === candidate.id && medicationDraft !== null;
 
                 return (
                   <Card
@@ -805,7 +1075,7 @@ export default function ReferenceReview() {
                             >
                               {statusMeta.label}
                             </span>
-                            {foodDetail && (
+                            {(foodDetail || medicationDetail) && (
                               <span
                                 className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${enrichmentStatusMeta?.className}`}
                               >
@@ -892,7 +1162,7 @@ export default function ReferenceReview() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={cancelFoodEditing}
+                                  onClick={cancelEditing}
                                   disabled={isProcessing}
                                 >
                                   <X className="h-3.5 w-3.5" />
@@ -1170,6 +1440,240 @@ export default function ReferenceReview() {
                         </div>
                       )}
 
+                      {candidate.candidate_kind === 'medication' && isPending && medicationDetail && (
+                        <div className="space-y-4 rounded-[22px] border border-white/8 bg-[rgba(255,255,255,0.02)] p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleRefreshMedicationCandidate(candidate.id)}
+                              disabled={isProcessing}
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              {processingAction === 'refresh'
+                                ? 'Refreshing knowledge...'
+                                : 'Refresh knowledge lookup'}
+                            </Button>
+
+                            {isEditingMedication ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveMedicationDraft(candidate)}
+                                  disabled={isProcessing || !medicationDraft}
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                  {processingAction === 'save' ? 'Saving...' : 'Save suggestion'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={cancelEditing}
+                                  disabled={isProcessing}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Cancel edit
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => beginMedicationEditing(candidate)}
+                                disabled={isProcessing}
+                              >
+                                <FileSearch className="h-3.5 w-3.5" />
+                                Edit suggestion
+                              </Button>
+                            )}
+                          </div>
+
+                          {isEditingMedication && medicationDraft && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <EditableField
+                                label="Observed dosage"
+                                value={medicationDraft.dosage}
+                                onChange={(value) => handleMedicationDraftChange('dosage', value)}
+                                placeholder="e.g. 20 mg"
+                              />
+                              <EditableSelectField
+                                label="Medication type"
+                                value={medicationDraft.medication_type}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange(
+                                    'medication_type',
+                                    value as MedicationDetailDraft['medication_type']
+                                  )
+                                }
+                                options={MEDICATION_TYPE_OPTIONS}
+                              />
+                              <EditableField
+                                label="Observed route"
+                                value={medicationDraft.route}
+                                onChange={(value) => handleMedicationDraftChange('route', value)}
+                                placeholder="e.g. oral"
+                              />
+                              <EditableSelectField
+                                label="Regimen"
+                                value={medicationDraft.regimen_status}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange(
+                                    'regimen_status',
+                                    value as MedicationDetailDraft['regimen_status']
+                                  )
+                                }
+                                options={REGIMEN_STATUS_OPTIONS}
+                              />
+                              <EditableField
+                                label="Reason for use"
+                                value={medicationDraft.reason_for_use}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('reason_for_use', value)
+                                }
+                              />
+                              <EditableField
+                                label="Timing context"
+                                value={medicationDraft.timing_context}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('timing_context', value)
+                                }
+                              />
+                              <EditableField
+                                label="Suggested generic"
+                                value={medicationDraft.suggested_generic_name}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_generic_name', value)
+                                }
+                              />
+                              <EditableField
+                                label="Suggested brands"
+                                value={medicationDraft.suggested_brand_names}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_brand_names', value)
+                                }
+                                placeholder="Comma-separated brand names"
+                              />
+                              <EditableField
+                                label="Medication class"
+                                value={medicationDraft.suggested_medication_class}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_medication_class', value)
+                                }
+                              />
+                              <EditableField
+                                label="Medication family"
+                                value={medicationDraft.suggested_medication_family}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_medication_family', value)
+                                }
+                              />
+                              <EditableField
+                                label="Suggested route"
+                                value={medicationDraft.suggested_route}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_route', value)
+                                }
+                              />
+                              <EditableField
+                                label="Dosage form"
+                                value={medicationDraft.suggested_dosage_form}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_dosage_form', value)
+                                }
+                              />
+                              <EditableField
+                                label="Common dose units"
+                                value={medicationDraft.suggested_common_dose_units}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_common_dose_units', value)
+                                }
+                                placeholder="Comma-separated units"
+                              />
+                              <EditableField
+                                label="Active ingredients"
+                                value={medicationDraft.suggested_active_ingredients}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_active_ingredients', value)
+                                }
+                                placeholder="Comma-separated active ingredients"
+                              />
+                              <EditableSelectField
+                                label="Gut relevance"
+                                value={medicationDraft.suggested_gut_relevance}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange(
+                                    'suggested_gut_relevance',
+                                    value as MedicationDetailDraft['suggested_gut_relevance']
+                                  )
+                                }
+                                options={GUT_RELEVANCE_OPTIONS}
+                              />
+                              <EditableField
+                                label="Common gut effects"
+                                value={medicationDraft.suggested_common_gut_effects}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange(
+                                    'suggested_common_gut_effects',
+                                    value
+                                  )
+                                }
+                                placeholder="Comma-separated gut effects"
+                              />
+                              <EditableField
+                                label="Interaction flags"
+                                value={medicationDraft.suggested_interaction_flags}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange(
+                                    'suggested_interaction_flags',
+                                    value
+                                  )
+                                }
+                                placeholder="Comma-separated flags"
+                              />
+                              <EditableField
+                                label="RxNorm code"
+                                value={medicationDraft.suggested_rxnorm_code}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('suggested_rxnorm_code', value)
+                                }
+                                placeholder="Optional RxNorm code"
+                              />
+                              <EditableField
+                                label="Source label"
+                                value={medicationDraft.enrichment_source_label}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('enrichment_source_label', value)
+                                }
+                              />
+                              <EditableField
+                                label="Source ref"
+                                value={medicationDraft.enrichment_source_ref}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('enrichment_source_ref', value)
+                                }
+                              />
+                              <EditableField
+                                label="Confidence (0-1)"
+                                value={medicationDraft.enrichment_confidence}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('enrichment_confidence', value)
+                                }
+                                inputMode="decimal"
+                                placeholder="e.g. 0.84"
+                              />
+                              <EditableField
+                                label="Knowledge note"
+                                value={medicationDraft.enrichment_notes}
+                                onChange={(value) =>
+                                  handleMedicationDraftChange('enrichment_notes', value)
+                                }
+                                placeholder="Optional enrichment note"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {candidate.review_notes && (
                         <div className="rounded-[20px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                           {candidate.review_notes}
@@ -1246,6 +1750,37 @@ function EditableField({
         inputMode={inputMode}
         className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
       />
+    </label>
+  );
+}
+
+function EditableSelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent-primary)] focus:bg-black/[0.18]"
+      >
+        {options.map((option) => (
+          <option key={option.value || 'empty'} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
