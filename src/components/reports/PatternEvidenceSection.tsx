@@ -72,6 +72,9 @@ const statusLabels: Record<string, string> = {
 };
 
 const subtypeLabels: Record<string, string> = {
+  medication_any_bm_shift: 'GI-relevant medication timing linked to bowel changes',
+  medication_any_symptom_burden:
+    'GI-relevant medication timing associated with symptom patterns',
   medication_as_needed_antidiarrheal_next_day_hard_stool:
     'As-needed antidiarrheal linked to harder stool the next day',
   medication_before_meal_iron_same_day_nausea:
@@ -164,6 +167,10 @@ function formatCategoryLabel(raw: string): string {
   return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
 }
 
+function formatMedicationDetailLabel(raw: string): string {
+  return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
+}
+
 function buildSourceCaution(item: ExplanationInsightItem): string | null {
   const source = item.signal_source;
 
@@ -228,6 +235,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
   const outcomeSummary = item.target_outcomes.map(formatFactorLabel).join(', ');
   const title = subtypeLabels[item.subtype] ?? formatSubtypeFallback(item.subtype);
   const trustMetrics = buildTrustMetrics(item.signal_source);
+  const medicationDetail = item.medication_reference_detail;
   const relationshipSummary =
     triggerSummary.length > 0 && outcomeSummary.length > 0
       ? { trigger: triggerSummary, outcome: outcomeSummary }
@@ -285,6 +293,55 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
           {item.signal_source.summary}
         </p>
       </div>
+
+      {medicationDetail && (
+        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.08)] px-4 py-3">
+          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+            {item.signal_source.kind === 'reviewed_medication_reference'
+              ? 'Reviewed medication detail'
+              : 'Medication context used'}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+            {medicationDetail.summary}
+          </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] px-2.5 py-1 text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+              {medicationDetail.label}
+            </span>
+
+            {medicationDetail.family && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Family: {formatMedicationDetailLabel(medicationDetail.family)}
+              </span>
+            )}
+
+            {medicationDetail.route && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Route: {formatMedicationDetailLabel(medicationDetail.route)}
+              </span>
+            )}
+
+            {medicationDetail.timing_context && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Timing: {formatMedicationDetailLabel(medicationDetail.timing_context)}
+              </span>
+            )}
+
+            {medicationDetail.regimen_status && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Regimen: {formatMedicationDetailLabel(medicationDetail.regimen_status)}
+              </span>
+            )}
+
+            {medicationDetail.dose_context && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Dose: {medicationDetail.dose_context}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {trustMetrics.length > 0 && (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -346,7 +403,9 @@ export default function PatternEvidenceSection({
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           These report patterns use the same ranked insight pipeline as the live Insights screen and
           now carry explicit provenance about reviewed nutrition, structured ingredients, reviewed
-          medication references, or heuristic fallback.
+          medication references, or heuristic fallback. Medication findings now also expose the
+          concrete family, route, timing, regimen, and dose context used by the rule when that
+          detail exists.
         </p>
       </div>
 
@@ -362,8 +421,8 @@ export default function PatternEvidenceSection({
                 <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                   GutWise should say when a finding is backed by reviewed nutrition, structured
                   ingredient matching, reviewed medication references with dose or timing context,
-                  and when it is still leaning on fallback heuristics. These cards carry that
-                  framing directly into print and PDF export.
+                  and when it is still leaning on fallback heuristics. These cards now also carry
+                  the medication detail used by the rule into print and PDF export.
                 </p>
               </div>
             </div>
