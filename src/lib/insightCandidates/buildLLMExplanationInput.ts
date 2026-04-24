@@ -81,6 +81,9 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
   if (item.signal_source.kind === 'fallback_heuristic') {
     signals.push('heuristic_food_signal');
   }
+  if (item.signal_source.kind === 'fallback_medication_heuristic') {
+    signals.push('heuristic_medication_signal');
+  }
   if (
     item.signal_source.nutrition_coverage_ratio !== null &&
     item.signal_source.nutrition_coverage_ratio < 0.65
@@ -104,6 +107,24 @@ function deriveCautionSignals(item: ExplanationInsightItem): string[] {
     item.signal_source.ingredient_signal_confidence < 0.6
   ) {
     signals.push('ingredient_signal_confidence_low');
+  }
+  if (
+    item.signal_source.medication_coverage_ratio !== null &&
+    item.signal_source.medication_coverage_ratio < 0.65
+  ) {
+    signals.push('medication_coverage_partial');
+  }
+  if (
+    item.signal_source.medication_signal_confidence !== null &&
+    item.signal_source.medication_signal_confidence < 0.6
+  ) {
+    signals.push('medication_signal_confidence_low');
+  }
+  if (
+    item.signal_source.structured_medication_profile_ratio !== null &&
+    item.signal_source.structured_medication_profile_ratio < 0.65
+  ) {
+    signals.push('medication_profile_structure_partial');
   }
   return signals;
 }
