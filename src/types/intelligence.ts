@@ -144,11 +144,18 @@ export interface MedicationReferenceItemRow {
   brand_names: string[];
   rxnorm_code: string | null;
   medication_class: string | null;
+  medication_family: string | null;
   route: string | null;
+  dosage_form: string | null;
   medication_type: MedicationReferenceType | null;
   gut_relevance: MedicationGutRelevance | null;
   common_gut_effects: string[];
   interaction_flags: string[];
+  active_ingredients: string[];
+  common_dose_units: string[];
+  source_label: string | null;
+  source_ref: string | null;
+  source_confidence: number | null;
   evidence_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -203,6 +210,24 @@ export interface MedicationReferenceCandidateDetail {
   reason_for_use: string | null;
   regimen_status: MedicationRegimenStatus | null;
   timing_context: string | null;
+  suggested_generic_name: string | null;
+  suggested_brand_names: string[];
+  suggested_medication_class: string | null;
+  suggested_medication_family: string | null;
+  suggested_rxnorm_code: string | null;
+  suggested_gut_relevance: MedicationGutRelevance | null;
+  suggested_common_gut_effects: string[];
+  suggested_interaction_flags: string[];
+  suggested_active_ingredients: string[];
+  suggested_common_dose_units: string[];
+  suggested_dosage_form: string | null;
+  suggested_route: string | null;
+  enrichment_source_label: string | null;
+  enrichment_source_ref: string | null;
+  enrichment_confidence: number | null;
+  enrichment_status: 'not_started' | 'enriched' | 'fallback' | 'failed';
+  enrichment_last_attempt_at: string | null;
+  enrichment_notes: string | null;
 }
 
 export interface ReferenceReviewCandidateRow {
