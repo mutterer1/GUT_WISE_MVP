@@ -691,6 +691,17 @@ export default function MedicalDocumentIntake() {
                     medication instructions from your care team.
                   </p>
 
+                  <div className="mt-4 rounded-[18px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-3 py-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                      Current extraction coverage
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+                      First-pass extraction is now available for text files, PDFs, and DOCX files.
+                      Images and legacy DOC uploads still route into manual review until OCR and
+                      legacy parsing are added.
+                    </p>
+                  </div>
+
                   <label className="mt-4 block">
                     <input
                       ref={fileInputRef}
