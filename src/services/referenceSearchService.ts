@@ -26,7 +26,11 @@ export interface MedicationReferenceSuggestion {
   name: string;
   genericName?: string | null;
   medicationType?: 'prescription' | 'otc' | 'supplement' | 'unknown' | null;
+  medicationClass?: string | null;
+  medicationFamily?: string | null;
   route?: string | null;
+  dosageForm?: string | null;
+  sourceLabel?: string | null;
   detail?: string | null;
 }
 
@@ -60,9 +64,14 @@ function buildFoodDetail(row: FoodReferenceItemRow): string | null {
 }
 
 function buildMedicationDetail(row: MedicationReferenceItemRow): string | null {
-  const detailParts = [row.medication_class, row.route, row.medication_type].filter(
-    (part): part is string => typeof part === 'string' && part.trim().length > 0
-  );
+  const detailParts = [
+    row.medication_class,
+    row.medication_family,
+    row.dosage_form,
+    row.route,
+    row.medication_type,
+    row.source_label,
+  ].filter((part): part is string => typeof part === 'string' && part.trim().length > 0);
 
   return detailParts.length > 0 ? detailParts.join(' | ') : null;
 }
@@ -261,7 +270,11 @@ export async function searchMedicationReferenceSuggestions(
     name: row.display_name,
     genericName: row.generic_name,
     medicationType: row.medication_type,
+    medicationClass: row.medication_class,
+    medicationFamily: row.medication_family,
     route: row.route,
+    dosageForm: row.dosage_form,
+    sourceLabel: row.source_label,
     detail: buildMedicationDetail(row),
   }));
 }
