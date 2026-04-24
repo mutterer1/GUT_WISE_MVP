@@ -273,6 +273,10 @@ function formatSubtypeFallback(raw: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+function formatMedicationDetailLabel(raw: string): string {
+  return raw.replace(/_/g, ' ').replace(/^\w/, (char) => char.toUpperCase());
+}
+
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return 'N/A';
   return `${Math.round(value * 100)}%`;
@@ -428,6 +432,7 @@ export default function RankedCandidateCard({
   const contradictionRate = candidate.evidence.contradiction_rate;
   const medicalContextApplied = candidate.medical_context_modifier_applied;
   const signalSource = bundleItem?.signal_source ?? null;
+  const medicationDetail = bundleItem?.medication_reference_detail ?? null;
   const signalSourceMeta = signalSource ? signalSourceConfig[signalSource.kind] : null;
   const signalSourceCaution = signalSource ? buildSignalSourceCaution(signalSource) : null;
   const trustMetrics = signalSource ? buildTrustMetrics(signalSource) : [];
@@ -504,6 +509,55 @@ export default function RankedCandidateCard({
           <p className={`mt-1 text-xs leading-relaxed ${signalSourceMeta.bodyClass}`}>
             {signalSource.summary}
           </p>
+        </div>
+      )}
+
+      {medicationDetail && (
+        <div className="mt-4 rounded-xl border border-[rgba(76,174,124,0.18)] bg-[rgba(76,174,124,0.08)] px-3.5 py-3 dark:bg-[rgba(76,174,124,0.1)]">
+          <p className="text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+            {signalSource?.kind === 'reviewed_medication_reference'
+              ? 'Reviewed medication detail'
+              : 'Medication context used'}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[#295E46] dark:text-[#D7F8E5]">
+            {medicationDetail.summary}
+          </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full border border-[rgba(76,174,124,0.2)] bg-[rgba(76,174,124,0.1)] px-2.5 py-1 text-xs font-medium text-[#2F7A57] dark:text-[#9DE2BC]">
+              {medicationDetail.label}
+            </span>
+
+            {medicationDetail.family && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Family: {formatMedicationDetailLabel(medicationDetail.family)}
+              </span>
+            )}
+
+            {medicationDetail.route && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Route: {formatMedicationDetailLabel(medicationDetail.route)}
+              </span>
+            )}
+
+            {medicationDetail.timing_context && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Timing: {formatMedicationDetailLabel(medicationDetail.timing_context)}
+              </span>
+            )}
+
+            {medicationDetail.regimen_status && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Regimen: {formatMedicationDetailLabel(medicationDetail.regimen_status)}
+              </span>
+            )}
+
+            {medicationDetail.dose_context && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-gray-700 dark:text-gray-300">
+                Dose: {medicationDetail.dose_context}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
