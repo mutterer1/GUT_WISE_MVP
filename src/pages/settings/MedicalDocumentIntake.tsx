@@ -691,16 +691,21 @@ export default function MedicalDocumentIntake() {
                     medication instructions from your care team.
                   </p>
 
-                  <div className="mt-4 rounded-[18px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-3 py-3">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
-                      Current extraction coverage
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
-                      First-pass extraction is now available for text files, PDFs, and DOCX files.
-                      Images and legacy DOC uploads still route into manual review until OCR and
-                      legacy parsing are added.
-                    </p>
-                  </div>
+                    <div className="mt-4 rounded-[18px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-3 py-3">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                        Current extraction coverage
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+                        First-pass extraction is now available for text files, PDFs, and DOCX files.
+                        Images and legacy DOC uploads still route into manual review until OCR and
+                        legacy parsing are added.
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+                        When supported extraction finds diagnoses, medications, allergies,
+                        diet guidance, procedures, or red-flag history, GutWise now adds them to
+                        the review queue automatically instead of waiting for manual seeding.
+                      </p>
+                    </div>
 
                   <label className="mt-4 block">
                     <input
@@ -987,6 +992,10 @@ export default function MedicalDocumentIntake() {
                     </h3>
                     <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                       <p>Use uploaded records as evidence, not automatic medical interpretation.</p>
+                      <p>
+                        Supported document extraction can suggest reviewable facts automatically,
+                        but nothing enters active context until you confirm it.
+                      </p>
                       <p>Add a detail only when you want it to enter structured review.</p>
                       <p>Accepted candidates become usable context only after your confirmation.</p>
                     </div>
