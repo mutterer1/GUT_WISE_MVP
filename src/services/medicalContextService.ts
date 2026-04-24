@@ -28,6 +28,69 @@ const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
 const DOCUMENT_EXTRACTION_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-medical-document-intake`;
 const DOCUMENT_EXTRACTION_TIMEOUT_MS = 60_000;
 
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    return `{${keys
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function normalizeStringList(values: string[]): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const value of values) {
+    const cleaned = value.replace(/\s+/g, ' ').trim();
+    if (!cleaned) continue;
+
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    normalized.push(cleaned);
+  }
+
+  return normalized;
+}
+
+function normalizeDetailForSignature(detail: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, rawValue] of Object.entries(detail)) {
+    if (Array.isArray(rawValue)) {
+      normalized[key] = normalizeStringList(rawValue.map((value) => String(value))).sort((a, b) =>
+        a.localeCompare(b)
+      );
+      continue;
+    }
+
+    if (typeof rawValue === 'string') {
+      normalized[key] = rawValue.replace(/\s+/g, ' ').trim();
+      continue;
+    }
+
+    normalized[key] = rawValue;
+  }
+
+  return normalized;
+}
+
+function buildCandidateSignature(
+  category: MedicalFactCategory,
+  detail: Record<string, unknown>
+): string {
+  return `${category}:${stableStringify(normalizeDetailForSignature(detail))}`;
+}
+
 function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind {
   switch (category) {
     case 'diagnosis':
@@ -809,6 +872,79 @@ async function attachEvidenceCounts(
   }));
 }
 
+async function findExistingActiveFactMatch(
+  userId: string,
+  candidate: Pick<CandidateMedicalFactRow, 'category' | 'detail'>
+): Promise<MedicalFactRow | null> {
+  const candidateSignature = buildCandidateSignature(candidate.category, candidate.detail);
+
+  const { data, error } = await supabase
+    .from('medical_facts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('category', candidate.category)
+    .eq('is_active', true)
+    .in('confirmation_state', ['confirmed', 'user_reported'] as ConfirmationState[]);
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as MedicalFactRow[];
+  return (
+    rows.find(
+      (row) => buildCandidateSignature(candidate.category, row.detail) === candidateSignature
+    ) ?? null
+  );
+}
+
+async function mergeSiblingExactCandidates(params: {
+  userId: string;
+  category: MedicalFactCategory;
+  detail: Record<string, unknown>;
+  promotedFactId: string;
+  excludedCandidateId: string;
+  reviewedAt: string;
+}): Promise<string[]> {
+  const { userId, category, detail, promotedFactId, excludedCandidateId, reviewedAt } = params;
+  const candidateSignature = buildCandidateSignature(category, detail);
+
+  const { data, error } = await supabase
+    .from('candidate_medical_facts')
+    .select('id, source_document_id, detail, review_status, promoted_fact_id')
+    .eq('user_id', userId)
+    .eq('category', category)
+    .neq('id', excludedCandidateId)
+    .in('review_status', ['pending_review', 'merged'] as CandidateReviewStatus[]);
+
+  if (error) throw error;
+
+  const matchingRows = ((data ?? []) as CandidateMedicalFactRow[]).filter((row) => {
+    const sameSignature = buildCandidateSignature(category, row.detail) === candidateSignature;
+    if (!sameSignature) return false;
+
+    return row.review_status === 'pending_review' || row.promoted_fact_id === null;
+  });
+
+  if (matchingRows.length === 0) return [];
+
+  const duplicateIds = matchingRows.map((row) => row.id);
+  const { error: updateError } = await supabase
+    .from('candidate_medical_facts')
+    .update({
+      review_status: 'merged',
+      reviewed_at: reviewedAt,
+      promoted_fact_id: promotedFactId,
+      updated_at: reviewedAt,
+    })
+    .eq('user_id', userId)
+    .in('id', duplicateIds);
+
+  if (updateError) throw updateError;
+
+  return matchingRows
+    .map((row) => row.source_document_id)
+    .filter((value): value is string => Boolean(value));
+}
+
 export async function acceptCandidate(
   userId: string,
   candidateId: string
@@ -829,42 +965,80 @@ export async function acceptCandidate(
 
   await ensureMedicalContextProfile(userId);
 
-  const { data: newFact, error: insertErr } = await supabase
-    .from('medical_facts')
-    .insert({
-      user_id: userId,
-      category: row.category,
-      confirmation_state: 'confirmed',
-      detail: row.detail,
-      provenance_source: 'document_extraction',
-      provenance_entered_at: row.created_at,
-      provenance_confirmed_at: now,
-      provenance_source_document_id: row.source_document_id,
-      provenance_notes: row.extraction_notes,
-      is_active: true,
-    })
-    .select()
-    .maybeSingle();
+  const existingMatch = await findExistingActiveFactMatch(userId, row);
 
-  if (insertErr) throw insertErr;
+  let promoted: MedicalFactRow;
 
-  const promoted = newFact as MedicalFactRow;
+  if (existingMatch) {
+    promoted = existingMatch;
 
-  const { error: updateErr } = await supabase
-    .from('candidate_medical_facts')
-    .update({
-      review_status: 'accepted',
-      reviewed_at: now,
-      promoted_fact_id: promoted.id,
-      updated_at: now,
-    })
-    .eq('id', candidateId)
-    .eq('user_id', userId);
+    const { error: updateErr } = await supabase
+      .from('candidate_medical_facts')
+      .update({
+        review_status: 'merged',
+        reviewed_at: now,
+        promoted_fact_id: promoted.id,
+        updated_at: now,
+      })
+      .eq('id', candidateId)
+      .eq('user_id', userId);
 
-  if (updateErr) throw updateErr;
+    if (updateErr) throw updateErr;
+  } else {
+    const { data: newFact, error: insertErr } = await supabase
+      .from('medical_facts')
+      .insert({
+        user_id: userId,
+        category: row.category,
+        confirmation_state: 'confirmed',
+        detail: row.detail,
+        provenance_source: 'document_extraction',
+        provenance_entered_at: row.created_at,
+        provenance_confirmed_at: now,
+        provenance_source_document_id: row.source_document_id,
+        provenance_notes: row.extraction_notes,
+        is_active: true,
+      })
+      .select()
+      .maybeSingle();
 
+    if (insertErr) throw insertErr;
+    promoted = newFact as MedicalFactRow;
+
+    const { error: updateErr } = await supabase
+      .from('candidate_medical_facts')
+      .update({
+        review_status: 'accepted',
+        reviewed_at: now,
+        promoted_fact_id: promoted.id,
+        updated_at: now,
+      })
+      .eq('id', candidateId)
+      .eq('user_id', userId);
+
+    if (updateErr) throw updateErr;
+  }
+
+  const affectedDocumentIds = new Set<string>();
   if (row.source_document_id) {
-    await syncIntakeReviewState(userId, row.source_document_id);
+    affectedDocumentIds.add(row.source_document_id);
+  }
+
+  const siblingDocumentIds = await mergeSiblingExactCandidates({
+    userId,
+    category: row.category,
+    detail: row.detail,
+    promotedFactId: promoted.id,
+    excludedCandidateId: candidateId,
+    reviewedAt: now,
+  });
+
+  for (const intakeId of siblingDocumentIds) {
+    affectedDocumentIds.add(intakeId);
+  }
+
+  for (const intakeId of affectedDocumentIds) {
+    await syncIntakeReviewState(userId, intakeId);
   }
 
   await syncProfileCounters(userId);
