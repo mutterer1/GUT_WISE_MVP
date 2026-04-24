@@ -59,6 +59,15 @@ const statusLabels: Record<string, string> = {
   insufficient: 'Not enough data yet',
 };
 
+const subtypeLabels: Record<string, string> = {
+  medication_as_needed_antidiarrheal_next_day_hard_stool:
+    'As-needed antidiarrheal linked to harder stool the next day',
+  medication_before_meal_iron_same_day_nausea:
+    'Before-meal iron linked to same-day nausea',
+  medication_oral_magnesium_same_day_loose_stool:
+    'Quantified oral magnesium linked to same-day loose stool',
+};
+
 function formatPercent(value: number | null): string {
   if (value === null) return 'N/A';
   return `${Math.round(value * 100)}%`;
@@ -129,7 +138,7 @@ function PatternEvidenceCard({ item }: { item: ExplanationInsightItem }) {
   const sourceCaution = buildSourceCaution(item);
   const triggerSummary = item.trigger_factors.map(formatFactorLabel).join(', ');
   const outcomeSummary = item.target_outcomes.map(formatFactorLabel).join(', ');
-  const title = formatSubtypeFallback(item.subtype);
+  const title = subtypeLabels[item.subtype] ?? formatSubtypeFallback(item.subtype);
   const relationshipSummary =
     triggerSummary.length > 0 && outcomeSummary.length > 0
       ? { trigger: triggerSummary, outcome: outcomeSummary }
