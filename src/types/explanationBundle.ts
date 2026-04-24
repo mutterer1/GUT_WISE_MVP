@@ -45,6 +45,16 @@ export interface ExplanationSignalSourceSummary {
   structured_medication_profile_ratio: number | null;
 }
 
+export interface ExplanationMedicationReferenceDetail {
+  label: string;
+  family: string | null;
+  route: string | null;
+  timing_context: string | null;
+  regimen_status: string | null;
+  dose_context: string | null;
+  summary: string;
+}
+
 export interface ExplanationInsightItem {
   insight_key: string;
   category: CandidateCategory;
@@ -63,6 +73,7 @@ export interface ExplanationInsightItem {
     to: string;
   };
   signal_source: ExplanationSignalSourceSummary;
+  medication_reference_detail: ExplanationMedicationReferenceDetail | null;
   medical_context_annotations: string[];
   medical_context_modifier_applied: boolean;
   medical_context_score_delta: number;
