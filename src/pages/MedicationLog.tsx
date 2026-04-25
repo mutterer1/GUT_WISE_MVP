@@ -8,6 +8,7 @@ import LogFollowUpActions from '../components/LogFollowUpActions';
 import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
@@ -21,6 +22,7 @@ import {
 } from '../services/logFollowUpService';
 import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
 import { type MedicationReferenceSuggestion } from '../services/referenceSearchService';
+import { getMedicationLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 import type { MedicationRegimenStatus } from '../types/intelligence';
 
@@ -322,9 +324,13 @@ export default function MedicationLog() {
     subtitle: `${entry.data.medication_type}${
       entry.data.regimen_status !== 'unknown'
         ? ` | ${formatSnakeCase(entry.data.regimen_status)}`
-        : ''
+      : ''
     }${entry.data.route ? ` | ${entry.data.route}` : ''}`,
   }));
+  const qualityHints = getMedicationLogQualityHints(formData, {
+    contextOpen: showContextDetails,
+    responseOpen: showResponseDetails,
+  });
 
   return (
     <LogPageShell
@@ -676,6 +682,18 @@ export default function MedicationLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={(id) => {
+                if (id.startsWith('medication-off-plan')) {
+                  setShowResponseDetails(true);
+                  return;
+                }
+
+                setShowContextDetails(true);
+              }}
+            />
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={handleReset} />
           </form>
