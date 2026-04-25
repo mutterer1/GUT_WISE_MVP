@@ -6,6 +6,7 @@ import {
   Globe,
   HeartPulse,
   HelpCircle,
+  Layers3,
   Lock,
   ShieldCheck,
   Shield,
@@ -68,6 +69,12 @@ export default function Settings() {
       path: '/settings/document-intake',
     },
     {
+      title: 'Clinical Import Workbench',
+      icon: Layers3,
+      description: 'Stage future external imports as reviewable candidates before they enter active medical context.',
+      path: '/settings/import-workbench',
+    },
+    {
       title: 'Reference Review Queue',
       icon: ShieldCheck,
       description: 'Review custom foods and medications before promoting them into the live reference library.',
@@ -110,6 +117,7 @@ export default function Settings() {
             const discovery =
               section.title === 'Medical Context' ||
               section.title === 'Document Intake & Review' ||
+              section.title === 'Clinical Import Workbench' ||
               section.title === 'Reference Review Queue';
 
             return (
