@@ -15,11 +15,22 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
 import { type FoodReferenceSuggestion } from '../services/referenceSearchService';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 
 interface FoodItem {
   name: string;
@@ -72,6 +83,7 @@ export default function FoodLog() {
   const [searchParams] = useSearchParams();
   const [foodItemInput, setFoodItemInput] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const [historyQuery, setHistoryQuery] = useState('');
 
   const getMealTypeFromParam = (): FoodFormData['meal_type'] => {
     const mealParam = searchParams.get('meal');
@@ -216,6 +228,21 @@ export default function FoodLog() {
     (sum, item) => sum + (item.estimated_calories || 0),
     0
   );
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.meal_type,
+        log.portion_size,
+        log.food_items,
+        log.tags,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -492,82 +519,88 @@ export default function FoodLog() {
               icon={<Utensils className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => {
-                const logCalories = (log.food_items || []).reduce(
-                  (sum, item) => sum + (item.estimated_calories || 0),
-                  0
-                );
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search meals, foods, tags, notes..."
+              />
 
-                return (
-                  <div
-                    key={log.id}
-                    className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
-                  >
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                          {formatDateTime(log.logged_at)}
-                        </div>
-                        <div className="mt-1 text-xs capitalize text-[var(--color-text-tertiary)]">
-                          {log.meal_type} | {log.portion_size}
-                          {logCalories > 0 ? ` | ${logCalories} cal` : ''}
-                        </div>
-                      </div>
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => {
+                        const logCalories = (log.food_items || []).reduce(
+                          (sum, item) => sum + (item.estimated_calories || 0),
+                          0
+                        );
 
-                      <div className="flex gap-3 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(log as FoodFormData & { id: string })}
-                          className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(log.id!)}
-                          className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-
-                    {log.food_items?.length > 0 && (
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        {log.food_items.map((item, idx) => (
-                          <span
-                            key={`${item.name}-${idx}`}
-                            className="inline-flex items-center rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-primary)]"
+                        return (
+                          <div
+                            key={log.id}
+                            className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                           >
-                            {item.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                                  {formatLogHistoryTime(log.logged_at)}
+                                </div>
+                                <div className="mt-1 text-xs capitalize text-[var(--color-text-tertiary)]">
+                                  {log.meal_type} | {log.portion_size}
+                                  {logCalories > 0 ? ` | ${logCalories} cal` : ''}
+                                </div>
+                              </div>
 
-                    {log.tags?.length > 0 && (
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        {log.tags.map((tag, idx) => (
-                          <span
-                            key={`${tag}-${idx}`}
-                            className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
-                          >
-                            <Tag className="mr-1 h-3 w-3 text-[var(--color-text-tertiary)]" />
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                              <LogHistoryActions
+                                onEdit={() => handleEdit(log as FoodFormData & { id: string })}
+                                onDelete={() => handleDelete(log.id!)}
+                              />
+                            </div>
 
-                    {log.notes && (
-                      <div className="rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-                        {log.notes}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                            {log.food_items?.length > 0 && (
+                              <div className="mb-3 flex flex-wrap gap-2">
+                                {log.food_items.map((item, idx) => (
+                                  <span
+                                    key={`${item.name}-${idx}`}
+                                    className="inline-flex items-center rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-primary)]"
+                                  >
+                                    {item.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {log.tags?.length > 0 && (
+                              <div className="mb-3 flex flex-wrap gap-2">
+                                {log.tags.map((tag, idx) => (
+                                  <span
+                                    key={`${tag}-${idx}`}
+                                    className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
+                                  >
+                                    <Tag className="mr-1 h-3 w-3 text-[var(--color-text-tertiary)]" />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {log.notes && (
+                              <div className="rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                                {log.notes}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </LogHistoryGroup>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </Card>
