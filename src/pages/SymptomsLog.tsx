@@ -13,8 +13,19 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 
 interface SymptomsFormData {
   id?: string;
@@ -50,6 +61,7 @@ const commonTriggers = [
 
 export default function SymptomsLog() {
   const [customSymptom, setCustomSymptom] = useState('');
+  const [historyQuery, setHistoryQuery] = useState('');
 
   const {
     formData,
@@ -65,6 +77,7 @@ export default function SymptomsLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm: baseResetForm,
   } = useLogCrud<SymptomsFormData>({
@@ -112,6 +125,22 @@ export default function SymptomsLog() {
         : [...formData.triggers, trigger],
     });
   };
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.symptom_type,
+        log.severity,
+        log.duration_minutes,
+        log.location,
+        log.triggers,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -373,79 +402,87 @@ export default function SymptomsLog() {
               icon={<AlertCircle className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
-                <div
-                  key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
-                >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
-                      </div>
-                      <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                        {log.symptom_type}
-                      </div>
-                    </div>
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search symptoms, triggers, notes..."
+              />
 
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as SymptomsFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
+                        <div
+                          key={log.id}
+                          className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
+                        >
+                          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                                {formatLogHistoryTime(log.logged_at)}
+                              </div>
+                              <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                                {log.symptom_type}
+                              </div>
+                            </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+                            <LogHistoryActions
+                              onUseAsTemplate={() =>
+                                handleUseAsTemplate(log as SymptomsFormData & { id: string })
+                              }
+                              onEdit={() => handleEdit(log as SymptomsFormData & { id: string })}
+                              onDelete={() => handleDelete(log.id!)}
+                            />
+                          </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <MetricChip label="Severity" value={`${log.severity}/10`} />
-                    <MetricChip label="Duration" value={`${log.duration_minutes} min`} />
-                  </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <MetricChip label="Severity" value={`${log.severity}/10`} />
+                            <MetricChip label="Duration" value={`${log.duration_minutes} min`} />
+                          </div>
 
-                  {log.location && (
-                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-secondary)]">
-                      <span className="font-medium text-[var(--color-text-primary)]">Location:</span>{' '}
-                      {log.location}
-                    </div>
-                  )}
+                          {log.location && (
+                            <div className="mt-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+                              <span className="font-medium text-[var(--color-text-primary)]">Location:</span>{' '}
+                              {log.location}
+                            </div>
+                          )}
 
-                  {log.triggers?.length > 0 && (
-                    <div className="mt-4">
-                      <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-                        Triggers
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {log.triggers.map((trigger, idx) => (
-                          <span
-                            key={`${trigger}-${idx}`}
-                            className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
-                          >
-                            <AlertCircle className="mr-1 h-3 w-3 text-[var(--color-accent-primary)]" />
-                            {trigger}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                          {log.triggers?.length > 0 && (
+                            <div className="mt-3">
+                              <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                                Triggers
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {log.triggers.map((trigger, idx) => (
+                                  <span
+                                    key={`${trigger}-${idx}`}
+                                    className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)]"
+                                  >
+                                    <AlertCircle className="mr-1 h-3 w-3 text-[var(--color-accent-primary)]" />
+                                    {trigger}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                  {log.notes && (
-                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
-                      {log.notes}
-                    </div>
-                  )}
+                          {log.notes && (
+                            <div className="mt-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                              {log.notes}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
