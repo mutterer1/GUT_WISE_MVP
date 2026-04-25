@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Activity, Clock, Pill } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
@@ -6,6 +7,7 @@ import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
+import LogOptionalSection from '../components/LogOptionalSection';
 import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
@@ -90,7 +92,24 @@ function hasMeaningfulMedicationDraft(formData: MedicationFormData): boolean {
   );
 }
 
+function hasMedicationContextDetails(formData: MedicationFormData): boolean {
+  return (
+    formData.route.trim().length > 0 ||
+    formData.reason_for_use.trim().length > 0 ||
+    formData.regimen_status !== 'unknown' ||
+    formData.timing_context.trim().length > 0 ||
+    !formData.taken_as_prescribed
+  );
+}
+
+function hasMedicationResponseDetails(formData: MedicationFormData): boolean {
+  return formData.side_effects.length > 0 || formData.notes.trim().length > 0;
+}
+
 export default function MedicationLog() {
+  const [showContextDetails, setShowContextDetails] = useState(false);
+  const [showResponseDetails, setShowResponseDetails] = useState(false);
+
   const {
     formData,
     setFormData,
@@ -184,6 +203,22 @@ export default function MedicationLog() {
     },
   });
 
+  useEffect(() => {
+    if (hasMedicationContextDetails(formData)) {
+      setShowContextDetails(true);
+    } else if (!editingId) {
+      setShowContextDetails(false);
+    }
+  }, [editingId, formData]);
+
+  useEffect(() => {
+    if (hasMedicationResponseDetails(formData)) {
+      setShowResponseDetails(true);
+    } else if (!editingId) {
+      setShowResponseDetails(false);
+    }
+  }, [editingId, formData]);
+
   const selectMedicationSuggestion = (suggestion: MedicationReferenceSuggestion) => {
     setFormData({
       ...formData,
@@ -216,6 +251,8 @@ export default function MedicationLog() {
     }
 
     applyRecent(entry);
+    setShowContextDetails(hasMedicationContextDetails(entry.data));
+    setShowResponseDetails(hasMedicationResponseDetails(entry.data));
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
@@ -250,7 +287,14 @@ export default function MedicationLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+          <LogEditingBanner
+            isEditing={Boolean(editingId)}
+            onCancel={() => {
+              resetForm();
+              setShowContextDetails(false);
+              setShowResponseDetails(false);
+            }}
+          />
 
           {!editingId ? (
             <div className="mb-6">
@@ -266,7 +310,7 @@ export default function MedicationLog() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
@@ -302,7 +346,7 @@ export default function MedicationLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <label htmlFor="medication_name" className="field-label mb-2 block">
                 <Pill className="mr-1 inline h-4 w-4" />
                 Medication Name
@@ -320,7 +364,7 @@ export default function MedicationLog() {
               </p>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <label htmlFor="dosage" className="field-label mb-2 block">
                 Dosage
               </label>
@@ -335,7 +379,7 @@ export default function MedicationLog() {
               />
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <div className="mb-4">
                 <label className="field-label">Medication Type</label>
               </div>
@@ -362,188 +406,202 @@ export default function MedicationLog() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-                <div className="mb-4">
-                  <label className="field-label">Route</label>
-                  <p className="field-help mt-1">
-                    Leave this blank if you want GutWise to fall back to a known route from the
-                    medication reference table.
+            <LogOptionalSection
+              title="Context details"
+              isOpen={showContextDetails}
+              onToggle={() => setShowContextDetails(!showContextDetails)}
+              summary="Route, regimen, timing, and adherence help when medication effects need more precision."
+            >
+              <div className="grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
+                <div className="surface-panel-soft rounded-[24px] p-4">
+                  <div className="mb-4">
+                    <label className="field-label">Route</label>
+                    <p className="field-help mt-1">
+                      Leave this blank if you want GutWise to fall back to a known route from the
+                      medication reference table.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                    {routeOptions.map((route) => (
+                      <button
+                        key={route}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            route: formData.route === route ? '' : route,
+                          })
+                        }
+                        className={[
+                          'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                          formData.route === route
+                            ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                            : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                        ].join(' ')}
+                      >
+                        {route.charAt(0).toUpperCase() + route.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="surface-panel-soft rounded-[24px] p-4">
+                  <div className="mb-4">
+                    <label className="field-label">Regimen Status</label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {regimenOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            regimen_status: option.value,
+                          })
+                        }
+                        className={[
+                          'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                          formData.regimen_status === option.value
+                            ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                            : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                        ].join(' ')}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
+                <div className="surface-panel-soft rounded-[24px] p-4">
+                  <label htmlFor="reason_for_use" className="field-label mb-2 block">
+                    Reason for Use
+                    <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="reason_for_use"
+                    value={formData.reason_for_use}
+                    onChange={(e) =>
+                      setFormData({ ...formData, reason_for_use: e.target.value })
+                    }
+                    placeholder="e.g. reflux flare, maintenance, headache"
+                    className="input-base w-full"
+                  />
+                </div>
+
+                <div className="surface-panel-soft rounded-[24px] p-4">
+                  <div className="mb-4">
+                    <label className="field-label">Timing Context</label>
+                    <p className="field-help mt-1">
+                      Capture when the dose happened relative to the day or meals.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                    {timingOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            timing_context:
+                              formData.timing_context === option.value ? '' : option.value,
+                          })
+                        }
+                        className={[
+                          'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                          formData.timing_context === option.value
+                            ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                            : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                        ].join(' ')}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                    Taken as Prescribed
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                    Mark whether the dose matched the intended plan.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {routeOptions.map((route) => (
-                    <button
-                      key={route}
-                      type="button"
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          route: formData.route === route ? '' : route,
-                        })
-                      }
-                      className={[
-                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.route === route
-                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {route.charAt(0).toUpperCase() + route.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, taken_as_prescribed: !formData.taken_as_prescribed })
+                  }
+                  className={[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+                    formData.taken_as_prescribed ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                      formData.taken_as_prescribed ? 'translate-x-6' : 'translate-x-1',
+                    ].join(' ')}
+                  />
+                </button>
+              </div>
+            </LogOptionalSection>
+
+            <LogOptionalSection
+              title="Response and notes"
+              isOpen={showResponseDetails}
+              onToggle={() => setShowResponseDetails(!showResponseDetails)}
+              summary="Side effects and notes stay available without forcing extra scrolling on every medication entry."
+            >
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <div className="mb-4">
-                  <label className="field-label">Regimen Status</label>
+                  <label className="field-label">Side Effects</label>
+                  <p className="field-help mt-1">(optional)</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {regimenOptions.map((option) => (
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {commonSideEffects.map((effect) => (
                     <button
-                      key={option.value}
+                      key={effect}
                       type="button"
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          regimen_status: option.value,
-                        })
-                      }
+                      onClick={() => toggleSideEffect(effect)}
                       className={[
-                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.regimen_status === option.value
-                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.side_effects.includes(effect)
+                          ? effect === 'None'
+                            ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
+                            : 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
                           : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
                       ].join(' ')}
                     >
-                      {option.label}
+                      {effect}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-                <label htmlFor="reason_for_use" className="field-label mb-2 block">
-                  Reason for Use
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
                   <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
                 </label>
-                <input
-                  type="text"
-                  id="reason_for_use"
-                  value={formData.reason_for_use}
-                  onChange={(e) =>
-                    setFormData({ ...formData, reason_for_use: e.target.value })
-                  }
-                  placeholder="e.g. reflux flare, maintenance, headache"
-                  className="input-base w-full"
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="input-base min-h-[112px] w-full resize-none"
+                  rows={4}
+                  placeholder="Effectiveness, side effects, or context not captured above..."
                 />
               </div>
-
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-                <div className="mb-4">
-                  <label className="field-label">Timing Context</label>
-                  <p className="field-help mt-1">
-                    Capture when the dose happened relative to the day or meals.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {timingOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          timing_context:
-                            formData.timing_context === option.value ? '' : option.value,
-                        })
-                      }
-                      className={[
-                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.timing_context === option.value
-                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
-              <div>
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                  Taken as Prescribed
-                </p>
-                <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                  Mark whether the dose matched the intended plan.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData({ ...formData, taken_as_prescribed: !formData.taken_as_prescribed })
-                }
-                className={[
-                  'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
-                  formData.taken_as_prescribed ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
-                ].join(' ')}
-              >
-                <span
-                  className={[
-                    'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-                    formData.taken_as_prescribed ? 'translate-x-6' : 'translate-x-1',
-                  ].join(' ')}
-                />
-              </button>
-            </div>
-
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4">
-                <label className="field-label">Side Effects</label>
-                <p className="field-help mt-1">(optional)</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                {commonSideEffects.map((effect) => (
-                  <button
-                    key={effect}
-                    type="button"
-                    onClick={() => toggleSideEffect(effect)}
-                    className={[
-                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                      formData.side_effects.includes(effect)
-                        ? effect === 'None'
-                          ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
-                          : 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
-                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                    ].join(' ')}
-                  >
-                    {effect}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <label htmlFor="notes" className="field-label mb-2 block">
-                Notes
-                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="input-base min-h-[112px] w-full resize-none"
-                rows={4}
-                placeholder="Effectiveness, side effects, or context not captured above..."
-              />
-            </div>
+            </LogOptionalSection>
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
