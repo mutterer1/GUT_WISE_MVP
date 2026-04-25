@@ -11,6 +11,7 @@ import LogFollowUpActions from '../components/LogFollowUpActions';
 import LogFormActions from '../components/LogFormActions';
 import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -18,6 +19,7 @@ import {
   createLogFollowUpState,
   type LogFollowUpAction,
 } from '../services/logFollowUpService';
+import { getBmLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 import { BRISTOL_SCALE } from '../constants/domain';
 
@@ -190,6 +192,7 @@ export default function BMLog() {
       entry.data.pain_level
     ).toFixed(1)}/10`,
   }));
+  const qualityHints = getBmLogQualityHints(formData, { detailsOpen: showDetails });
 
   return (
     <LogPageShell
@@ -407,6 +410,11 @@ export default function BMLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowDetails(true)}
+            />
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={handleReset} />
           </form>
