@@ -4,6 +4,7 @@ import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -74,6 +75,21 @@ function coerceMedicationType(
   return null;
 }
 
+function hasMeaningfulMedicationDraft(formData: MedicationFormData): boolean {
+  return (
+    formData.medication_name.trim().length > 0 ||
+    formData.dosage.trim().length > 0 ||
+    formData.medication_type !== 'prescription' ||
+    formData.route.trim().length > 0 ||
+    formData.reason_for_use.trim().length > 0 ||
+    formData.regimen_status !== 'unknown' ||
+    formData.timing_context.trim().length > 0 ||
+    !formData.taken_as_prescribed ||
+    formData.side_effects.length > 0 ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function MedicationLog() {
   const {
     formData,
@@ -83,6 +99,11 @@ export default function MedicationLog() {
     setShowHistory,
     editingId,
     saving,
+    recentEntries,
+    applyRecent,
+    hasStoredDraft,
+    draftUpdatedAt,
+    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -106,6 +127,7 @@ export default function MedicationLog() {
       side_effects: [] as string[],
       notes: '' as const,
     },
+    hasMeaningfulDraft: hasMeaningfulMedicationDraft,
     mapHistoryToForm: (log) => ({
       logged_at: log.logged_at,
       medication_name: log.medication_name ?? '',
@@ -187,6 +209,27 @@ export default function MedicationLog() {
     });
   };
 
+  const handleUseRecent = (recentId: string) => {
+    const entry = recentEntries.find((item) => item.id === recentId);
+    if (!entry) {
+      return;
+    }
+
+    applyRecent(entry);
+  };
+
+  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
+    id: entry.id,
+    title: `${entry.data.medication_name || 'Medication'}${
+      entry.data.dosage ? ` | ${entry.data.dosage}` : ''
+    }`,
+    subtitle: `${entry.data.medication_type}${
+      entry.data.regimen_status !== 'unknown'
+        ? ` | ${formatSnakeCase(entry.data.regimen_status)}`
+        : ''
+    }${entry.data.route ? ` | ${entry.data.route}` : ''}`,
+  }));
+
   return (
     <LogPageShell
       title="Medication Log"
@@ -208,6 +251,19 @@ export default function MedicationLog() {
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+
+          {!editingId ? (
+            <div className="mb-6">
+              <LogRecallPanel
+                hasStoredDraft={hasStoredDraft}
+                draftUpdatedAt={draftUpdatedAt}
+                draftLabel="Medication draft restored from this device."
+                recentItems={recentRecallItems}
+                onDiscardDraft={discardStoredDraft}
+                onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
