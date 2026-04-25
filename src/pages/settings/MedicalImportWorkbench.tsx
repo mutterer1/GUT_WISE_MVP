@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ArrowRight, CheckCircle2, FileJson2, Layers3, Sparkles, UploadCloud } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  FileJson2,
+  Layers3,
+  Pill,
+  Sparkles,
+  UploadCloud,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
@@ -173,6 +181,34 @@ export default function MedicalImportWorkbench() {
                   <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                     Only accepted candidates become active medical context.
                   </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[24px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.16)] text-[var(--color-accent-primary)]">
+                      <Pill className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        First real importer is now medication-focused
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Use the medication list importer for pasted portal or pharmacy lists. Keep
+                        this workbench for raw batch testing and future source-specific importers.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('/settings/import-medication-list')}
+                  >
+                    <Pill className="h-4 w-4" />
+                    Open Medication Importer
+                  </Button>
                 </div>
               </div>
             </div>
