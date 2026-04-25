@@ -10,6 +10,7 @@ import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
+import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
@@ -82,6 +83,14 @@ function hasNonDefaultDetails(formData: BMFormData): boolean {
   );
 }
 
+function hasMeaningfulBmDraft(formData: BMFormData): boolean {
+  return (
+    formData.bristol_type !== 4 ||
+    formData.amount !== 'medium' ||
+    hasNonDefaultDetails(formData)
+  );
+}
+
 export default function BMLog() {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -93,6 +102,11 @@ export default function BMLog() {
     setShowHistory,
     editingId,
     saving,
+    recentEntries,
+    applyRecent,
+    hasStoredDraft,
+    draftUpdatedAt,
+    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -101,7 +115,10 @@ export default function BMLog() {
     handleEdit,
     handleDelete,
     resetForm,
-  } = useLogCrud<BMFormData>(bmConfig);
+  } = useLogCrud<BMFormData>({
+    ...bmConfig,
+    hasMeaningfulDraft: hasMeaningfulBmDraft,
+  });
 
   useEffect(() => {
     if (editingId && hasNonDefaultDetails(formData)) {
@@ -119,6 +136,24 @@ export default function BMLog() {
     resetForm();
     setShowDetails(false);
   };
+
+  const handleUseRecent = (recentId: string) => {
+    const entry = recentEntries.find((item) => item.id === recentId);
+    if (!entry) {
+      return;
+    }
+
+    applyRecent(entry);
+    setShowDetails(hasNonDefaultDetails(entry.data));
+  };
+
+  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
+    id: entry.id,
+    title: `Bristol Type ${entry.data.bristol_type} | ${entry.data.amount}`,
+    subtitle: `Urgency ${Number(entry.data.urgency).toFixed(1)}/10 | Pain ${Number(
+      entry.data.pain_level
+    ).toFixed(1)}/10`,
+  }));
 
   return (
     <LogPageShell
@@ -141,6 +176,22 @@ export default function BMLog() {
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner isEditing={Boolean(editingId)} onCancel={handleReset} />
+
+          {!editingId ? (
+            <div className="mb-6">
+              <LogRecallPanel
+                hasStoredDraft={hasStoredDraft}
+                draftUpdatedAt={draftUpdatedAt}
+                draftLabel="BM draft restored from this device."
+                recentItems={recentRecallItems}
+                onDiscardDraft={() => {
+                  discardStoredDraft();
+                  setShowDetails(false);
+                }}
+                onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
