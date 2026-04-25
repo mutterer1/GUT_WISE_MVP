@@ -5,6 +5,7 @@ import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
@@ -81,6 +82,19 @@ function buildHydrationFormData(
   };
 }
 
+function hasMeaningfulHydrationDraft(formData: HydrationFormData): boolean {
+  const defaults = buildHydrationFormData();
+  return (
+    formData.beverage_type !== defaults.beverage_type ||
+    formData.amount_ml !== defaults.amount_ml ||
+    formData.caffeine_content !== defaults.caffeine_content ||
+    formData.caffeine_mg !== defaults.caffeine_mg ||
+    formData.electrolyte_present !== defaults.electrolyte_present ||
+    formData.alcohol_present !== defaults.alcohol_present ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function HydrationLog() {
   const [unit, setUnit] = useState<HydrationUnit>(getStoredHydrationUnit);
 
@@ -92,6 +106,11 @@ export default function HydrationLog() {
     setShowHistory,
     editingId,
     saving,
+    recentEntries,
+    applyRecent,
+    hasStoredDraft,
+    draftUpdatedAt,
+    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -104,6 +123,7 @@ export default function HydrationLog() {
     table: 'hydration_logs' as const,
     logType: 'hydration' as const,
     defaultValues: buildHydrationFormData(),
+    hasMeaningfulDraft: hasMeaningfulHydrationDraft,
     buildInsertPayload: (data, userId) => {
       const normalized = hydrateLogWithDerivedFields(data);
       return {
@@ -224,6 +244,23 @@ export default function HydrationLog() {
         ? 'Tracked separately from hydration'
         : 'Counts as total fluid, not water goal';
 
+  const handleUseRecent = (recentId: string) => {
+    const entry = recentEntries.find((item) => item.id === recentId);
+    if (!entry) {
+      return;
+    }
+
+    applyRecent(entry);
+  };
+
+  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
+    id: entry.id,
+    title: `${entry.data.beverage_type} | ${formatHydrationAmount(entry.data.amount_ml, unit)}`,
+    subtitle: entry.data.caffeine_mg > 0
+      ? `${entry.data.caffeine_mg} mg caffeine | ${entry.data.beverage_category}`
+      : `caffeine-free | ${entry.data.beverage_category}`,
+  }));
+
   return (
     <LogPageShell
       title="Hydration Log"
@@ -245,6 +282,19 @@ export default function HydrationLog() {
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+
+          {!editingId ? (
+            <div className="mb-6">
+              <LogRecallPanel
+                hasStoredDraft={hasStoredDraft}
+                draftUpdatedAt={draftUpdatedAt}
+                draftLabel="Hydration draft restored from this device."
+                recentItems={recentRecallItems}
+                onDiscardDraft={discardStoredDraft}
+                onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
