@@ -23,6 +23,10 @@ import {
   type ClinicalImportPreviewCategory,
   type ClinicalImportPreviewItem,
 } from '../../services/clinicalHistoryImportService';
+import {
+  getClinicalImportSourceOptions,
+  type ClinicalImportSourceProfileId,
+} from '../../services/importSourceProfileService';
 import type {
   GenericMedicalImportSourceType,
   MedicalImportBatchResult,
@@ -65,6 +69,15 @@ allergy_intolerance,Lactose intolerance,,Bloating and urgency after dairy,
 surgery_procedure,Colonoscopy,2023-11-18,Normal exam,
 diet_guidance,Low-FODMAP trial,2025-02-01,Avoid onions and garlic,
 red_flag_history,Rectal bleeding,2023-08-20,Resolved after GI evaluation,`;
+
+const SOURCE_PROFILE_OPTIONS = [
+  {
+    value: '',
+    label: 'Auto-detect from source and content',
+    hint: 'Use source label, reference, headers, and pasted content to infer the best clinical-history import profile.',
+  },
+  ...getClinicalImportSourceOptions(),
+];
 
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
@@ -327,6 +340,22 @@ function ClinicalPreviewCard({
           )}
         </div>
 
+        <div className="rounded-[22px] border border-[rgba(133,93,255,0.14)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+            Import source mapping
+          </p>
+          <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+            <p>Profile: {item.source_profile_label}</p>
+            <p>Source system: {item.source_system_label}</p>
+            <p>Strategy: {item.parse_strategy_label}</p>
+            <p>Profile confidence: {formatConfidence(item.source_profile_confidence)}</p>
+            <p>Effective import kind: {item.effective_import_kind.replace(/_/g, ' ')}</p>
+            {item.source_mapping_notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+          </div>
+        </div>
+
         {(item.parse_notes.length > 0 || item.normalization_notes.length > 0) && (
           <div className="rounded-[22px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
             <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
@@ -354,6 +383,7 @@ export default function ClinicalHistoryImport() {
   const [importKind, setImportKind] = useState<ClinicalImportKind>('mixed_clinical');
   const [sourceLabel, setSourceLabel] = useState('Imported clinical history');
   const [sourceReference, setSourceReference] = useState('');
+  const [sourceProfileId, setSourceProfileId] = useState<ClinicalImportSourceProfileId | ''>('');
   const [importNote, setImportNote] = useState('');
   const [inputText, setInputText] = useState(EXAMPLE_INPUT);
   const [parsing, setParsing] = useState(false);
@@ -372,6 +402,11 @@ export default function ClinicalHistoryImport() {
     () => new Set(previewItems.map((item) => item.category)).size,
     [previewItems]
   );
+  const sourceProfileLabel = previewItems[0]?.source_profile_label ?? 'Not detected yet';
+  const sourceSystemLabel = previewItems[0]?.source_system_label ?? 'Unknown';
+  const sourceStrategyLabel = previewItems[0]?.parse_strategy_label ?? 'Not available';
+  const effectiveImportKindLabel =
+    previewItems[0]?.effective_import_kind.replace(/_/g, ' ') ?? 'Not available';
 
   const handleBuildPreview = async () => {
     setParsing(true);
@@ -379,7 +414,11 @@ export default function ClinicalHistoryImport() {
     setQueueResult(null);
 
     try {
-      const parsed = await parseClinicalHistoryImportInput(inputText, importKind);
+      const parsed = await parseClinicalHistoryImportInput(inputText, importKind, {
+        sourceLabel,
+        sourceReference,
+        sourceProfileId: sourceProfileId || null,
+      });
       setParseResult(parsed);
       setPreviewItems(parsed.items);
     } catch (err) {
@@ -423,6 +462,7 @@ export default function ClinicalHistoryImport() {
         source_label: sourceLabel,
         source_reference: sourceReference || null,
         import_note: importNote || null,
+        source_profile_id: sourceProfileId || null,
         import_kind: importKind,
         detected_format: parseResult?.detected_format ?? 'line_list',
         items: previewItems,
@@ -517,7 +557,7 @@ export default function ClinicalHistoryImport() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
           <Card variant="elevated" className="rounded-[30px]">
             <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-4">
                 <div>
                   <label className={labelClassName}>Import Kind</label>
                   <select
@@ -568,6 +608,27 @@ export default function ClinicalHistoryImport() {
                     className={fieldClassName}
                     placeholder="Optional visit date or export id"
                   />
+                </div>
+
+                <div>
+                  <label className={labelClassName}>Source Profile</label>
+                  <select
+                    value={sourceProfileId}
+                    onChange={(e) =>
+                      setSourceProfileId(e.target.value as ClinicalImportSourceProfileId | '')
+                    }
+                    className={fieldClassName}
+                  >
+                    {SOURCE_PROFILE_OPTIONS.map((option) => (
+                      <option key={option.value || 'auto'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                    {SOURCE_PROFILE_OPTIONS.find((option) => option.value === sourceProfileId)?.hint ??
+                      SOURCE_PROFILE_OPTIONS[0].hint}
+                  </p>
                 </div>
               </div>
 
@@ -682,6 +743,18 @@ export default function ClinicalHistoryImport() {
                       <p className="mt-2 text-2xl font-semibold text-[var(--color-text-primary)]">
                         {categoryCount}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[20px] border border-[rgba(133,93,255,0.14)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+                      Source-aware mapping
+                    </p>
+                    <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <p>Profile: {sourceProfileLabel}</p>
+                      <p>Source system: {sourceSystemLabel}</p>
+                      <p>Strategy: {sourceStrategyLabel}</p>
+                      <p>Effective import kind: {effectiveImportKindLabel}</p>
                     </div>
                   </div>
 
