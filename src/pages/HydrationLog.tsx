@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Activity, Clock, Droplet, Zap } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
+import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
 import { useLogCrud } from '../hooks/useLogCrud';
+import {
+  mergeLogFollowUpPrefill,
+  readLogFollowUpState,
+} from '../services/logFollowUpService';
 import { formatDateTime } from '../utils/dateFormatters';
 import {
   type HydrationUnit,
@@ -105,8 +111,10 @@ function hasHydrationContextDetails(formData: HydrationFormData): boolean {
 }
 
 export default function HydrationLog() {
+  const location = useLocation();
   const [unit, setUnit] = useState<HydrationUnit>(getStoredHydrationUnit);
   const [showHydrationDetails, setShowHydrationDetails] = useState(false);
+  const followUp = readLogFollowUpState<HydrationFormData>(location.state);
 
   const {
     formData,
@@ -180,6 +188,15 @@ export default function HydrationLog() {
       setShowHydrationDetails(false);
     }
   }, [editingId, formData]);
+
+  useEffect(() => {
+    if (!followUp || editingId) {
+      return;
+    }
+
+    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
+    setShowHydrationDetails(false);
+  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
 
   const applyHydrationChanges = (patch: Partial<HydrationFormData>) => {
     setFormData((prev) => {
@@ -315,9 +332,17 @@ export default function HydrationLog() {
                 draftUpdatedAt={draftUpdatedAt}
                 draftLabel="Hydration draft restored from this device."
                 recentItems={recentRecallItems}
-                onDiscardDraft={discardStoredDraft}
+                onDiscardDraft={() => {
+                  discardStoredDraft();
+                }}
                 onUseRecent={handleUseRecent}
               />
+            </div>
+          ) : null}
+
+          {!editingId && followUp ? (
+            <div className="mb-6">
+              <LogFollowUpNotice followUp={followUp} />
             </div>
           ) : null}
 
