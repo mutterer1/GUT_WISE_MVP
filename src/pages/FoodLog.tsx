@@ -2,19 +2,18 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Activity,
-  ChevronDown,
-  ChevronUp,
   Clock,
-  Pencil,
-  Save,
   Tag,
   Utensils,
 } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
+import LogEditingBanner from '../components/LogEditingBanner';
+import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import LogOptionalSection from '../components/LogOptionalSection';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
@@ -237,22 +236,7 @@ export default function FoodLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          {editingId && (
-            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
-                <Pencil className="h-4 w-4" />
-                <span>Editing entry</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -389,99 +373,77 @@ export default function FoodLog() {
               )}
             </div>
 
-            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
-              >
-                <span>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
-                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
-                </span>
-
-                {showDetails ? (
-                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
-                )}
-              </button>
-
-              {showDetails && (
-                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
-                  <div>
-                    <label className="field-label mb-3 block">Portion Size</label>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      {portionSizes.map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, portion_size: size })}
-                          className={[
-                            'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                            formData.portion_size === size
-                              ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                          ].join(' ')}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="field-label mb-3 block">Digestive Tags</label>
-
-                    <div className="flex flex-wrap gap-2">
-                      {digestiveTags.map((tag) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => toggleTag(tag)}
-                          className={[
-                            'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-smooth',
-                            formData.tags.includes(tag)
-                              ? 'border-[rgba(84,160,255,0.24)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
-                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-tertiary)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]',
-                          ].join(' ')}
-                        >
-                          <Tag className="h-3 w-3" />
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="notes" className="field-label mb-2 block">
-                      Notes
-                    </label>
-                    <textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      rows={4}
-                      placeholder="Location, cravings, mood, unusual reactions..."
-                      className="input-base min-h-[112px] w-full resize-none"
-                    />
-                  </div>
+            <LogOptionalSection
+              title="Details"
+              isOpen={showDetails}
+              onToggle={() => setShowDetails(!showDetails)}
+              summary="Portion, digestive tags, and notes can sharpen later analysis without slowing the first pass."
+            >
+              <div>
+                <label className="field-label mb-3 block">Portion Size</label>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {portionSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, portion_size: size })}
+                      className={[
+                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.portion_size === size
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {size}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button type="submit" disabled={saving || formData.food_items.length === 0} size="lg">
-                <Save className="mr-2 inline h-4 w-4" />
-                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
-              </Button>
+              <div>
+                <label className="field-label mb-3 block">Digestive Tags</label>
 
-              {editingId && (
-                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
-                  Cancel
-                </Button>
-              )}
-            </div>
+                <div className="flex flex-wrap gap-2">
+                  {digestiveTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={[
+                        'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-smooth',
+                        formData.tags.includes(tag)
+                          ? 'border-[rgba(84,160,255,0.24)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-tertiary)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]',
+                      ].join(' ')}
+                    >
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={4}
+                  placeholder="Location, cravings, mood, unusual reactions..."
+                  className="input-base min-h-[112px] w-full resize-none"
+                />
+              </div>
+            </LogOptionalSection>
+
+            <LogFormActions
+              isEditing={Boolean(editingId)}
+              saving={saving}
+              submitDisabled={formData.food_items.length === 0}
+              onCancel={resetForm}
+            />
           </form>
         </Card>
       ) : (
