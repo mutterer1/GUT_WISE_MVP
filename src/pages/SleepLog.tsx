@@ -6,8 +6,10 @@ import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
+import { getSleepLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface SleepFormData {
@@ -95,6 +97,9 @@ export default function SleepLog() {
 
     return '0h 0m';
   };
+  const qualityHints = getSleepLogQualityHints(formData, {
+    recoveryOpen: showRecoveryDetails,
+  });
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +280,11 @@ export default function SleepLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowRecoveryDetails(true)}
+            />
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
