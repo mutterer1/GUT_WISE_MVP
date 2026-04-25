@@ -1,3 +1,7 @@
+import {
+  detectClinicalImportSourceProfile,
+  type ClinicalImportSourceProfileId,
+} from './importSourceProfileService';
 import { queueMedicalImportBatch } from './medicalImportService';
 import type {
   CandidateEvidenceKind,
@@ -25,12 +29,19 @@ export interface ClinicalImportPreviewItem {
   source_row_label: string;
   parse_method: 'structured_json' | 'structured_columns' | 'line_heuristic';
   import_kind: ClinicalImportKind;
+  effective_import_kind: ClinicalImportKind;
   category: ClinicalImportPreviewCategory;
   original_category: ClinicalImportPreviewCategory;
   detail: Record<string, unknown>;
   original_detail: Record<string, unknown>;
   parse_confidence: number;
   parse_notes: string[];
+  source_profile_id: ClinicalImportSourceProfileId;
+  source_profile_label: string;
+  source_system_label: string;
+  source_profile_confidence: number;
+  parse_strategy_label: string;
+  source_mapping_notes: string[];
   normalization_confidence: number | null;
   normalization_notes: string[];
 }
@@ -59,9 +70,16 @@ interface QueueClinicalHistoryImportInput {
   source_label: string;
   source_reference?: string | null;
   import_note?: string | null;
+  source_profile_id?: ClinicalImportSourceProfileId | null;
   import_kind: ClinicalImportKind;
   detected_format: ClinicalImportDetectedFormat;
   items: ClinicalImportPreviewItem[];
+}
+
+interface ParseClinicalHistoryImportOptions {
+  sourceLabel?: string | null;
+  sourceReference?: string | null;
+  sourceProfileId?: ClinicalImportSourceProfileId | null;
 }
 
 const CATEGORY_DISPLAY_FIELD: Record<ClinicalImportPreviewCategory, string> = {
@@ -734,12 +752,19 @@ function buildPreviewItem(record: ClinicalImportRecord, index: number): Clinical
     source_row_label: record.sourceRowLabel,
     parse_method: record.parseMethod,
     import_kind: record.importKind,
+    effective_import_kind: record.importKind,
     category: record.category,
     original_category: record.category,
     detail,
     original_detail: safeStructuredClone(detail),
     parse_confidence: record.parseConfidence,
     parse_notes: [...record.parseNotes],
+    source_profile_id: 'generic_clinical_history',
+    source_profile_label: 'Generic Clinical History',
+    source_system_label: 'Generic import',
+    source_profile_confidence: 0.56,
+    parse_strategy_label: 'Generic clinical history mapping',
+    source_mapping_notes: [],
     normalization_confidence: record.normalizationConfidence,
     normalization_notes: [...record.normalizationNotes],
   };
@@ -817,13 +842,21 @@ function buildImportCandidate(item: ClinicalImportPreviewItem): ImportedMedicalF
     `import_meta: Source row ${item.source_row_label}`,
     `import_meta: Parse method ${item.parse_method.replace(/_/g, ' ')}`,
     `import_meta: Import kind ${item.import_kind.replace(/_/g, ' ')}`,
+    `import_meta: Effective import kind ${item.effective_import_kind.replace(/_/g, ' ')}`,
+    `import_meta: Source profile ${item.source_profile_label}`,
+    `import_meta: Source system ${item.source_system_label}`,
+    `import_meta: Parse strategy ${item.parse_strategy_label}`,
     `import_meta: Normalized category ${summarizeCategory(item.category)}`,
     formatConfidencePercent(item.parse_confidence)
       ? `import_meta: Parse confidence ${formatConfidencePercent(item.parse_confidence)}`
       : null,
+    formatConfidencePercent(item.source_profile_confidence)
+      ? `import_meta: Source profile confidence ${formatConfidencePercent(item.source_profile_confidence)}`
+      : null,
     formatConfidencePercent(item.normalization_confidence)
       ? `import_meta: Normalization confidence ${formatConfidencePercent(item.normalization_confidence)}`
       : null,
+    ...item.source_mapping_notes.map((note) => `import_meta: ${note}`),
     ...item.normalization_notes,
     ...correctionNotes.map((note) => `import_correction: ${note}`),
   ].filter(Boolean);
@@ -893,21 +926,34 @@ export function remapClinicalImportDetail(
 
 export async function parseClinicalHistoryImportInput(
   input: string,
-  importKind: ClinicalImportKind
+  importKind: ClinicalImportKind,
+  options: ParseClinicalHistoryImportOptions = {}
 ): Promise<ClinicalHistoryImportParseResult> {
   const trimmed = input.trim();
   if (!trimmed) {
     throw new Error('Paste a clinical history list before building a preview.');
   }
 
+  const sourceProfile = detectClinicalImportSourceProfile({
+    input: trimmed,
+    sourceLabel: options.sourceLabel ?? null,
+    sourceReference: options.sourceReference ?? null,
+    requestedProfileId: options.sourceProfileId ?? null,
+  });
+
+  const effectiveImportKind =
+    importKind === 'mixed_clinical' && sourceProfile.defaultImportKind
+      ? sourceProfile.defaultImportKind
+      : importKind;
+
   let detectedFormat: ClinicalImportDetectedFormat = 'line_list';
-  let records: ClinicalImportRecord[] | null = parseJsonRecords(trimmed, importKind);
+  let records: ClinicalImportRecord[] | null = parseJsonRecords(trimmed, effectiveImportKind);
   let skippedLines: string[] = [];
 
   if (records) {
     detectedFormat = 'json';
   } else {
-    const tsvParsed = parseDelimitedRecords(trimmed, '\t', importKind);
+    const tsvParsed = parseDelimitedRecords(trimmed, '\t', effectiveImportKind);
     if (tsvParsed) {
       detectedFormat = 'tsv';
       records = tsvParsed.records;
@@ -916,7 +962,7 @@ export async function parseClinicalHistoryImportInput(
   }
 
   if (!records) {
-    const csvParsed = parseDelimitedRecords(trimmed, ',', importKind);
+    const csvParsed = parseDelimitedRecords(trimmed, ',', effectiveImportKind);
     if (csvParsed) {
       detectedFormat = 'csv';
       records = csvParsed.records;
@@ -927,7 +973,7 @@ export async function parseClinicalHistoryImportInput(
   if (!records) {
     records = trimmed
       .split(/\r?\n/)
-      .map((line, index) => buildLineRecord(line, index, importKind))
+      .map((line, index) => buildLineRecord(line, index, effectiveImportKind))
       .filter((record): record is ClinicalImportRecord => Boolean(record));
     detectedFormat = 'line_list';
   }
@@ -941,7 +987,17 @@ export async function parseClinicalHistoryImportInput(
 
   return {
     detected_format: detectedFormat,
-    items: deduped.unique.map(buildPreviewItem),
+    items: deduped.unique.map((record, index) => ({
+      ...buildPreviewItem(record, index),
+      effective_import_kind: effectiveImportKind,
+      source_profile_id: sourceProfile.profileId,
+      source_profile_label: sourceProfile.label,
+      source_system_label: sourceProfile.sourceSystemLabel,
+      source_profile_confidence: sourceProfile.confidence,
+      parse_strategy_label: sourceProfile.parseStrategyLabel,
+      source_mapping_notes: sourceProfile.mappingNotes,
+      parse_notes: [...record.parseNotes, ...sourceProfile.mappingNotes],
+    })),
     skipped_lines: skippedLines,
   };
 }
@@ -962,7 +1018,21 @@ export async function queueClinicalHistoryImport(
     source_metadata: {
       importer: 'clinical_history_importer',
       import_kind: input.import_kind,
+      effective_import_kind: input.items[0]?.effective_import_kind ?? input.import_kind,
       detected_format: input.detected_format,
+      source_profile_id: input.items[0]?.source_profile_id ?? input.source_profile_id ?? null,
+      source_profile_label: input.items[0]?.source_profile_label ?? null,
+      source_system_label: input.items[0]?.source_system_label ?? null,
+      source_profile_confidence_avg:
+        input.items.length > 0
+          ? Number(
+              (
+                input.items.reduce((sum, item) => sum + item.source_profile_confidence, 0) /
+                input.items.length
+              ).toFixed(2)
+            )
+          : null,
+      parse_strategy_label: input.items[0]?.parse_strategy_label ?? null,
       imported_item_count: input.items.length,
       corrected_item_count: input.items.filter(hasImportCorrections).length,
       category_breakdown: getCategoryCounts(input.items),
