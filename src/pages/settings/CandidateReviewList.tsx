@@ -331,6 +331,9 @@ export default function CandidateReviewList({
         const importBatchCount = getMetadataText(sourceMetadata, 'imported_item_count');
         const correctedItemCount = getMetadataText(sourceMetadata, 'corrected_item_count');
         const importerLabel = getMetadataText(sourceMetadata, 'importer');
+        const templateName = getMetadataText(sourceMetadata, 'template_name');
+        const importFileName = getMetadataText(sourceMetadata, 'import_file_name');
+        const importFileFormat = getMetadataText(sourceMetadata, 'import_file_format');
         const sourceProfileLabel = getMetadataText(sourceMetadata, 'source_profile_label');
         const sourceSystemLabel = getMetadataText(sourceMetadata, 'source_system_label');
         const parseStrategyLabel = getMetadataText(sourceMetadata, 'parse_strategy_label');
@@ -779,6 +782,23 @@ export default function CandidateReviewList({
                               <div className="flex items-start gap-3">
                                 <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                                 <span>Importer: {formatSource(importerLabel)}</span>
+                              </div>
+                            )}
+
+                            {templateName && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Template: {templateName}</span>
+                              </div>
+                            )}
+
+                            {importFileName && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>
+                                  Import file: {importFileName}
+                                  {importFileFormat ? ` (${formatSource(importFileFormat)})` : ''}
+                                </span>
                               </div>
                             )}
 
