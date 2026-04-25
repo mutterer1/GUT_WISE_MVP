@@ -124,12 +124,16 @@ function parseStructuredCandidateNotes(notes: string | null | undefined): {
   generalNote: string | null;
   mergeNotes: string[];
   conflictNotes: string[];
+  importMetaNotes: string[];
+  importCorrectionNotes: string[];
 } {
   if (!notes) {
     return {
       generalNote: null,
       mergeNotes: [],
       conflictNotes: [],
+      importMetaNotes: [],
+      importCorrectionNotes: [],
     };
   }
 
@@ -141,6 +145,8 @@ function parseStructuredCandidateNotes(notes: string | null | undefined): {
   const generalLines: string[] = [];
   const mergeNotes: string[] = [];
   const conflictNotes: string[] = [];
+  const importMetaNotes: string[] = [];
+  const importCorrectionNotes: string[] = [];
 
   for (const line of lines) {
     if (line.startsWith('auto_merge:')) {
@@ -153,6 +159,16 @@ function parseStructuredCandidateNotes(notes: string | null | undefined): {
       continue;
     }
 
+    if (line.startsWith('import_meta:')) {
+      importMetaNotes.push(line.replace(/^import_meta:\s*/, '').trim());
+      continue;
+    }
+
+    if (line.startsWith('import_correction:')) {
+      importCorrectionNotes.push(line.replace(/^import_correction:\s*/, '').trim());
+      continue;
+    }
+
     generalLines.push(line);
   }
 
@@ -160,7 +176,31 @@ function parseStructuredCandidateNotes(notes: string | null | undefined): {
     generalNote: generalLines.length > 0 ? generalLines.join('\n') : null,
     mergeNotes,
     conflictNotes,
+    importMetaNotes,
+    importCorrectionNotes,
   };
+}
+
+function getSourceMetadataRecord(
+  intake: MedicalDocumentIntakeRow | null
+): Record<string, unknown> | null {
+  if (!intake?.source_metadata || typeof intake.source_metadata !== 'object' || Array.isArray(intake.source_metadata)) {
+    return null;
+  }
+
+  return intake.source_metadata as Record<string, unknown>;
+}
+
+function getMetadataText(
+  metadata: Record<string, unknown> | null,
+  key: string
+): string | null {
+  if (!metadata) return null;
+  const value = metadata[key];
+
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return null;
 }
 
 export default function CandidateReviewList({
@@ -267,6 +307,11 @@ export default function CandidateReviewList({
         const sourceIntake =
           reviewEvidence[0]?.intake ??
           (candidate.source_document_id ? intakeById.get(candidate.source_document_id) ?? null : null);
+        const sourceMetadata = getSourceMetadataRecord(sourceIntake);
+        const importDetectedFormat = getMetadataText(sourceMetadata, 'detected_format');
+        const importBatchCount = getMetadataText(sourceMetadata, 'imported_item_count');
+        const correctedItemCount = getMetadataText(sourceMetadata, 'corrected_item_count');
+        const importerLabel = getMetadataText(sourceMetadata, 'importer');
 
         return (
           <Card
@@ -307,10 +352,18 @@ export default function CandidateReviewList({
                       <span>{config.label}</span>
                       <span>{statusMeta.tone}</span>
                       <span>Source: {formatSource(candidate.extraction_source)}</span>
+                      {sourceIntake?.intake_source === 'external_import' && (
+                        <span className="text-[var(--color-accent-primary)]">Imported review batch</span>
+                      )}
                       <span>
                         Evidence: {candidate.evidence_count ?? 0}{' '}
                         {(candidate.evidence_count ?? 0) === 1 ? 'link' : 'links'}
                       </span>
+                      {structuredNotes.importCorrectionNotes.length > 0 && (
+                        <span className="text-[var(--color-accent-primary)]">
+                          Corrected before queueing
+                        </span>
+                      )}
                       {structuredNotes.conflictNotes.length > 0 && (
                         <span className="text-[rgba(245,190,80,0.98)]">Conflict flagged</span>
                       )}
@@ -379,8 +432,9 @@ export default function CandidateReviewList({
                               Evidence basis
                             </p>
                             <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
-                              Review the supporting document evidence first, then confirm whether
-                              the extracted detail is stated clearly enough to enter active context.
+                              {candidate.extraction_source === 'external_import'
+                                ? 'Review the imported row, suggested medication context, and linked evidence before promoting this detail into active context.'
+                                : 'Review the supporting document evidence first, then confirm whether the extracted detail is stated clearly enough to enter active context.'}
                             </p>
                           </div>
                         </div>
@@ -526,6 +580,47 @@ export default function CandidateReviewList({
 
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
                       <div>
+                        {(structuredNotes.importMetaNotes.length > 0 ||
+                          structuredNotes.importCorrectionNotes.length > 0) && (
+                          <div className="mb-5 space-y-3">
+                            {structuredNotes.importMetaNotes.length > 0 && (
+                              <div className="rounded-[20px] border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+                                <div className="flex items-start gap-3">
+                                  <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                  <div>
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                                      Import Metadata
+                                    </p>
+                                    <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-primary)]">
+                                      {structuredNotes.importMetaNotes.map((note) => (
+                                        <p key={`import-meta-${note}`}>{note}</p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {structuredNotes.importCorrectionNotes.length > 0 && (
+                              <div className="rounded-[20px] border border-[rgba(133,93,255,0.18)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+                                <div className="flex items-start gap-3">
+                                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-secondary)]" />
+                                  <div>
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+                                      Import Corrections
+                                    </p>
+                                    <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-primary)]">
+                                      {structuredNotes.importCorrectionNotes.map((note) => (
+                                        <p key={`import-correction-${note}`}>{note}</p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {(structuredNotes.mergeNotes.length > 0 ||
                           structuredNotes.conflictNotes.length > 0) && (
                           <div className="mb-5 space-y-3">
@@ -644,6 +739,34 @@ export default function CandidateReviewList({
                                 Extraction confidence: {formatConfidence(candidate.extraction_confidence)}
                               </span>
                             </div>
+
+                            {importDetectedFormat && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Import format: {formatSource(importDetectedFormat)}</span>
+                              </div>
+                            )}
+
+                            {importerLabel && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Importer: {formatSource(importerLabel)}</span>
+                              </div>
+                            )}
+
+                            {importBatchCount && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Batch size: {importBatchCount} items</span>
+                              </div>
+                            )}
+
+                            {correctedItemCount && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Corrected before queueing: {correctedItemCount} items</span>
+                              </div>
+                            )}
 
                             <div className="flex items-start gap-3">
                               <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
