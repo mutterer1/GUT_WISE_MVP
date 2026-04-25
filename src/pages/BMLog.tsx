@@ -7,12 +7,17 @@ import {
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
+import LogFollowUpActions from '../components/LogFollowUpActions';
 import LogFormActions from '../components/LogFormActions';
 import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
+import {
+  createLogFollowUpState,
+  type LogFollowUpAction,
+} from '../services/logFollowUpService';
 import { formatDateTime } from '../utils/dateFormatters';
 import { BRISTOL_SCALE } from '../constants/domain';
 
@@ -93,6 +98,7 @@ function hasMeaningfulBmDraft(formData: BMFormData): boolean {
 
 export default function BMLog() {
   const [showDetails, setShowDetails] = useState(false);
+  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
 
   const {
     formData,
@@ -135,6 +141,7 @@ export default function BMLog() {
   const handleReset = () => {
     resetForm();
     setShowDetails(false);
+    setPostSaveActions([]);
   };
 
   const handleUseRecent = (recentId: string) => {
@@ -145,6 +152,35 @@ export default function BMLog() {
 
     applyRecent(entry);
     setShowDetails(hasNonDefaultDetails(entry.data));
+    setPostSaveActions([]);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    const saveResult = await handleSubmit(e);
+
+    if (!saveResult || saveResult.mode !== 'create') {
+      setPostSaveActions([]);
+      return;
+    }
+
+    const context = {
+      sourceType: 'bm' as const,
+      sourceTitle: 'BM saved',
+      sourceSummary: `Bristol Type ${saveResult.formData.bristol_type} | ${saveResult.formData.amount}`,
+      loggedAt: saveResult.formData.logged_at,
+    };
+
+    setPostSaveActions([
+      {
+        id: 'bm-follow-up-symptoms',
+        label: 'Log symptoms',
+        description: 'Capture cramping, urgency, or lingering effects tied to this bowel event.',
+        to: '/symptoms-log',
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+        }),
+      },
+    ]);
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
@@ -187,13 +223,24 @@ export default function BMLog() {
                 onDiscardDraft={() => {
                   discardStoredDraft();
                   setShowDetails(false);
+                  setPostSaveActions([]);
                 }}
                 onUseRecent={handleUseRecent}
               />
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {!editingId && postSaveActions.length > 0 ? (
+            <div className="mb-6">
+              <LogFollowUpActions
+                summary="This bowel event is saved. If symptoms belong to the same episode, log them now while the timing is still precise."
+                actions={postSaveActions}
+                onDismiss={() => setPostSaveActions([])}
+              />
+            </div>
+          ) : null}
+
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
