@@ -57,6 +57,19 @@ function formatConfidence(value: number | null | undefined): string {
   return `${Math.round(value * 100)}%`;
 }
 
+function hasPreviewCorrections(item: MedicationImportPreviewItem): boolean {
+  return (
+    item.medication_name !== item.original_medication_name ||
+    item.dosage !== item.original_dosage ||
+    item.frequency !== item.original_frequency ||
+    item.prescribing_reason !== item.original_prescribing_reason ||
+    item.route !== item.original_route ||
+    item.start_date !== item.original_start_date ||
+    item.end_date !== item.original_end_date ||
+    item.is_current !== item.original_is_current
+  );
+}
+
 function MedicationPreviewCard({
   item,
   onChange,
@@ -84,11 +97,22 @@ function MedicationPreviewCard({
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              {item.source_row_label}
+            </span>
+            <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+              {item.parse_method.replace(/_/g, ' ')}
+            </span>
+            <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
               Parse {formatConfidence(item.parse_confidence)}
             </span>
             <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
               Enrichment {formatConfidence(item.enrichment_confidence)}
             </span>
+            {hasPreviewCorrections(item) && (
+              <span className="inline-flex rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.1)] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                Corrected before queue
+              </span>
+            )}
           </div>
         </div>
 
@@ -215,6 +239,56 @@ function MedicationPreviewCard({
           </div>
         </div>
 
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {item.suggested_generic_name && item.suggested_generic_name !== item.medication_name && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                onChange(item.id, {
+                  medication_name: item.suggested_generic_name ?? item.medication_name,
+                })
+              }
+            >
+              <Sparkles className="h-4 w-4" />
+              Use Suggested Generic
+            </Button>
+          )}
+
+          {item.suggested_route && item.suggested_route !== item.route && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onChange(item.id, { route: item.suggested_route ?? item.route })}
+            >
+              <ArrowRight className="h-4 w-4" />
+              Use Suggested Route
+            </Button>
+          )}
+
+          {hasPreviewCorrections(item) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                onChange(item.id, {
+                  medication_name: item.original_medication_name,
+                  dosage: item.original_dosage,
+                  frequency: item.original_frequency,
+                  prescribing_reason: item.original_prescribing_reason,
+                  route: item.original_route,
+                  start_date: item.original_start_date,
+                  end_date: item.original_end_date,
+                  is_current: item.original_is_current,
+                })
+              }
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Restore Parsed Values
+            </Button>
+          )}
+        </div>
+
         {(item.parse_notes.length > 0 || item.enrichment_notes) && (
           <div className="rounded-[22px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
             <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
@@ -292,6 +366,9 @@ export default function MedicationListImport() {
       current.map((item) => (item.id === id ? { ...item, ...patch } : item))
     );
   };
+
+  const correctedCount = previewItems.filter(hasPreviewCorrections).length;
+  const enrichedCount = previewItems.filter((item) => item.enrichment_status === 'enriched').length;
 
   return (
     <SettingsPageLayout
@@ -497,6 +574,22 @@ export default function MedicationListImport() {
                       </p>
                       <p className="mt-2 text-2xl font-semibold text-[var(--color-text-primary)]">
                         {parseResult.skipped_lines.length}
+                      </p>
+                    </div>
+                    <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                        Corrected items
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-[var(--color-text-primary)]">
+                        {correctedCount}
+                      </p>
+                    </div>
+                    <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                        Enriched matches
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-[var(--color-text-primary)]">
+                        {enrichedCount}
                       </p>
                     </div>
                   </div>
