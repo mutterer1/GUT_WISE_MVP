@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Activity, Clock, Moon } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
+import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -19,7 +21,12 @@ interface SleepFormData {
   duration_minutes?: number;
 }
 
+function hasSleepDetailContext(formData: SleepFormData): boolean {
+  return formData.interruptions > 0 || formData.felt_rested || formData.notes.trim().length > 0;
+}
+
 export default function SleepLog() {
+  const [showRecoveryDetails, setShowRecoveryDetails] = useState(false);
   const {
     formData,
     setFormData,
@@ -68,6 +75,14 @@ export default function SleepLog() {
     }),
   });
 
+  useEffect(() => {
+    if (hasSleepDetailContext(formData)) {
+      setShowRecoveryDetails(true);
+    } else if (!editingId) {
+      setShowRecoveryDetails(false);
+    }
+  }, [editingId, formData]);
+
   const calculateDuration = () => {
     if (formData.sleep_start && formData.sleep_end) {
       const start = new Date(formData.sleep_start);
@@ -110,10 +125,16 @@ export default function SleepLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+          <LogEditingBanner
+            isEditing={Boolean(editingId)}
+            onCancel={() => {
+              resetForm();
+              setShowRecoveryDetails(false);
+            }}
+          />
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="sleep_start" className="field-label mb-2 block">
                   <Moon className="mr-1 inline h-4 w-4" />
@@ -158,7 +179,7 @@ export default function SleepLog() {
               </p>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <label className="field-label mb-2 block">
                 Sleep Quality:{' '}
                 <span className="font-medium text-[var(--color-text-primary)]">
@@ -182,71 +203,78 @@ export default function SleepLog() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-                <label htmlFor="interruptions" className="field-label mb-2 block">
-                  Number of Interruptions
-                </label>
-                <input
-                  type="number"
-                  id="interruptions"
-                  value={formData.interruptions}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      interruptions: parseInt(e.target.value, 10) || 0,
-                    })
-                  }
-                  className="input-base w-full"
-                  min="0"
-                  required
-                />
-              </div>
-
-              <div className="surface-panel-quiet flex items-center justify-between rounded-[28px] p-4 sm:p-5">
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                    Felt Rested Upon Waking
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                    Use your subjective recovery read, not just hours slept.
-                  </p>
+            <LogOptionalSection
+              title="Recovery details"
+              isOpen={showRecoveryDetails}
+              onToggle={() => setShowRecoveryDetails(!showRecoveryDetails)}
+              summary="Interruptions, felt-rested, and notes stay available when the entry needs more than the core sleep window."
+            >
+              <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+                <div className="surface-panel-soft rounded-[24px] p-4">
+                  <label htmlFor="interruptions" className="field-label mb-2 block">
+                    Number of Interruptions
+                  </label>
+                  <input
+                    type="number"
+                    id="interruptions"
+                    value={formData.interruptions}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        interruptions: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                    className="input-base w-full"
+                    min="0"
+                    required
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({ ...formData, felt_rested: !formData.felt_rested })
-                  }
-                  className={[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
-                    formData.felt_rested ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
-                  ].join(' ')}
-                >
-                  <span
-                    className={[
-                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-                      formData.felt_rested ? 'translate-x-6' : 'translate-x-1',
-                    ].join(' ')}
-                  />
-                </button>
-              </div>
-            </div>
+                <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                      Felt Rested Upon Waking
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                      Use your subjective recovery read, not just hours slept.
+                    </p>
+                  </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <label htmlFor="notes" className="field-label mb-2 block">
-                Notes
-                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="input-base min-h-[112px] w-full resize-none"
-                rows={4}
-                placeholder="Dreams, sleep environment, disturbances..."
-              />
-            </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, felt_rested: !formData.felt_rested })
+                    }
+                    className={[
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+                      formData.felt_rested ? 'bg-[var(--color-accent-primary)]' : 'bg-white/12',
+                    ].join(' ')}
+                  >
+                    <span
+                      className={[
+                        'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                        formData.felt_rested ? 'translate-x-6' : 'translate-x-1',
+                      ].join(' ')}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="input-base min-h-[112px] w-full resize-none"
+                  rows={4}
+                  placeholder="Dreams, sleep environment, disturbances..."
+                />
+              </div>
+            </LogOptionalSection>
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
