@@ -1,11 +1,23 @@
+import { useState } from 'react';
 import { Activity, Clock, Frown, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 
 interface StressFormData {
   logged_at: string;
@@ -53,6 +65,8 @@ const toggleItem = (array: string[], item: string) =>
   array.includes(item) ? array.filter((entry) => entry !== item) : [...array, item];
 
 export default function StressLog() {
+  const [historyQuery, setHistoryQuery] = useState('');
+
   const {
     formData,
     setFormData,
@@ -97,6 +111,21 @@ export default function StressLog() {
       notes: data.notes,
     }),
   });
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.stress_level,
+        log.triggers,
+        log.coping_methods,
+        log.physical_symptoms,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -316,41 +345,43 @@ export default function StressLog() {
               icon={<Frown className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search stress, triggers, coping, notes..."
+              />
+
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                  className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
+                        {formatLogHistoryTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         Stress Level: {log.stress_level}/10
                       </div>
                     </div>
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as StressFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <LogHistoryActions
+                      onEdit={() => handleEdit(log as StressFormData & { id: string })}
+                      onDelete={() => handleDelete(log.id!)}
+                    />
                   </div>
 
                   {log.triggers && log.triggers.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Triggers
                       </div>
@@ -368,7 +399,7 @@ export default function StressLog() {
                   )}
 
                   {log.coping_methods && log.coping_methods.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Coping Methods
                       </div>
@@ -386,7 +417,7 @@ export default function StressLog() {
                   )}
 
                   {log.physical_symptoms && log.physical_symptoms.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Physical Symptoms
                       </div>
@@ -408,8 +439,12 @@ export default function StressLog() {
                       {log.notes}
                     </div>
                   )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
