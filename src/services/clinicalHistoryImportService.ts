@@ -71,6 +71,9 @@ interface QueueClinicalHistoryImportInput {
   source_reference?: string | null;
   import_note?: string | null;
   source_profile_id?: ClinicalImportSourceProfileId | null;
+  template_name?: string | null;
+  import_file_name?: string | null;
+  import_file_format?: string | null;
   import_kind: ClinicalImportKind;
   detected_format: ClinicalImportDetectedFormat;
   items: ClinicalImportPreviewItem[];
@@ -1020,6 +1023,9 @@ export async function queueClinicalHistoryImport(
       import_kind: input.import_kind,
       effective_import_kind: input.items[0]?.effective_import_kind ?? input.import_kind,
       detected_format: input.detected_format,
+      template_name: input.template_name ?? null,
+      import_file_name: input.import_file_name ?? null,
+      import_file_format: input.import_file_format ?? null,
       source_profile_id: input.items[0]?.source_profile_id ?? input.source_profile_id ?? null,
       source_profile_label: input.items[0]?.source_profile_label ?? null,
       source_system_label: input.items[0]?.source_system_label ?? null,
