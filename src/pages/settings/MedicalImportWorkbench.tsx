@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CheckCircle2,
   FileJson2,
+  FileText,
   Layers3,
   Pill,
   Sparkles,
@@ -143,9 +144,9 @@ export default function MedicalImportWorkbench() {
                 Route future external sources through one review-first intake path
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
-                This workbench is the reusable staging layer for medication lists, visit summaries,
-                lab summaries, and future integrations. Imported data becomes reviewable candidates,
-                not active context, until you confirm it.
+                This workbench is the reusable staging layer for medication lists, clinical
+                history imports, visit summaries, lab summaries, and future integrations. Imported
+                data becomes reviewable candidates, not active context, until you confirm it.
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -184,31 +185,65 @@ export default function MedicalImportWorkbench() {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.16)] text-[var(--color-accent-primary)]">
-                      <Pill className="h-5 w-5" />
+              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-[24px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+                  <div className="flex h-full flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(84,160,255,0.16)] text-[var(--color-accent-primary)]">
+                        <Pill className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                          Medication importer
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                          Best for portal or pharmacy medication lists with dose, route, and
+                          frequency details.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                        First real importer is now medication-focused
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
-                        Use the medication list importer for pasted portal or pharmacy lists. Keep
-                        this workbench for raw batch testing and future source-specific importers.
-                      </p>
+
+                    <div className="mt-auto">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate('/settings/import-medication-list')}
+                      >
+                        <Pill className="h-4 w-4" />
+                        Open Medication Importer
+                      </Button>
                     </div>
                   </div>
+                </div>
 
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigate('/settings/import-medication-list')}
-                  >
-                    <Pill className="h-4 w-4" />
-                    Open Medication Importer
-                  </Button>
+                <div className="rounded-[24px] border border-[rgba(133,93,255,0.16)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+                  <div className="flex h-full flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(133,93,255,0.16)] text-[var(--color-accent-secondary)]">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                          Clinical history importer
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+                          Best for problem lists, allergies, procedures, diet guidance, and red-flag
+                          history that need category-aware normalization before review.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigate('/settings/import-clinical-history')}
+                      >
+                        <FileText className="h-4 w-4" />
+                        Open Clinical History Importer
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -223,8 +258,9 @@ export default function MedicalImportWorkbench() {
                     Framework boundary
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                    This pass creates a generic import path and a manual workbench for testing.
-                    The next pass can plug a real external importer into the same queueing service.
+                    This workbench remains the raw batch test surface even as source-specific
+                    importers grow around it. Use it when you want to test direct JSON candidate
+                    payloads instead of one of the guided import flows.
                   </p>
                 </div>
               </div>
