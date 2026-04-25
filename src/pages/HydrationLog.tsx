@@ -7,6 +7,7 @@ import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
@@ -16,6 +17,7 @@ import {
   readLogFollowUpState,
 } from '../services/logFollowUpService';
 import { formatDateTime } from '../utils/dateFormatters';
+import { getHydrationLogQualityHints } from '../utils/logQualityHints';
 import {
   type HydrationUnit,
   mlToOz,
@@ -296,6 +298,9 @@ export default function HydrationLog() {
       ? `${entry.data.caffeine_mg} mg caffeine | ${entry.data.beverage_category}`
       : `caffeine-free | ${entry.data.beverage_category}`,
   }));
+  const qualityHints = getHydrationLogQualityHints(formData, {
+    detailsOpen: showHydrationDetails,
+  });
 
   return (
     <LogPageShell
@@ -587,6 +592,11 @@ export default function HydrationLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowHydrationDetails(true)}
+            />
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
