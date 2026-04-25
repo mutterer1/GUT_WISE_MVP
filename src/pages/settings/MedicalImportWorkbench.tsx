@@ -198,7 +198,7 @@ export default function MedicalImportWorkbench() {
                         </p>
                         <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
                           Best for portal or pharmacy medication lists with dose, route, and
-                          frequency details.
+                          frequency details, plus saved source templates and direct file upload.
                         </p>
                       </div>
                     </div>
@@ -228,7 +228,8 @@ export default function MedicalImportWorkbench() {
                         </p>
                         <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
                           Best for problem lists, allergies, procedures, diet guidance, and red-flag
-                          history that need category-aware normalization before review.
+                          history that need category-aware normalization, reusable source presets,
+                          and file-backed preview before review.
                         </p>
                       </div>
                     </div>
