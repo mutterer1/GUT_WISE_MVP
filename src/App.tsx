@@ -35,6 +35,7 @@ import PreferencesSettings from './pages/settings/PreferencesSettings';
 import MedicalContextSettings from './pages/settings/MedicalContextSettings';
 import MedicalDocumentIntake from './pages/settings/MedicalDocumentIntake';
 import MedicalImportWorkbench from './pages/settings/MedicalImportWorkbench';
+import MedicationListImport from './pages/settings/MedicationListImport';
 import ReferenceReview from './pages/settings/ReferenceReview';
 
 function AppContent() {
@@ -75,6 +76,7 @@ function AppContent() {
           <Route path="/settings/medical-context" element={<MedicalContextSettings />} />
           <Route path="/settings/document-intake" element={<MedicalDocumentIntake />} />
           <Route path="/settings/import-workbench" element={<MedicalImportWorkbench />} />
+          <Route path="/settings/import-medication-list" element={<MedicationListImport />} />
           <Route path="/settings/reference-review" element={<ReferenceReview />} />
           <Route path="/account" element={<Account />} />
         </Route>
