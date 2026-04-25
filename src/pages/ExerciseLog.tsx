@@ -1,11 +1,23 @@
+import { useState } from 'react';
 import { Activity, Clock, Dumbbell, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 
 interface ExerciseFormData {
   logged_at: string;
@@ -41,6 +53,8 @@ const intensityLabels: Record<number, string> = {
 };
 
 export default function ExerciseLog() {
+  const [historyQuery, setHistoryQuery] = useState('');
+
   const {
     formData,
     setFormData,
@@ -88,6 +102,23 @@ export default function ExerciseLog() {
       notes: data.notes || null,
     }),
   });
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.exercise_type,
+        log.duration_minutes,
+        log.intensity_level,
+        intensityLabels[log.intensity_level],
+        log.perceived_exertion,
+        log.indoor_outdoor,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -369,40 +400,42 @@ export default function ExerciseLog() {
               icon={<Dumbbell className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search exercise, intensity, location, notes..."
+              />
+
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                  className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
+                        {formatLogHistoryTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         {log.exercise_type} · {log.duration_minutes}min · Intensity {log.intensity_level}/5
                       </div>
                     </div>
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as ExerciseFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <LogHistoryActions
+                      onEdit={() => handleEdit(log as ExerciseFormData & { id: string })}
+                      onDelete={() => handleDelete(log.id!)}
+                    />
                   </div>
 
-                  <div className="mb-4 flex flex-wrap gap-2">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     <span className="inline-flex items-center rounded-full border border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.10)] px-2.5 py-1 text-xs font-medium text-[var(--color-accent-primary)]">
                       {intensityLabels[log.intensity_level] || `Intensity ${log.intensity_level}`}
                     </span>
@@ -425,8 +458,12 @@ export default function ExerciseLog() {
                       {log.notes}
                     </div>
                   )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
