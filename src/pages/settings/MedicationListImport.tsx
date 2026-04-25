@@ -19,6 +19,10 @@ import {
   type MedicationImportPreviewItem,
   type MedicationListImportParseResult,
 } from '../../services/medicationListImportService';
+import {
+  getMedicationImportSourceOptions,
+  type MedicationImportSourceProfileId,
+} from '../../services/importSourceProfileService';
 import type { MedicalImportBatchResult } from '../../types/medicalContext';
 
 const fieldClassName =
@@ -30,6 +34,15 @@ const EXAMPLE_INPUT = `Medication,Strength,Frequency,Reason,Status
 Omeprazole,20 mg,once daily,acid reflux,current
 Loperamide,2 mg,as needed,diarrhea,current
 Magnesium glycinate,200 mg,nightly,supplement,current`;
+
+const SOURCE_PROFILE_OPTIONS = [
+  {
+    value: '',
+    label: 'Auto-detect from source and content',
+    hint: 'Use source label, reference, headers, and pasted content to infer the best medication import profile.',
+  },
+  ...getMedicationImportSourceOptions(),
+];
 
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   return (
@@ -235,7 +248,24 @@ function MedicationPreviewCard({
                   ? item.suggested_common_dose_units.join(', ')
                   : 'Unknown'}
               </p>
+              <p>Source profile: {item.source_profile_label}</p>
+              <p>Source system: {item.source_system_label}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-[22px] border border-[rgba(133,93,255,0.14)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+            Import source mapping
+          </p>
+          <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+            <p>Profile: {item.source_profile_label}</p>
+            <p>Source system: {item.source_system_label}</p>
+            <p>Strategy: {item.parse_strategy_label}</p>
+            <p>Profile confidence: {formatConfidence(item.source_profile_confidence)}</p>
+            {item.source_mapping_notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
           </div>
         </div>
 
@@ -312,6 +342,7 @@ export default function MedicationListImport() {
   const navigate = useNavigate();
   const [sourceLabel, setSourceLabel] = useState('Pasted medication list');
   const [sourceReference, setSourceReference] = useState('');
+  const [sourceProfileId, setSourceProfileId] = useState<MedicationImportSourceProfileId | ''>('');
   const [importNote, setImportNote] = useState('');
   const [inputText, setInputText] = useState(EXAMPLE_INPUT);
   const [parsing, setParsing] = useState(false);
@@ -327,7 +358,11 @@ export default function MedicationListImport() {
     setQueueResult(null);
 
     try {
-      const result = await parseMedicationListInput(inputText);
+      const result = await parseMedicationListInput(inputText, {
+        sourceLabel,
+        sourceReference,
+        sourceProfileId: sourceProfileId || null,
+      });
       setParseResult(result);
       setPreviewItems(result.items);
     } catch (err) {
@@ -350,6 +385,7 @@ export default function MedicationListImport() {
         source_label: sourceLabel,
         source_reference: sourceReference || null,
         import_note: importNote || null,
+        source_profile_id: sourceProfileId || null,
         items: previewItems,
         detected_format: parseResult.detected_format,
       });
@@ -369,6 +405,9 @@ export default function MedicationListImport() {
 
   const correctedCount = previewItems.filter(hasPreviewCorrections).length;
   const enrichedCount = previewItems.filter((item) => item.enrichment_status === 'enriched').length;
+  const sourceProfileLabel = previewItems[0]?.source_profile_label ?? 'Not detected yet';
+  const sourceSystemLabel = previewItems[0]?.source_system_label ?? 'Unknown';
+  const sourceStrategyLabel = previewItems[0]?.parse_strategy_label ?? 'Not available';
 
   return (
     <SettingsPageLayout
@@ -451,7 +490,7 @@ export default function MedicationListImport() {
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
           <Card variant="elevated" className="rounded-[30px]">
             <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-3">
                 <div>
                   <label className={labelClassName}>Source Label</label>
                   <input
@@ -472,6 +511,27 @@ export default function MedicationListImport() {
                     className={fieldClassName}
                     placeholder="Optional export id or visit date"
                   />
+                </div>
+
+                <div>
+                  <label className={labelClassName}>Source Profile</label>
+                  <select
+                    value={sourceProfileId}
+                    onChange={(e) =>
+                      setSourceProfileId(e.target.value as MedicationImportSourceProfileId | '')
+                    }
+                    className={fieldClassName}
+                  >
+                    {SOURCE_PROFILE_OPTIONS.map((option) => (
+                      <option key={option.value || 'auto'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                    {SOURCE_PROFILE_OPTIONS.find((option) => option.value === sourceProfileId)?.hint ??
+                      SOURCE_PROFILE_OPTIONS[0].hint}
+                  </p>
                 </div>
               </div>
 
@@ -591,6 +651,17 @@ export default function MedicationListImport() {
                       <p className="mt-2 text-2xl font-semibold text-[var(--color-text-primary)]">
                         {enrichedCount}
                       </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[20px] border border-[rgba(133,93,255,0.14)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+                      Source-aware mapping
+                    </p>
+                    <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <p>Profile: {sourceProfileLabel}</p>
+                      <p>Source system: {sourceSystemLabel}</p>
+                      <p>Strategy: {sourceStrategyLabel}</p>
                     </div>
                   </div>
 
