@@ -19,6 +19,7 @@ interface UseLogCrudConfig<T extends { logged_at: string; id?: string }> {
   onAfterCreate?: (params: { entryId: string; userId: string; formData: T }) => Promise<void>;
   onAfterUpdate?: (params: { entryId: string; userId: string; formData: T }) => Promise<void>;
   mapHistoryToForm?: (log: T & { id: string }) => T;
+  mapTemplateToForm?: (log: T & { id: string }, defaultFormData: T) => T;
   historyLimit?: number;
 }
 
@@ -37,6 +38,7 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   dismissToast: () => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   handleEdit: (log: T & { id: string }) => void;
+  handleUseAsTemplate: (log: T & { id: string }) => void;
   handleDelete: (id: string) => Promise<void>;
   resetForm: () => void;
   fetchHistory: () => Promise<void>;
@@ -76,6 +78,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     onAfterCreate,
     onAfterUpdate,
     mapHistoryToForm,
+    mapTemplateToForm,
     historyLimit = 50,
   } = config;
 
@@ -242,6 +245,34 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     });
   };
 
+  const handleUseAsTemplate = (log: T & { id: string }) => {
+    const defaultFormData = createDefaultFormData();
+    const { id: _id, ...rest } = log;
+    const mappedLog = mapTemplateToForm
+      ? mapTemplateToForm(log, defaultFormData)
+      : mapHistoryToForm
+        ? mapHistoryToForm(log)
+        : (rest as T);
+
+    const templateData = {
+      ...mappedLog,
+      logged_at: defaultFormData.logged_at,
+    } as T;
+
+    delete (templateData as { id?: string }).id;
+
+    setFormData(templateData);
+    setEditingId(null);
+    setShowHistory(false);
+    showSuccess('Template loaded. Review and save as a new entry.');
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth',
+    });
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this entry?')) {
       return;
@@ -297,6 +328,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
     fetchHistory,
