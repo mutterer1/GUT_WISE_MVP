@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Activity, Clock, Pill } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
+import LogFollowUpActions from '../components/LogFollowUpActions';
+import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
@@ -10,6 +13,12 @@ import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
 import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
+import {
+  createLogFollowUpState,
+  mergeLogFollowUpPrefill,
+  readLogFollowUpState,
+  type LogFollowUpAction,
+} from '../services/logFollowUpService';
 import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
 import { type MedicationReferenceSuggestion } from '../services/referenceSearchService';
 import { formatDateTime } from '../utils/dateFormatters';
@@ -107,8 +116,11 @@ function hasMedicationResponseDetails(formData: MedicationFormData): boolean {
 }
 
 export default function MedicationLog() {
+  const location = useLocation();
   const [showContextDetails, setShowContextDetails] = useState(false);
   const [showResponseDetails, setShowResponseDetails] = useState(false);
+  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
+  const followUp = readLogFollowUpState<MedicationFormData>(location.state);
 
   const {
     formData,
@@ -219,6 +231,16 @@ export default function MedicationLog() {
     }
   }, [editingId, formData]);
 
+  useEffect(() => {
+    if (!followUp || editingId) {
+      return;
+    }
+
+    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
+    setShowContextDetails(true);
+    setShowResponseDetails(false);
+  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
+
   const selectMedicationSuggestion = (suggestion: MedicationReferenceSuggestion) => {
     setFormData({
       ...formData,
@@ -253,6 +275,43 @@ export default function MedicationLog() {
     applyRecent(entry);
     setShowContextDetails(hasMedicationContextDetails(entry.data));
     setShowResponseDetails(hasMedicationResponseDetails(entry.data));
+    setPostSaveActions([]);
+  };
+
+  const handleReset = () => {
+    resetForm();
+    setShowContextDetails(false);
+    setShowResponseDetails(false);
+    setPostSaveActions([]);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    const saveResult = await handleSubmit(e);
+
+    if (!saveResult || saveResult.mode !== 'create') {
+      setPostSaveActions([]);
+      return;
+    }
+
+    const context = {
+      sourceType: 'medication' as const,
+      sourceTitle: 'Medication saved',
+      sourceSummary: `${saveResult.formData.medication_name} | ${saveResult.formData.dosage}`,
+      loggedAt: saveResult.formData.logged_at,
+    };
+
+    setPostSaveActions([
+      {
+        id: 'medication-follow-up-symptoms',
+        label: 'Log symptom response',
+        description: 'Capture relief or side effects that belong to this dose window.',
+        to: '/symptoms-log',
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+          triggers: ['Medication'],
+        }),
+      },
+    ]);
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
@@ -289,11 +348,7 @@ export default function MedicationLog() {
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner
             isEditing={Boolean(editingId)}
-            onCancel={() => {
-              resetForm();
-              setShowContextDetails(false);
-              setShowResponseDetails(false);
-            }}
+            onCancel={handleReset}
           />
 
           {!editingId ? (
@@ -303,13 +358,32 @@ export default function MedicationLog() {
                 draftUpdatedAt={draftUpdatedAt}
                 draftLabel="Medication draft restored from this device."
                 recentItems={recentRecallItems}
-                onDiscardDraft={discardStoredDraft}
+                onDiscardDraft={() => {
+                  discardStoredDraft();
+                  setPostSaveActions([]);
+                }}
                 onUseRecent={handleUseRecent}
               />
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {!editingId && followUp ? (
+            <div className="mb-6">
+              <LogFollowUpNotice followUp={followUp} />
+            </div>
+          ) : null}
+
+          {!editingId && postSaveActions.length > 0 ? (
+            <div className="mb-6">
+              <LogFollowUpActions
+                summary="This dose is saved. If you want to capture how it landed, add the symptom response while the timing is still accurate."
+                actions={postSaveActions}
+                onDismiss={() => setPostSaveActions([])}
+              />
+            </div>
+          ) : null}
+
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
@@ -603,7 +677,7 @@ export default function MedicationLog() {
               </div>
             </LogOptionalSection>
 
-            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
+            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={handleReset} />
           </form>
         </Card>
       ) : (
