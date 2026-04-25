@@ -1,12 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock, Droplet, Heart, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 import { useAuth } from '../contexts/AuthContext';
 import { DEV_CYCLE_LOG_ACCESS } from '../lib/devFlags';
 
@@ -117,6 +128,7 @@ const menstrualConfig = {
 
 export default function MenstrualCycleLog() {
   const { profile } = useAuth();
+  const [historyQuery, setHistoryQuery] = useState('');
 
   const {
     formData,
@@ -194,6 +206,25 @@ export default function MenstrualCycleLog() {
         : [...formData.ovulation_indicators, indicator],
     });
   };
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.cycle_start_date,
+        log.cycle_day,
+        log.flow_intensity,
+        log.color,
+        log.pain_level,
+        log.symptoms,
+        log.mood_notes,
+        log.ovulation_indicators,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -644,40 +675,42 @@ export default function MenstrualCycleLog() {
               icon={<Heart className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search cycle day, flow, symptoms, notes..."
+              />
+
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                  className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
+                        {formatLogHistoryTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         Day {log.cycle_day} · {log.flow_intensity} flow
                       </div>
                     </div>
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as MenstrualFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <LogHistoryActions
+                      onEdit={() => handleEdit(log as MenstrualFormData & { id: string })}
+                      onDelete={() => handleDelete(log.id!)}
+                    />
                   </div>
 
-                  <div className="mb-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+                  <div className="mb-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                     <MetricChip label="Color" value={log.color} />
                     <MetricChip label="Pain" value={`${log.pain_level}/10`} />
                     <MetricChip label="Sleep" value={`${log.sleep_quality}/10`} />
@@ -685,7 +718,7 @@ export default function MenstrualCycleLog() {
                   </div>
 
                   {log.symptoms && log.symptoms.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Symptoms
                       </div>
@@ -703,7 +736,7 @@ export default function MenstrualCycleLog() {
                   )}
 
                   {log.mood_notes && (
-                    <div className="mb-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+                    <div className="mb-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm text-[var(--color-text-secondary)]">
                       <span className="font-medium text-[var(--color-text-primary)]">Mood:</span>{' '}
                       {log.mood_notes}
                     </div>
@@ -714,8 +747,12 @@ export default function MenstrualCycleLog() {
                       {log.notes}
                     </div>
                   )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
