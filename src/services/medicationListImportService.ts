@@ -11,6 +11,8 @@ export type MedicationImportDetectedFormat = 'json' | 'csv' | 'tsv' | 'line_list
 export interface MedicationImportPreviewItem {
   id: string;
   source_line: string;
+  source_row_label: string;
+  parse_method: 'structured_json' | 'structured_columns' | 'line_heuristic';
   medication_name: string;
   dosage: string;
   frequency: string;
@@ -21,6 +23,14 @@ export interface MedicationImportPreviewItem {
   is_current: boolean;
   parse_confidence: number;
   parse_notes: string[];
+  original_medication_name: string;
+  original_dosage: string;
+  original_frequency: string;
+  original_prescribing_reason: string;
+  original_route: string;
+  original_start_date: string;
+  original_end_date: string;
+  original_is_current: boolean;
   enrichment_status: 'not_started' | 'enriched' | 'fallback' | 'failed';
   enrichment_confidence: number | null;
   suggested_generic_name: string | null;
@@ -45,6 +55,8 @@ export interface MedicationListImportParseResult {
 
 interface MedicationImportRecord {
   sourceLine: string;
+  sourceRowLabel: string;
+  parseMethod: 'structured_json' | 'structured_columns' | 'line_heuristic';
   medicationName: string;
   dosage: string;
   frequency: string;
@@ -237,6 +249,8 @@ function buildLineRecord(line: string, index: number): MedicationImportRecord | 
 
   return {
     sourceLine,
+    sourceRowLabel: `Line ${index + 1}`,
+    parseMethod: 'line_heuristic',
     medicationName,
     dosage,
     frequency,
@@ -342,6 +356,8 @@ function parseDelimitedRecords(
 
     records.push({
       sourceLine: line,
+      sourceRowLabel: `Row ${index + 2}`,
+      parseMethod: 'structured_columns',
       medicationName,
       dosage: cleanOptional(getColumnValue(values, headerMap.dosage)),
       frequency: cleanOptional(getColumnValue(values, headerMap.frequency)),
@@ -407,6 +423,8 @@ function parseJsonRecords(input: string): MedicationImportRecord[] | null {
 
       records.push({
         sourceLine: rawLine,
+        sourceRowLabel: `Item ${index + 1}`,
+        parseMethod: 'structured_json',
         medicationName,
         dosage: cleanOptional(String(row.dosage ?? row.dose ?? row.strength ?? '')),
         frequency: cleanOptional(String(row.frequency ?? row.sig ?? row.schedule ?? '')),
@@ -444,6 +462,8 @@ async function enrichRecord(
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')}`,
     source_line: record.sourceLine,
+    source_row_label: record.sourceRowLabel,
+    parse_method: record.parseMethod,
     medication_name: record.medicationName,
     dosage: record.dosage,
     frequency: record.frequency,
@@ -454,6 +474,14 @@ async function enrichRecord(
     is_current: record.isCurrent,
     parse_confidence: record.parseConfidence,
     parse_notes: record.parseNotes,
+    original_medication_name: record.medicationName,
+    original_dosage: record.dosage,
+    original_frequency: record.frequency,
+    original_prescribing_reason: record.prescribingReason,
+    original_route: record.route,
+    original_start_date: record.startDate,
+    original_end_date: record.endDate,
+    original_is_current: record.isCurrent,
     enrichment_status: enrichment.enrichmentStatus,
     enrichment_confidence: enrichment.enrichmentConfidence,
     suggested_generic_name: enrichment.suggestedGenericName,
@@ -503,6 +531,60 @@ function dedupeRecords(records: MedicationImportRecord[]): {
   });
 
   return { unique, skipped };
+}
+
+function formatConfidencePercent(value: number | null | undefined): string | null {
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  return `${Math.round(value * 100)}%`;
+}
+
+function describeCorrection(label: string, originalValue: string, currentValue: string): string | null {
+  const originalCleaned = normalizeWhitespace(originalValue);
+  const currentCleaned = normalizeWhitespace(currentValue);
+
+  if (originalCleaned === currentCleaned) return null;
+
+  if (!originalCleaned && currentCleaned) {
+    return `${label} added: ${currentCleaned}.`;
+  }
+
+  if (originalCleaned && !currentCleaned) {
+    return `${label} cleared after import review.`;
+  }
+
+  return `${label} changed from "${originalCleaned}" to "${currentCleaned}".`;
+}
+
+function describeBooleanCorrection(
+  label: string,
+  originalValue: boolean,
+  currentValue: boolean
+): string | null {
+  if (originalValue === currentValue) return null;
+  return `${label} changed from ${originalValue ? 'yes' : 'no'} to ${
+    currentValue ? 'yes' : 'no'
+  }.`;
+}
+
+function buildImportCorrectionNotes(item: MedicationImportPreviewItem): string[] {
+  return [
+    describeCorrection('Medication name', item.original_medication_name, item.medication_name),
+    describeCorrection('Dosage', item.original_dosage, item.dosage),
+    describeCorrection('Frequency', item.original_frequency, item.frequency),
+    describeCorrection(
+      'Prescribing reason',
+      item.original_prescribing_reason,
+      item.prescribing_reason
+    ),
+    describeCorrection('Route', item.original_route, item.route),
+    describeCorrection('Start date', item.original_start_date, item.start_date),
+    describeCorrection('End date', item.original_end_date, item.end_date),
+    describeBooleanCorrection('Current medication status', item.original_is_current, item.is_current),
+  ].filter((note): note is string => Boolean(note));
+}
+
+function hasImportCorrections(item: MedicationImportPreviewItem): boolean {
+  return buildImportCorrectionNotes(item).length > 0;
 }
 
 export async function parseMedicationListInput(
@@ -565,15 +647,34 @@ export async function parseMedicationListInput(
 
 function buildImportCandidate(item: MedicationImportPreviewItem): ImportedMedicalFactDraft {
   const preferredName = item.medication_name || item.suggested_generic_name || item.source_line;
+  const correctionNotes = buildImportCorrectionNotes(item);
   const sourceParts = [
     `Imported medication list entry: ${item.source_line}`,
-    item.suggested_medication_family
-      ? `Medication family: ${item.suggested_medication_family.replace(/_/g, ' ')}`
+    `import_meta: Source row ${item.source_row_label}`,
+    `import_meta: Parse method ${item.parse_method.replace(/_/g, ' ')}`,
+    formatConfidencePercent(item.parse_confidence)
+      ? `import_meta: Parse confidence ${formatConfidencePercent(item.parse_confidence)}`
       : null,
-    item.suggested_medication_class ? `Class: ${item.suggested_medication_class}` : null,
-    item.route ? `Route: ${item.route}` : item.suggested_route ? `Route: ${item.suggested_route}` : null,
-    item.enrichment_source_label ? `Enrichment source: ${item.enrichment_source_label}` : null,
+    `import_meta: Enrichment status ${item.enrichment_status.replace(/_/g, ' ')}`,
+    formatConfidencePercent(item.enrichment_confidence)
+      ? `import_meta: Enrichment confidence ${formatConfidencePercent(item.enrichment_confidence)}`
+      : null,
+    item.suggested_medication_family
+      ? `import_meta: Medication family ${item.suggested_medication_family.replace(/_/g, ' ')}`
+      : null,
+    item.suggested_medication_class
+      ? `import_meta: Medication class ${item.suggested_medication_class}`
+      : null,
+    item.route
+      ? `import_meta: Route ${item.route}`
+      : item.suggested_route
+        ? `import_meta: Route ${item.suggested_route}`
+        : null,
+    item.enrichment_source_label
+      ? `import_meta: Reference source ${item.enrichment_source_label}`
+      : null,
     item.enrichment_notes ? item.enrichment_notes : null,
+    ...correctionNotes.map((note) => `import_correction: ${note}`),
   ].filter(Boolean);
 
   const extractionConfidence =
@@ -625,6 +726,9 @@ export async function queueMedicationListImport(
       importer: 'medication_list_importer',
       detected_format: input.detected_format,
       imported_item_count: input.items.length,
+      corrected_item_count: input.items.filter(hasImportCorrections).length,
+      enriched_item_count: input.items.filter((item) => item.enrichment_status === 'enriched').length,
+      fallback_item_count: input.items.filter((item) => item.enrichment_status === 'fallback').length,
     },
     candidates: input.items.map(buildImportCandidate),
   });
