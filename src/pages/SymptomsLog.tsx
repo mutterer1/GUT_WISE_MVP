@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Activity,
   AlertCircle,
@@ -10,12 +11,21 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
+import LogFollowUpActions from '../components/LogFollowUpActions';
+import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
 import { useLogCrud } from '../hooks/useLogCrud';
+import {
+  createLogFollowUpState,
+  getMealTypeFromDateTime,
+  mergeLogFollowUpPrefill,
+  readLogFollowUpState,
+  type LogFollowUpAction,
+} from '../services/logFollowUpService';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface SymptomsFormData {
@@ -70,8 +80,11 @@ function hasSymptomContextDetails(formData: SymptomsFormData): boolean {
 }
 
 export default function SymptomsLog() {
+  const location = useLocation();
   const [customSymptom, setCustomSymptom] = useState('');
   const [showContextDetails, setShowContextDetails] = useState(false);
+  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
+  const followUp = readLogFollowUpState<SymptomsFormData>(location.state);
 
   const {
     formData,
@@ -135,9 +148,25 @@ export default function SymptomsLog() {
     }
   }, [editingId, formData]);
 
+  useEffect(() => {
+    if (!followUp || editingId) {
+      return;
+    }
+
+    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
+    setCustomSymptom('');
+    if (
+      Array.isArray(followUp.prefill.triggers) &&
+      followUp.prefill.triggers.length > 0
+    ) {
+      setShowContextDetails(true);
+    }
+  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
+
   const resetForm = () => {
     baseResetForm();
     setCustomSymptom('');
+    setPostSaveActions([]);
   };
 
   const toggleTrigger = (trigger: string) => {
@@ -158,6 +187,45 @@ export default function SymptomsLog() {
     applyRecent(entry);
     setCustomSymptom('');
     setShowContextDetails(hasSymptomContextDetails(entry.data));
+    setPostSaveActions([]);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    const saveResult = await handleSubmit(e);
+
+    if (!saveResult || saveResult.mode !== 'create') {
+      setPostSaveActions([]);
+      return;
+    }
+
+    const context = {
+      sourceType: 'symptoms' as const,
+      sourceTitle: 'Symptom saved',
+      sourceSummary: `${saveResult.formData.symptom_type} | severity ${saveResult.formData.severity}/10 | ${saveResult.formData.duration_minutes} min`,
+      loggedAt: saveResult.formData.logged_at,
+    };
+
+    setPostSaveActions([
+      {
+        id: 'symptom-follow-up-food',
+        label: 'Log food',
+        description: 'Capture what you ate around this symptom window while the timing is still clear.',
+        to: `/food-log?meal=${getMealTypeFromDateTime(saveResult.formData.logged_at)}`,
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+        }),
+      },
+      {
+        id: 'symptom-follow-up-medication',
+        label: 'Log medication response',
+        description: 'Record anything you took in response to this symptom.',
+        to: '/medication-log',
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+          reason_for_use: saveResult.formData.symptom_type,
+        }),
+      },
+    ]);
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
@@ -206,13 +274,30 @@ export default function SymptomsLog() {
                 onDiscardDraft={() => {
                   discardStoredDraft();
                   setCustomSymptom('');
+                  setPostSaveActions([]);
                 }}
                 onUseRecent={handleUseRecent}
               />
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {!editingId && followUp ? (
+            <div className="mb-6">
+              <LogFollowUpNotice followUp={followUp} />
+            </div>
+          ) : null}
+
+          {!editingId && postSaveActions.length > 0 ? (
+            <div className="mb-6">
+              <LogFollowUpActions
+                summary="This symptom is saved. If a nearby meal or medication belongs to the same episode, capture it now while the timeline is fresh."
+                actions={postSaveActions}
+                onDismiss={() => setPostSaveActions([])}
+              />
+            </div>
+          ) : null}
+
+          <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
