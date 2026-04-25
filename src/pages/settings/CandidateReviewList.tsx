@@ -215,6 +215,13 @@ function formatCategoryBreakdown(metadata: Record<string, unknown> | null): stri
   return parts.length > 0 ? parts.join(', ') : null;
 }
 
+function formatConfidencePercent(value: string | null): string | null {
+  if (!value) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  return `${Math.round(numeric * 100)}%`;
+}
+
 export default function CandidateReviewList({
   candidates,
   intakes,
@@ -324,6 +331,14 @@ export default function CandidateReviewList({
         const importBatchCount = getMetadataText(sourceMetadata, 'imported_item_count');
         const correctedItemCount = getMetadataText(sourceMetadata, 'corrected_item_count');
         const importerLabel = getMetadataText(sourceMetadata, 'importer');
+        const sourceProfileLabel = getMetadataText(sourceMetadata, 'source_profile_label');
+        const sourceSystemLabel = getMetadataText(sourceMetadata, 'source_system_label');
+        const parseStrategyLabel = getMetadataText(sourceMetadata, 'parse_strategy_label');
+        const sourceProfileConfidence = getMetadataText(
+          sourceMetadata,
+          'source_profile_confidence_avg'
+        );
+        const effectiveImportKind = getMetadataText(sourceMetadata, 'effective_import_kind');
         const categoryBreakdown = formatCategoryBreakdown(sourceMetadata);
 
         return (
@@ -767,6 +782,37 @@ export default function CandidateReviewList({
                               </div>
                             )}
 
+                            {sourceProfileLabel && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Source profile: {sourceProfileLabel}</span>
+                              </div>
+                            )}
+
+                            {sourceSystemLabel && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Source system: {sourceSystemLabel}</span>
+                              </div>
+                            )}
+
+                            {parseStrategyLabel && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Parse strategy: {parseStrategyLabel}</span>
+                              </div>
+                            )}
+
+                            {sourceProfileConfidence && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>
+                                  Source profile confidence:{' '}
+                                  {formatConfidencePercent(sourceProfileConfidence)}
+                                </span>
+                              </div>
+                            )}
+
                             {importBatchCount && (
                               <div className="flex items-start gap-3">
                                 <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
@@ -785,6 +831,13 @@ export default function CandidateReviewList({
                               <div className="flex items-start gap-3">
                                 <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                                 <span>Category mix: {categoryBreakdown}</span>
+                              </div>
+                            )}
+
+                            {effectiveImportKind && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Effective import kind: {formatSource(effectiveImportKind)}</span>
                               </div>
                             )}
 
