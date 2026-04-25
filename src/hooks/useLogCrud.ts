@@ -46,11 +46,16 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   draftUpdatedAt: string | null;
   discardStoredDraft: () => void;
   dismissToast: () => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  handleSubmit: (e: React.FormEvent) => Promise<LogSaveResult<T> | null>;
   handleEdit: (log: T & { id: string }) => void;
   handleDelete: (id: string) => Promise<void>;
   resetForm: () => void;
   fetchHistory: () => Promise<void>;
+}
+
+export interface LogSaveResult<T extends { logged_at: string; id?: string }> {
+  mode: 'create' | 'update';
+  formData: T;
 }
 
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -214,7 +219,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     [logType, showSuccess]
   );
 
-  const saveEntry = useCallback(async (): Promise<{ mode: 'create' | 'update' }> => {
+  const saveEntry = useCallback(async (): Promise<LogSaveResult<T>> => {
     if (!user?.id) {
       throw new Error('You must be signed in to save an entry');
     }
@@ -251,7 +256,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
           signature: buildRecentKey ? buildRecentKey(dataWithTimestamp as T) : undefined,
         })
       );
-      return { mode: 'update' };
+      return { mode: 'update', formData: dataWithTimestamp as T };
     }
 
     const { data: insertedRow, error: insertError } = await supabase
@@ -296,7 +301,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
         signature: buildRecentKey ? buildRecentKey(dataWithTimestamp as T) : undefined,
       })
     );
-    return { mode: 'create' };
+    return { mode: 'create', formData: dataWithTimestamp as T };
   }, [
     user?.id,
     formData,
@@ -318,16 +323,19 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     setSaving(true);
 
     try {
-      await saveEntry();
+      const saveResult = await saveEntry();
       clearPersistedDraft();
       resetForm();
 
       if (showHistory) {
         await fetchHistory();
       }
+
+      return saveResult;
     } catch (err) {
       console.error(`Error saving entry to ${table}:`, err);
       showError(getErrorMessage(err, 'Failed to save entry'));
+      return null;
     } finally {
       setSaving(false);
     }
