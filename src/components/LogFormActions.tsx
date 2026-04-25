@@ -21,14 +21,14 @@ export default function LogFormActions({
   savingLabel = 'Saving...',
 }: LogFormActionsProps) {
   return (
-    <div className="sticky bottom-3 z-20 pt-2 safe-area-inset-bottom">
-      <div className="rounded-[24px] border border-white/10 bg-[rgba(11,17,25,0.78)] p-3 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-md">
+    <div className="sticky bottom-2 z-20 pt-2 safe-area-inset-bottom sm:bottom-3">
+      <div className="rounded-[22px] border border-white/10 bg-[rgba(11,17,25,0.88)] p-2.5 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-md sm:rounded-[24px] sm:p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="px-1">
+          <div className="px-1 sm:max-w-[24rem]">
             <p className="text-sm font-semibold text-[var(--color-text-primary)]">
               {isEditing ? 'Update this existing log entry' : 'Save this log entry'}
             </p>
-            <p className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">
+            <p className="mt-1 hidden text-xs leading-5 text-[var(--color-text-tertiary)] sm:block">
               {isEditing
                 ? 'Your changes will replace the previous version in history.'
                 : 'Keep the timeline current without leaving the form flow.'}
