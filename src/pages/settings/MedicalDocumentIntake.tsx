@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Upload,
   FileText,
@@ -12,6 +13,7 @@ import {
   FileSearch,
   ArrowUpRight,
   Layers3,
+  RefreshCcw,
 } from 'lucide-react';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
 import Card from '../../components/Card';
@@ -23,6 +25,7 @@ import type {
   MedicalDocumentIntakeRow,
   CandidateMedicalFactRow,
   MedicalFactCategory,
+  DocumentExtractionStatus,
 } from '../../types/medicalContext';
 import {
   createDocumentIntake,
@@ -33,6 +36,7 @@ import {
   acceptCandidate,
   rejectCandidate,
   uploadMedicalDocumentArtifact,
+  startDocumentExtraction,
 } from '../../services/medicalContextService';
 
 type ViewMode = 'overview' | 'seed';
@@ -88,6 +92,49 @@ const INTAKE_STATUS_META: Record<
   },
 };
 
+const EXTRACTION_STATUS_META: Record<
+  DocumentExtractionStatus,
+  { icon: typeof Clock; label: string; tone: string; chipClassName: string }
+> = {
+  not_started: {
+    icon: FileSearch,
+    label: 'Not Started',
+    tone: 'Waiting to begin',
+    chipClassName:
+      'border-white/10 bg-white/[0.04] text-[var(--color-text-tertiary)]',
+  },
+  queued: {
+    icon: Upload,
+    label: 'Queued',
+    tone: 'Ready for extraction',
+    chipClassName:
+      'border-[rgba(84,160,255,0.22)] bg-[rgba(84,160,255,0.12)] text-[var(--color-accent-primary)]',
+  },
+  processing: {
+    icon: Clock,
+    label: 'Processing',
+    tone: 'Extraction in progress',
+    chipClassName:
+      'border-[rgba(245,158,11,0.22)] bg-[rgba(245,158,11,0.12)] text-[rgba(245,190,80,0.98)]',
+  },
+  completed: {
+    icon: CheckCircle2,
+    label: 'Extracted',
+    tone: 'Structured text captured',
+    chipClassName:
+      'border-[rgba(52,211,153,0.22)] bg-[rgba(52,211,153,0.12)] text-[rgba(110,231,183,0.98)]',
+  },
+  failed: {
+    icon: XCircle,
+    label: 'Manual Review',
+    tone: 'Extraction unavailable',
+    chipClassName:
+      'border-[rgba(248,113,113,0.22)] bg-[rgba(248,113,113,0.12)] text-[rgba(252,165,165,0.98)]',
+  },
+};
+
+const ACTIVE_EXTRACTION_STATUSES: DocumentExtractionStatus[] = ['queued', 'processing'];
+
 const fieldClassName =
   'w-full rounded-[18px] border border-white/10 bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition-smooth placeholder:text-[var(--color-text-tertiary)] focus:border-[rgba(84,160,255,0.32)] focus:bg-[rgba(255,255,255,0.06)]';
 const labelClassName =
@@ -108,14 +155,24 @@ function formatDate(value: string | null | undefined): string {
   });
 }
 
+function getIntakeDisplayName(intake: MedicalDocumentIntakeRow): string {
+  return intake.source_label?.trim() || intake.file_name;
+}
+
+function formatIntakeOrigin(intake: MedicalDocumentIntakeRow): string {
+  return intake.intake_source === 'external_import' ? 'Imported batch' : formatFileSize(intake.file_size_bytes);
+}
+
 export default function MedicalDocumentIntake() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [intakes, setIntakes] = useState<MedicalDocumentIntakeRow[]>([]);
   const [candidates, setCandidates] = useState<CandidateMedicalFactRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
   const [processing, setProcessing] = useState<string | null>(null);
+  const [extractingIntakeId, setExtractingIntakeId] = useState<string | null>(null);
   const [seedForm, setSeedForm] = useState<SeedForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'pending_review' | 'all'>('pending_review');
@@ -144,6 +201,50 @@ export default function MedicalDocumentIntake() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const hasActiveExtraction = intakes.some((intake) =>
+      ACTIVE_EXTRACTION_STATUSES.includes(intake.extraction_status ?? 'not_started')
+    );
+
+    if (!hasActiveExtraction) return;
+
+    const intervalId = window.setInterval(() => {
+      loadData();
+    }, 4000);
+
+    return () => window.clearInterval(intervalId);
+  }, [intakes, loadData, user?.id]);
+
+  const triggerExtraction = useCallback(
+    async (intakeId: string, options?: { silent?: boolean }) => {
+      if (!user?.id) return;
+
+      const silent = options?.silent === true;
+      if (!silent) {
+        setExtractingIntakeId(intakeId);
+        setError('');
+      }
+
+      try {
+        await startDocumentExtraction(user.id, intakeId);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to start document extraction. Manual review is still available.'
+        );
+      } finally {
+        await loadData();
+        if (!silent) {
+          setExtractingIntakeId(null);
+        }
+      }
+    },
+    [loadData, user?.id]
+  );
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!user?.id || !e.target.files?.length) return;
@@ -176,7 +277,7 @@ export default function MedicalDocumentIntake() {
         userId: user.id,
         file,
       });
-      await createDocumentIntake(user.id, {
+      const intake = await createDocumentIntake(user.id, {
         file_name: file.name,
         file_type: file.type,
         file_size_bytes: file.size,
@@ -184,6 +285,15 @@ export default function MedicalDocumentIntake() {
         storage_path: uploadedArtifact.storage_path,
         content_sha256: uploadedArtifact.content_sha256,
       });
+      try {
+        await startDocumentExtraction(user.id, intake.id);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? `Document uploaded, but automatic extraction could not start. ${err.message}`
+            : 'Document uploaded, but automatic extraction could not start.'
+        );
+      }
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create intake record');
@@ -257,6 +367,9 @@ export default function MedicalDocumentIntake() {
     .length;
   const readyDocuments = intakes.filter((intake) => intake.candidate_count > 0).length;
   const completedDocuments = intakes.filter((intake) => intake.intake_status === 'completed').length;
+  const extractingDocuments = intakes.filter((intake) =>
+    ACTIVE_EXTRACTION_STATUSES.includes(intake.extraction_status ?? 'not_started')
+  ).length;
 
   if (viewMode === 'seed' && seedForm) {
     const config = CATEGORY_CONFIGS.find((category) => category.key === seedForm.category)!;
@@ -264,7 +377,7 @@ export default function MedicalDocumentIntake() {
     return (
       <SettingsPageLayout
         title="Review a Document Detail"
-        description="Promote one verified detail from an uploaded record into a controlled medical context review queue."
+        description="Promote one verified detail from an evidence intake into a controlled medical context review queue."
       >
         {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -503,8 +616,8 @@ export default function MedicalDocumentIntake() {
 
   return (
     <SettingsPageLayout
-      title="Medical Documents"
-      description="Bring outside clinical records into GutWise through a controlled intake and review workflow."
+      title="Clinical Evidence Intakes"
+      description="Bring outside clinical records and future imported sources into GutWise through one controlled intake and review workflow."
     >
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
 
@@ -519,9 +632,9 @@ export default function MedicalDocumentIntake() {
           <Card variant="elevated" className="overflow-hidden rounded-[30px]">
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
               <div>
-                <span className="badge-secondary mb-3 inline-flex">Document Intake</span>
+                <span className="badge-secondary mb-3 inline-flex">Evidence Intake</span>
                 <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
-                  Upload records, extract facts manually, then review before merge
+                  Upload records or stage imported batches, then review before merge
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
                   Uploaded files stay separate from active personalization. GutWise uses them as
@@ -542,10 +655,10 @@ export default function MedicalDocumentIntake() {
                     helper="Contain reviewable details"
                   />
                   <MetricTile
-                    label="Pending"
-                    value={String(pendingCount)}
+                    label="Extracting"
+                    value={String(extractingDocuments)}
                     tone="neutral"
-                    helper="Awaiting your decision"
+                    helper="Automation currently running"
                   />
                 </div>
 
@@ -584,9 +697,25 @@ export default function MedicalDocumentIntake() {
 
                 <div className="mt-5 rounded-[22px] border border-dashed border-white/12 bg-[rgba(255,255,255,0.02)] p-4">
                   <p className="text-sm leading-6 text-[var(--color-text-secondary)]">
-                    Typical uploads include lab results, discharge paperwork, visit summaries, and
-                    medication instructions from your care team.
+                    Typical evidence sources include lab results, discharge paperwork, visit summaries,
+                    medication instructions, and structured import batches from future connectors.
                   </p>
+
+                    <div className="mt-4 rounded-[18px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-3 py-3">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                        Current extraction coverage
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+                        First-pass extraction is now available for text files, PDFs, and DOCX files.
+                        Images and legacy DOC uploads still route into manual review until OCR and
+                        legacy parsing are added.
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)]">
+                        When supported extraction finds diagnoses, medications, allergies,
+                        diet guidance, procedures, or red-flag history, GutWise now adds them to
+                        the review queue automatically instead of waiting for manual seeding.
+                      </p>
+                    </div>
 
                   <label className="mt-4 block">
                     <input
@@ -606,6 +735,15 @@ export default function MedicalDocumentIntake() {
                       {saving ? 'Uploading...' : 'Upload Document'}
                     </Button>
                   </label>
+
+                  <Button
+                    variant="secondary"
+                    className="mt-3 w-full"
+                    onClick={() => navigate('/settings/import-workbench')}
+                  >
+                    <Layers3 className="h-4 w-4" />
+                    Open Import Workbench
+                  </Button>
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
@@ -620,12 +758,12 @@ export default function MedicalDocumentIntake() {
             <Card variant="elevated" className="rounded-[30px]">
               <div className="flex items-center justify-between gap-4 border-b border-white/8 pb-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                    Uploaded Documents
-                  </h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                    Track intake status, then open manual detail review where needed.
-                  </p>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                    Evidence Intakes
+                    </h3>
+                    <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                    Track uploaded documents and imported review batches, then open manual detail review where needed.
+                    </p>
                 </div>
 
                 <div className="hidden rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-[var(--color-text-tertiary)] sm:inline-flex">
@@ -654,6 +792,23 @@ export default function MedicalDocumentIntake() {
                     const statusMeta =
                       INTAKE_STATUS_META[intake.intake_status] || INTAKE_STATUS_META.uploaded;
                     const StatusIcon = statusMeta.icon;
+                    const extractionStatus =
+                      intake.extraction_status ?? ('not_started' as DocumentExtractionStatus);
+                    const extractionMeta = EXTRACTION_STATUS_META[extractionStatus];
+                    const ExtractionIcon = extractionMeta.icon;
+                    const isExtractionActive = ACTIVE_EXTRACTION_STATUSES.includes(extractionStatus);
+                    const canRetryExtraction =
+                      !!intake.storage_path &&
+                      (extractionStatus === 'failed' ||
+                        extractionStatus === 'queued' ||
+                        extractionStatus === 'not_started' ||
+                        extractionStatus === 'completed');
+                    const extractionActionLabel =
+                      extractionStatus === 'failed'
+                        ? 'Retry Extraction'
+                        : extractionStatus === 'completed'
+                          ? 'Refresh Extraction'
+                          : 'Start Extraction';
 
                     return (
                       <div
@@ -670,7 +825,7 @@ export default function MedicalDocumentIntake() {
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                                    {intake.file_name}
+                                    {getIntakeDisplayName(intake)}
                                   </p>
                                   <span
                                     className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${statusMeta.chipClassName}`}
@@ -678,15 +833,25 @@ export default function MedicalDocumentIntake() {
                                     <StatusIcon className="h-3 w-3" />
                                     {statusMeta.label}
                                   </span>
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${extractionMeta.chipClassName}`}
+                                  >
+                                    <ExtractionIcon className="h-3 w-3" />
+                                    {extractionMeta.label}
+                                  </span>
                                 </div>
 
                                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-tertiary)]">
-                                  <span>{formatFileSize(intake.file_size_bytes)}</span>
+                                  <span>{formatIntakeOrigin(intake)}</span>
                                   <span>{statusMeta.tone}</span>
+                                  <span>{extractionMeta.tone}</span>
                                   <span>Added {formatDate(intake.created_at)}</span>
+                                  {intake.extracted_at && (
+                                    <span>Extracted {formatDate(intake.extracted_at)}</span>
+                                  )}
                                 </div>
 
-                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                   <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-3">
                                     <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
                                       Reviewable details
@@ -704,12 +869,44 @@ export default function MedicalDocumentIntake() {
                                       {statusMeta.tone}
                                     </p>
                                   </div>
+
+                                  <div className="rounded-[18px] border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-3">
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                                      Extraction
+                                    </p>
+                                    <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+                                      {extractionMeta.tone}
+                                    </p>
+                                  </div>
                                 </div>
+
+                                {intake.extraction_error && (
+                                  <div className="mt-4 rounded-[18px] border border-[rgba(248,113,113,0.16)] bg-[rgba(127,29,29,0.16)] px-3 py-3">
+                                    <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[rgba(252,165,165,0.9)]">
+                                      Extraction Note
+                                    </p>
+                                    <p className="mt-2 text-xs leading-5 text-[rgba(254,202,202,0.95)]">
+                                      {intake.extraction_error}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
 
                           <div className="flex flex-col gap-2 lg:w-[180px]">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => triggerExtraction(intake.id)}
+                              disabled={!canRetryExtraction || isExtractionActive || extractingIntakeId === intake.id}
+                            >
+                              <RefreshCcw className="h-3.5 w-3.5" />
+                              {isExtractionActive || extractingIntakeId === intake.id
+                                ? 'Extracting...'
+                                : extractionActionLabel}
+                            </Button>
+
                             <Button
                               size="sm"
                               onClick={() => {
@@ -732,7 +929,7 @@ export default function MedicalDocumentIntake() {
 
                             <div className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-[var(--color-text-tertiary)]">
                               <ArrowUpRight className="h-3.5 w-3.5" />
-                              Manual review only
+                              Manual review stays available
                             </div>
                           </div>
                         </div>
@@ -792,6 +989,7 @@ export default function MedicalDocumentIntake() {
                 <div className="mt-5">
                   <CandidateReviewList
                     candidates={candidates}
+                    intakes={intakes}
                     onAccept={handleAccept}
                     onReject={handleReject}
                     processing={processing}
@@ -814,8 +1012,13 @@ export default function MedicalDocumentIntake() {
                     </h3>
                     <div className="mt-2 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                       <p>Use uploaded records as evidence, not automatic medical interpretation.</p>
+                      <p>
+                        Supported document extraction can suggest reviewable facts automatically,
+                        but nothing enters active context until you confirm it.
+                      </p>
                       <p>Add a detail only when you want it to enter structured review.</p>
                       <p>Accepted candidates become usable context only after your confirmation.</p>
+                      <p>When documents repeat the same fact, GutWise now merges corroborating overlaps and flags true conflicts for review instead of stacking duplicate queue items.</p>
                     </div>
                   </div>
                 </div>
