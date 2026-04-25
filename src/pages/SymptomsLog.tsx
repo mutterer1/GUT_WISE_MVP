@@ -12,6 +12,7 @@ import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
@@ -48,6 +49,17 @@ const commonTriggers = [
   'Dehydration',
 ];
 
+function hasMeaningfulSymptomsDraft(formData: SymptomsFormData): boolean {
+  return (
+    formData.symptom_type.trim().length > 0 ||
+    formData.severity !== 5 ||
+    formData.duration_minutes !== 30 ||
+    formData.location.trim().length > 0 ||
+    formData.triggers.length > 0 ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function SymptomsLog() {
   const [customSymptom, setCustomSymptom] = useState('');
 
@@ -59,6 +71,11 @@ export default function SymptomsLog() {
     setShowHistory,
     editingId,
     saving,
+    recentEntries,
+    applyRecent,
+    hasStoredDraft,
+    draftUpdatedAt,
+    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -78,6 +95,7 @@ export default function SymptomsLog() {
       triggers: [],
       notes: '',
     },
+    hasMeaningfulDraft: hasMeaningfulSymptomsDraft,
     buildInsertPayload: (data, userId) => ({
       user_id: userId,
       logged_at: data.logged_at,
@@ -113,6 +131,24 @@ export default function SymptomsLog() {
     });
   };
 
+  const handleUseRecent = (recentId: string) => {
+    const entry = recentEntries.find((item) => item.id === recentId);
+    if (!entry) {
+      return;
+    }
+
+    applyRecent(entry);
+    setCustomSymptom('');
+  };
+
+  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
+    id: entry.id,
+    title: entry.data.symptom_type || 'Symptom entry',
+    subtitle: `Severity ${entry.data.severity}/10 | ${entry.data.duration_minutes} min${
+      entry.data.location ? ` | ${entry.data.location}` : ''
+    }`,
+  }));
+
   return (
     <LogPageShell
       title="Symptoms Log"
@@ -134,6 +170,22 @@ export default function SymptomsLog() {
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+
+          {!editingId ? (
+            <div className="mb-6">
+              <LogRecallPanel
+                hasStoredDraft={hasStoredDraft}
+                draftUpdatedAt={draftUpdatedAt}
+                draftLabel="Symptom draft restored from this device."
+                recentItems={recentRecallItems}
+                onDiscardDraft={() => {
+                  discardStoredDraft();
+                  setCustomSymptom('');
+                }}
+                onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
