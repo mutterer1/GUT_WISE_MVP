@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Activity,
   Clock,
@@ -10,6 +10,8 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
+import LogFollowUpActions from '../components/LogFollowUpActions';
+import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
@@ -18,6 +20,12 @@ import LogOptionalSection from '../components/LogOptionalSection';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
+import {
+  createLogFollowUpState,
+  mergeLogFollowUpPrefill,
+  readLogFollowUpState,
+  type LogFollowUpAction,
+} from '../services/logFollowUpService';
 import { type FoodReferenceSuggestion } from '../services/referenceSearchService';
 import { formatDateTime } from '../utils/dateFormatters';
 
@@ -96,9 +104,12 @@ function summarizeFoodItems(items: FoodItem[]) {
 }
 
 export default function FoodLog() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [foodItemInput, setFoodItemInput] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
+  const followUp = readLogFollowUpState<FoodFormData>(location.state);
 
   const getMealTypeFromParam = (): FoodFormData['meal_type'] => {
     const mealParam = searchParams.get('meal');
@@ -200,16 +211,62 @@ export default function FoodLog() {
     }
   }, [editingId, formData]);
 
+  useEffect(() => {
+    if (!followUp || editingId) {
+      return;
+    }
+
+    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
+    setFoodItemInput('');
+    setShowDetails(false);
+  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
+
   const resetForm = () => {
     baseResetForm();
     setFoodItemInput('');
     setShowDetails(false);
+    setPostSaveActions([]);
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleSubmit(e);
+    const saveResult = await handleSubmit(e);
     setFoodItemInput('');
+
+    if (!saveResult || saveResult.mode !== 'create') {
+      setPostSaveActions([]);
+      return;
+    }
+
+    const savedSummary = `${saveResult.formData.meal_type.charAt(0).toUpperCase()}${saveResult.formData.meal_type.slice(1)}: ${summarizeFoodItems(saveResult.formData.food_items)}`;
+    const context = {
+      sourceType: 'food' as const,
+      sourceTitle: 'Meal saved',
+      sourceSummary: savedSummary,
+      loggedAt: saveResult.formData.logged_at,
+    };
+
+    setPostSaveActions([
+      {
+        id: 'food-follow-up-symptoms',
+        label: 'Log symptoms',
+        description: 'Capture any reaction while the meal timing is still fresh.',
+        to: '/symptoms-log',
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+          triggers: ['Food'],
+        }),
+      },
+      {
+        id: 'food-follow-up-hydration',
+        label: 'Log hydration',
+        description: 'Add the drink that went with this meal or happened right after it.',
+        to: '/hydration-log',
+        state: createLogFollowUpState(context, {
+          logged_at: saveResult.formData.logged_at,
+        }),
+      },
+    ]);
   };
 
   const handleUseRecent = (recentId: string) => {
@@ -221,6 +278,7 @@ export default function FoodLog() {
     applyRecent(entry);
     setFoodItemInput('');
     setShowDetails(hasNonDefaultDetails(entry.data));
+    setPostSaveActions([]);
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => {
@@ -319,8 +377,25 @@ export default function FoodLog() {
                   discardStoredDraft();
                   setFoodItemInput('');
                   setShowDetails(false);
+                  setPostSaveActions([]);
                 }}
                 onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
+
+          {!editingId && followUp ? (
+            <div className="mb-6">
+              <LogFollowUpNotice followUp={followUp} />
+            </div>
+          ) : null}
+
+          {!editingId && postSaveActions.length > 0 ? (
+            <div className="mb-6">
+              <LogFollowUpActions
+                summary="This meal is saved. If another log belongs to the same moment, you can capture it now without starting cold."
+                actions={postSaveActions}
+                onDismiss={() => setPostSaveActions([])}
               />
             </div>
           ) : null}
