@@ -1,10 +1,22 @@
+import { useState } from 'react';
 import { Activity, Clock, Moon, Pencil, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
+import {
+  buildLogHistorySearchText,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface SleepFormData {
@@ -19,6 +31,8 @@ interface SleepFormData {
 }
 
 export default function SleepLog() {
+  const [historyQuery, setHistoryQuery] = useState('');
+
   const {
     formData,
     setFormData,
@@ -88,6 +102,26 @@ export default function SleepLog() {
 
     await handleSubmit(e);
   };
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.sleep_start,
+        log.sleep_end,
+        log.duration_minutes,
+        log.quality,
+        log.interruptions,
+        log.felt_rested ? 'rested refreshed' : 'not rested tired',
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(
+    filteredHistory,
+    (log) => log.sleep_start || log.logged_at
+  );
 
   return (
     <LogPageShell
@@ -282,18 +316,32 @@ export default function SleepLog() {
               icon={<Moon className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => {
-                const duration = log.duration_minutes
-                  ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m`
-                  : 'N/A';
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search sleep quality, duration, notes..."
+              />
 
-                return (
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => {
+                        const duration = log.duration_minutes
+                          ? `${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m`
+                          : 'N/A';
+
+                        return (
                   <div
                     key={log.id}
-                    className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                    className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                   >
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="text-sm font-medium text-[var(--color-text-primary)]">
                           {formatDateTime(log.sleep_start)} → {formatDateTime(log.sleep_end)}
@@ -302,22 +350,10 @@ export default function SleepLog() {
                           Duration: {duration}
                         </div>
                       </div>
-                      <div className="flex gap-3 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(log as SleepFormData & { id: string })}
-                          className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(log.id!)}
-                          className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <LogHistoryActions
+                        onEdit={() => handleEdit(log as SleepFormData & { id: string })}
+                        onDelete={() => handleDelete(log.id!)}
+                      />
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-3">
@@ -327,13 +363,17 @@ export default function SleepLog() {
                     </div>
 
                     {log.notes && (
-                      <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <div className="mt-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                         {log.notes}
                       </div>
                     )}
-                  </div>
-                );
-              })}
+                          </div>
+                        );
+                      })}
+                    </LogHistoryGroup>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </Card>
