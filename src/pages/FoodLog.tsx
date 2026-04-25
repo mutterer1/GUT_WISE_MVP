@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Activity,
@@ -12,6 +12,7 @@ import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
@@ -67,6 +68,33 @@ function hasNonDefaultDetails(formData: FoodFormData): boolean {
   );
 }
 
+function hasMeaningfulFoodDraft(
+  formData: FoodFormData,
+  defaultMealType: FoodFormData['meal_type']
+): boolean {
+  return (
+    formData.food_items.length > 0 ||
+    formData.meal_type !== defaultMealType ||
+    hasNonDefaultDetails(formData)
+  );
+}
+
+function summarizeFoodItems(items: FoodItem[]) {
+  if (items.length === 0) {
+    return 'No foods selected';
+  }
+
+  if (items.length === 1) {
+    return items[0].name;
+  }
+
+  if (items.length === 2) {
+    return `${items[0].name} + ${items[1].name}`;
+  }
+
+  return `${items[0].name} + ${items.length - 1} more`;
+}
+
 export default function FoodLog() {
   const [searchParams] = useSearchParams();
   const [foodItemInput, setFoodItemInput] = useState('');
@@ -86,6 +114,10 @@ export default function FoodLog() {
   };
 
   const initialMealType = getMealTypeFromParam();
+  const hasMeaningfulDraft = useCallback(
+    (draft: FoodFormData) => hasMeaningfulFoodDraft(draft, initialMealType),
+    [initialMealType]
+  );
 
   const {
     formData,
@@ -95,6 +127,11 @@ export default function FoodLog() {
     setShowHistory,
     editingId,
     saving,
+    recentEntries,
+    applyRecent,
+    hasStoredDraft,
+    draftUpdatedAt,
+    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -113,6 +150,7 @@ export default function FoodLog() {
       tags: [],
       notes: '',
     },
+    hasMeaningfulDraft,
     buildInsertPayload: (data, userId) => ({
       user_id: userId,
       logged_at: data.logged_at,
@@ -156,6 +194,12 @@ export default function FoodLog() {
     }
   }, [editingId, formData]);
 
+  useEffect(() => {
+    if (!editingId && formData.food_items.length > 0 && hasNonDefaultDetails(formData)) {
+      setShowDetails(true);
+    }
+  }, [editingId, formData]);
+
   const resetForm = () => {
     baseResetForm();
     setFoodItemInput('');
@@ -167,6 +211,32 @@ export default function FoodLog() {
     await handleSubmit(e);
     setFoodItemInput('');
   };
+
+  const handleUseRecent = (recentId: string) => {
+    const entry = recentEntries.find((item) => item.id === recentId);
+    if (!entry) {
+      return;
+    }
+
+    applyRecent(entry);
+    setFoodItemInput('');
+    setShowDetails(hasNonDefaultDetails(entry.data));
+  };
+
+  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => {
+    const totalCalories = entry.data.food_items.reduce(
+      (sum, item) => sum + (item.estimated_calories || 0),
+      0
+    );
+
+    return {
+      id: entry.id,
+      title: summarizeFoodItems(entry.data.food_items),
+      subtitle: `${entry.data.meal_type} | ${entry.data.portion_size}${
+        totalCalories > 0 ? ` | ${totalCalories} cal` : ''
+      }`,
+    };
+  });
 
   const addFoodItem = () => {
     if (!foodItemInput.trim()) return;
@@ -237,6 +307,23 @@ export default function FoodLog() {
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
           <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+
+          {!editingId ? (
+            <div className="mb-6">
+              <LogRecallPanel
+                hasStoredDraft={hasStoredDraft}
+                draftUpdatedAt={draftUpdatedAt}
+                draftLabel="Food draft restored from this device."
+                recentItems={recentRecallItems}
+                onDiscardDraft={() => {
+                  discardStoredDraft();
+                  setFoodItemInput('');
+                  setShowDetails(false);
+                }}
+                onUseRecent={handleUseRecent}
+              />
+            </div>
+          ) : null}
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
