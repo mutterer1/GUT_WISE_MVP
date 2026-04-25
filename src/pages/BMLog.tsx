@@ -2,15 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
   Clock,
-  Pencil,
-  Save,
 } from 'lucide-react';
-import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
+import LogEditingBanner from '../components/LogEditingBanner';
+import LogFormActions from '../components/LogFormActions';
+import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -142,22 +140,7 @@ export default function BMLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          {editingId && (
-            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
-                <Pencil className="h-4 w-4" />
-                <span>Editing entry</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={handleReset} />
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -254,107 +237,80 @@ export default function BMLog() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
-              >
-                <span>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
-                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
-                </span>
+            <LogOptionalSection
+              title="Details"
+              isOpen={showDetails}
+              onToggle={() => setShowDetails(!showDetails)}
+              summary="Urgency, pain, difficulty, and unusual findings can sharpen the event signal."
+            >
+              <div className="grid gap-5 md:grid-cols-3">
+                <SliderField
+                  label="Urgency Level"
+                  value={formData.urgency}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, urgency: value }))}
+                  low="Low"
+                  high="High"
+                />
 
-                {showDetails ? (
-                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
-                )}
-              </button>
+                <SliderField
+                  label="Pain Level"
+                  value={formData.pain_level}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, pain_level: value }))}
+                  low="None"
+                  high="Severe"
+                />
 
-              {showDetails && (
-                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
-                  <div className="grid gap-5 md:grid-cols-3">
-                    <SliderField
-                      label="Urgency Level"
-                      value={formData.urgency}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, urgency: value }))}
-                      low="Low"
-                      high="High"
-                    />
+                <SliderField
+                  label="Difficulty Level"
+                  value={formData.difficulty_level}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, difficulty_level: value }))}
+                  low="Easy"
+                  high="Hard"
+                />
+              </div>
 
-                    <SliderField
-                      label="Pain Level"
-                      value={formData.pain_level}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, pain_level: value }))}
-                      low="None"
-                      high="Severe"
-                    />
+              <div className="grid gap-4 md:grid-cols-3">
+                <ToggleField
+                  label="Incomplete Evacuation"
+                  active={formData.incomplete_evacuation}
+                  onToggle={() =>
+                    setFormData((prev) => ({ ...prev, incomplete_evacuation: !prev.incomplete_evacuation }))
+                  }
+                />
 
-                    <SliderField
-                      label="Difficulty Level"
-                      value={formData.difficulty_level}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, difficulty_level: value }))}
-                      low="Easy"
-                      high="Hard"
-                    />
-                  </div>
+                <ToggleField
+                  label="Blood Present"
+                  active={formData.blood_present}
+                  onToggle={() =>
+                    setFormData((prev) => ({ ...prev, blood_present: !prev.blood_present }))
+                  }
+                />
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <ToggleField
-                      label="Incomplete Evacuation"
-                      active={formData.incomplete_evacuation}
-                      onToggle={() =>
-                        setFormData((prev) => ({ ...prev, incomplete_evacuation: !prev.incomplete_evacuation }))
-                      }
-                    />
+                <ToggleField
+                  label="Mucus Present"
+                  active={formData.mucus_present}
+                  onToggle={() =>
+                    setFormData((prev) => ({ ...prev, mucus_present: !prev.mucus_present }))
+                  }
+                />
+              </div>
 
-                    <ToggleField
-                      label="Blood Present"
-                      active={formData.blood_present}
-                      onToggle={() =>
-                        setFormData((prev) => ({ ...prev, blood_present: !prev.blood_present }))
-                      }
-                    />
+              <div>
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => { const v = e.target.value; setFormData((prev) => ({ ...prev, notes: v })); }}
+                  rows={4}
+                  placeholder="Any context worth remembering..."
+                  className="input-base min-h-[112px] w-full resize-none"
+                />
+              </div>
+            </LogOptionalSection>
 
-                    <ToggleField
-                      label="Mucus Present"
-                      active={formData.mucus_present}
-                      onToggle={() =>
-                        setFormData((prev) => ({ ...prev, mucus_present: !prev.mucus_present }))
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="notes" className="field-label mb-2 block">
-                      Notes
-                    </label>
-                    <textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => { const v = e.target.value; setFormData((prev) => ({ ...prev, notes: v })); }}
-                      rows={4}
-                      placeholder="Any context worth remembering..."
-                      className="input-base min-h-[112px] w-full resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button type="submit" disabled={saving} size="lg">
-                <Save className="mr-2 inline h-4 w-4" />
-                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
-              </Button>
-
-              {editingId && (
-                <Button type="button" variant="secondary" size="lg" onClick={handleReset}>
-                  Cancel
-                </Button>
-              )}
-            </div>
+            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={handleReset} />
           </form>
         </Card>
       ) : (
