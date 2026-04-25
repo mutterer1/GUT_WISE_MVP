@@ -203,6 +203,18 @@ function getMetadataText(
   return null;
 }
 
+function formatCategoryBreakdown(metadata: Record<string, unknown> | null): string | null {
+  if (!metadata) return null;
+  const breakdown = metadata.category_breakdown;
+  if (!breakdown || typeof breakdown !== 'object' || Array.isArray(breakdown)) return null;
+
+  const parts = Object.entries(breakdown as Record<string, unknown>)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
+    .map(([key, value]) => `${formatSource(key)} (${value})`);
+
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
 export default function CandidateReviewList({
   candidates,
   intakes,
@@ -312,6 +324,7 @@ export default function CandidateReviewList({
         const importBatchCount = getMetadataText(sourceMetadata, 'imported_item_count');
         const correctedItemCount = getMetadataText(sourceMetadata, 'corrected_item_count');
         const importerLabel = getMetadataText(sourceMetadata, 'importer');
+        const categoryBreakdown = formatCategoryBreakdown(sourceMetadata);
 
         return (
           <Card
@@ -765,6 +778,13 @@ export default function CandidateReviewList({
                               <div className="flex items-start gap-3">
                                 <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
                                 <span>Corrected before queueing: {correctedItemCount} items</span>
+                              </div>
+                            )}
+
+                            {categoryBreakdown && (
+                              <div className="flex items-start gap-3">
+                                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                                <span>Category mix: {categoryBreakdown}</span>
                               </div>
                             )}
 
