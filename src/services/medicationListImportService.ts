@@ -85,6 +85,9 @@ interface QueueMedicationListImportInput {
   source_reference?: string | null;
   import_note?: string | null;
   source_profile_id?: MedicationImportSourceProfileId | null;
+  template_name?: string | null;
+  import_file_name?: string | null;
+  import_file_format?: string | null;
   items: MedicationImportPreviewItem[];
   detected_format: MedicationImportDetectedFormat;
 }
@@ -765,6 +768,9 @@ export async function queueMedicationListImport(
     source_metadata: {
       importer: 'medication_list_importer',
       detected_format: input.detected_format,
+      template_name: input.template_name ?? null,
+      import_file_name: input.import_file_name ?? null,
+      import_file_format: input.import_file_format ?? null,
       source_profile_id: input.items[0]?.source_profile_id ?? input.source_profile_id ?? null,
       source_profile_label: input.items[0]?.source_profile_label ?? null,
       source_system_label: input.items[0]?.source_system_label ?? null,
