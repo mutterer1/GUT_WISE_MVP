@@ -15,6 +15,7 @@ import LogFollowUpActions from '../components/LogFollowUpActions';
 import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
@@ -26,6 +27,7 @@ import {
   readLogFollowUpState,
   type LogFollowUpAction,
 } from '../services/logFollowUpService';
+import { getSymptomLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface SymptomsFormData {
@@ -235,6 +237,9 @@ export default function SymptomsLog() {
       entry.data.location ? ` | ${entry.data.location}` : ''
     }`,
   }));
+  const qualityHints = getSymptomLogQualityHints(formData, {
+    contextOpen: showContextDetails,
+  });
 
   return (
     <LogPageShell
@@ -504,6 +509,11 @@ export default function SymptomsLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowContextDetails(true)}
+            />
 
             <LogFormActions
               isEditing={Boolean(editingId)}
