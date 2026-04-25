@@ -14,6 +14,7 @@ import LogFollowUpActions from '../components/LogFollowUpActions';
 import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import LogOptionalSection from '../components/LogOptionalSection';
@@ -27,6 +28,7 @@ import {
   type LogFollowUpAction,
 } from '../services/logFollowUpService';
 import { type FoodReferenceSuggestion } from '../services/referenceSearchService';
+import { getFoodLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface FoodItem {
@@ -343,6 +345,7 @@ export default function FoodLog() {
     (sum, item) => sum + (item.estimated_calories || 0),
     0
   );
+  const qualityHints = getFoodLogQualityHints(formData, { detailsOpen: showDetails });
 
   return (
     <LogPageShell
@@ -599,6 +602,11 @@ export default function FoodLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowDetails(true)}
+            />
 
             <LogFormActions
               isEditing={Boolean(editingId)}
