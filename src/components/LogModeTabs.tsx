@@ -18,15 +18,14 @@ export default function LogModeTabs({
   historyLabel = 'History',
 }: LogModeTabsProps) {
   return (
-    <div className="mb-5 surface-panel-quiet flex w-full flex-col gap-1 rounded-[24px] p-1.5 sm:inline-flex sm:w-auto sm:flex-row">
+    <div className="mb-lg flex gap-1 bg-neutral-bg dark:bg-dark-bg border border-neutral-border dark:border-dark-border p-1 rounded-xl w-fit">
       <button
         type="button"
         onClick={onShowNew}
-        aria-pressed={!showHistory}
-        className={`flex min-h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] px-4 py-3 text-sm font-semibold transition-smooth ${
+        className={`flex items-center px-4 py-2 rounded-lg text-body-sm font-medium transition-all ${
           !showHistory
-            ? 'border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)] shadow-[0_0_0_1px_rgba(84,160,255,0.08)]'
-            : 'text-[var(--color-text-tertiary)] hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]'
+            ? 'bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text shadow-soft border border-neutral-border dark:border-dark-border'
+            : 'text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
         }`}
       >
         {newIcon}
@@ -35,11 +34,10 @@ export default function LogModeTabs({
       <button
         type="button"
         onClick={onShowHistory}
-        aria-pressed={showHistory}
-        className={`flex min-h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] px-4 py-3 text-sm font-semibold transition-smooth ${
+        className={`flex items-center px-4 py-2 rounded-lg text-body-sm font-medium transition-all ${
           showHistory
-            ? 'border border-[rgba(84,160,255,0.16)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)] shadow-[0_0_0_1px_rgba(84,160,255,0.08)]'
-            : 'text-[var(--color-text-tertiary)] hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]'
+            ? 'bg-neutral-surface dark:bg-dark-surface text-neutral-text dark:text-dark-text shadow-soft border border-neutral-border dark:border-dark-border'
+            : 'text-neutral-muted dark:text-dark-muted hover:text-neutral-text dark:hover:text-dark-text'
         }`}
       >
         {historyIcon}

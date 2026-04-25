@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import Sidebar from './Sidebar';
-import QuickLogLauncher from './QuickLogLauncher';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -15,7 +14,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
           {children}
         </div>
       </main>
-      <QuickLogLauncher />
     </div>
   );
 }

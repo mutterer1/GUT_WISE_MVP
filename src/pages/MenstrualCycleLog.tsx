@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Clock, Droplet, Heart } from 'lucide-react';
+import { useEffect } from 'react';
+import { Clock, Droplet, Heart, Pencil, Save } from 'lucide-react';
+import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import LogEditingBanner from '../components/LogEditingBanner';
-import LogFormActions from '../components/LogFormActions';
-import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -69,26 +67,6 @@ const contraceptiveOptions = [
 ];
 const cervicalMucusOptions = ['Dry', 'Sticky', 'Creamy', 'Fertile (Egg White)', 'N/A'];
 
-function hasBodyMoodDetails(formData: MenstrualFormData): boolean {
-  return (
-    formData.symptoms.length > 0 ||
-    formData.mood_notes.trim().length > 0 ||
-    formData.sleep_quality !== 7 ||
-    formData.energy_level !== 7
-  );
-}
-
-function hasFertilityDetails(formData: MenstrualFormData): boolean {
-  return (
-    formData.contraceptive_method !== 'None' ||
-    formData.cervical_mucus_type !== 'N/A' ||
-    formData.ovulation_indicators.length > 0 ||
-    formData.basal_temp !== '' ||
-    formData.sexual_activity ||
-    formData.notes.trim().length > 0
-  );
-}
-
 const buildPayload = (formData: MenstrualFormData, userId?: string) => ({
   ...(userId ? { user_id: userId } : {}),
   logged_at: formData.logged_at,
@@ -139,8 +117,6 @@ const menstrualConfig = {
 
 export default function MenstrualCycleLog() {
   const { profile } = useAuth();
-  const [showBodyMoodDetails, setShowBodyMoodDetails] = useState(false);
-  const [showFertilityDetails, setShowFertilityDetails] = useState(false);
 
   const {
     formData,
@@ -169,22 +145,6 @@ export default function MenstrualCycleLog() {
       setFormData((prev) => ({ ...prev, cycle_day: Math.max(1, diffDays) }));
     }
   }, [formData.cycle_start_date, setFormData]);
-
-  useEffect(() => {
-    if (hasBodyMoodDetails(formData)) {
-      setShowBodyMoodDetails(true);
-    } else if (!editingId) {
-      setShowBodyMoodDetails(false);
-    }
-  }, [editingId, formData]);
-
-  useEffect(() => {
-    if (hasFertilityDetails(formData)) {
-      setShowFertilityDetails(true);
-    } else if (!editingId) {
-      setShowFertilityDetails(false);
-    }
-  }, [editingId, formData]);
 
   if (!DEV_CYCLE_LOG_ACCESS && profile?.gender === 'male') {
     return (
@@ -255,19 +215,24 @@ export default function MenstrualCycleLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner
-            isEditing={Boolean(editingId)}
-            onCancel={() => {
-              resetForm();
-              setShowBodyMoodDetails(false);
-              setShowFertilityDetails(false);
-            }}
-            tone="danger"
-            description="Update the existing cycle entry or cancel to return to a fresh cycle record."
-          />
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(255,120,120,0.18)] bg-[rgba(255,120,120,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-danger)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="cycle_start_date" className="field-label mb-2 block">
                   <Droplet className="mr-1 inline h-4 w-4" />
@@ -311,8 +276,8 @@ export default function MenstrualCycleLog() {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
-              <div className="surface-panel-soft rounded-[22px] p-4 sm:rounded-[24px]">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <label htmlFor="cycle_day" className="field-label mb-2 block">
                   Cycle Day
                 </label>
@@ -330,7 +295,7 @@ export default function MenstrualCycleLog() {
                 <p className="field-help mt-2">Auto-calculated from start date</p>
               </div>
 
-              <div className="surface-panel-soft rounded-[22px] p-4 sm:rounded-[24px]">
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <label htmlFor="estimated_cycle_length" className="field-label mb-2 block">
                   Estimated Cycle Length (days)
                 </label>
@@ -350,7 +315,7 @@ export default function MenstrualCycleLog() {
                 />
               </div>
 
-              <div className="surface-panel-soft rounded-[22px] p-4 sm:rounded-[24px]">
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <label htmlFor="flow_intensity" className="field-label mb-2 block">
                   Flow Intensity
                 </label>
@@ -375,8 +340,8 @@ export default function MenstrualCycleLog() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-              <div className="surface-panel-soft rounded-[22px] p-4 sm:rounded-[24px]">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <label htmlFor="color" className="field-label mb-2 block">
                   Color
                 </label>
@@ -394,7 +359,7 @@ export default function MenstrualCycleLog() {
                 </select>
               </div>
 
-              <div className="surface-panel-soft rounded-[22px] p-4 sm:rounded-[24px]">
+              <div className="surface-panel-soft rounded-[24px] p-4">
                 <label htmlFor="pain_level" className="field-label mb-2 block">
                   Pain Level:{' '}
                   <span className="font-medium text-[var(--color-text-primary)]">
@@ -415,7 +380,7 @@ export default function MenstrualCycleLog() {
               </div>
             </div>
 
-            <div className="surface-panel-quiet flex items-center justify-between rounded-[22px] p-4 sm:rounded-[24px]">
+            <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text-primary)]">
                   Tissue/Clots Passed
@@ -442,237 +407,233 @@ export default function MenstrualCycleLog() {
               </button>
             </div>
 
-            <LogOptionalSection
-              title="Body and mood"
-              isOpen={showBodyMoodDetails}
-              onToggle={() => setShowBodyMoodDetails(!showBodyMoodDetails)}
-              summary="Symptoms, mood, sleep, and energy stay available without making every cycle entry feel oversized."
-            >
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <div className="mb-4">
-                  <label className="field-label">Symptoms</label>
-                  <p className="field-help mt-1">(optional)</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                  {commonSymptoms.map((symptom) => (
-                    <button
-                      key={symptom}
-                      type="button"
-                      onClick={() => toggleSymptom(symptom)}
-                      className={[
-                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.symptoms.includes(symptom)
-                          ? 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {symptom}
-                    </button>
-                  ))}
-                </div>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Symptoms</label>
+                <p className="field-help mt-1">(optional)</p>
               </div>
-
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="mood_notes" className="field-label mb-2 block">
-                  Mood Notes
-                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  id="mood_notes"
-                  value={formData.mood_notes}
-                  onChange={(e) => setFormData({ ...formData, mood_notes: e.target.value })}
-                  placeholder="e.g. irritable, emotional, anxious..."
-                  className="input-base w-full"
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="surface-panel-soft rounded-[24px] p-4">
-                  <label htmlFor="sleep_quality" className="field-label mb-2 block">
-                    Sleep Quality:{' '}
-                    <span className="font-medium text-[var(--color-text-primary)]">
-                      {formData.sleep_quality}/10
-                    </span>
-                  </label>
-                  <input
-                    type="range"
-                    id="sleep_quality"
-                    min="1"
-                    max="10"
-                    value={formData.sleep_quality}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sleep_quality: parseInt(e.target.value, 10) })
-                    }
-                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
-                  />
-                </div>
-
-                <div className="surface-panel-soft rounded-[24px] p-4">
-                  <label htmlFor="energy_level" className="field-label mb-2 block">
-                    Energy Level:{' '}
-                    <span className="font-medium text-[var(--color-text-primary)]">
-                      {formData.energy_level}/10
-                    </span>
-                  </label>
-                  <input
-                    type="range"
-                    id="energy_level"
-                    min="1"
-                    max="10"
-                    value={formData.energy_level}
-                    onChange={(e) =>
-                      setFormData({ ...formData, energy_level: parseInt(e.target.value, 10) })
-                    }
-                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
-                  />
-                </div>
-              </div>
-            </LogOptionalSection>
-
-            <LogOptionalSection
-              title="Fertility and extra context"
-              isOpen={showFertilityDetails}
-              onToggle={() => setShowFertilityDetails(!showFertilityDetails)}
-              summary="Contraception, cervical mucus, ovulation indicators, basal temperature, and other context stay tucked away unless needed."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="surface-panel-soft rounded-[24px] p-4">
-                  <label htmlFor="contraceptive_method" className="field-label mb-2 block">
-                    Contraceptive Method
-                    <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                  </label>
-                  <select
-                    id="contraceptive_method"
-                    value={formData.contraceptive_method}
-                    onChange={(e) =>
-                      setFormData({ ...formData, contraceptive_method: e.target.value })
-                    }
-                    className="input-base w-full"
-                  >
-                    {contraceptiveOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="surface-panel-soft rounded-[24px] p-4">
-                  <label htmlFor="cervical_mucus_type" className="field-label mb-2 block">
-                    Cervical Mucus
-                    <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                  </label>
-                  <select
-                    id="cervical_mucus_type"
-                    value={formData.cervical_mucus_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cervical_mucus_type: e.target.value })
-                    }
-                    className="input-base w-full"
-                  >
-                    {cervicalMucusOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <div className="mb-4">
-                  <label className="field-label">Ovulation Indicators</label>
-                  <p className="field-help mt-1">(optional)</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                  {ovulationIndicatorsList.map((indicator) => (
-                    <button
-                      key={indicator}
-                      type="button"
-                      onClick={() => toggleOvulationIndicator(indicator)}
-                      className={[
-                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.ovulation_indicators.includes(indicator)
-                          ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {indicator}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="basal_temp" className="field-label mb-2 block">
-                  Basal Body Temperature
-                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                </label>
-                <input
-                  type="number"
-                  id="basal_temp"
-                  step="0.1"
-                  min="96"
-                  max="100"
-                  value={formData.basal_temp}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      basal_temp: e.target.value ? parseFloat(e.target.value) : '',
-                    })
-                  }
-                  placeholder="e.g. 97.8 F"
-                  className="input-base w-full"
-                />
-              </div>
-
-              <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
-                <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                    Sexual Activity
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
-                    Include only if relevant to cycle context.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({ ...formData, sexual_activity: !formData.sexual_activity })
-                  }
-                  className={[
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
-                    formData.sexual_activity ? 'bg-[var(--color-danger)]' : 'bg-white/12',
-                  ].join(' ')}
-                >
-                  <span
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                {commonSymptoms.map((symptom) => (
+                  <button
+                    key={symptom}
+                    type="button"
+                    onClick={() => toggleSymptom(symptom)}
                     className={[
-                      'inline-block h-4 w-4 rounded-full bg-white transition-transform',
-                      formData.sexual_activity ? 'translate-x-6' : 'translate-x-1',
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                      formData.symptoms.includes(symptom)
+                        ? 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
                     ].join(' ')}
-                  />
-                </button>
+                  >
+                    {symptom}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="surface-panel-soft rounded-[24px] p-4">
+              <label htmlFor="mood_notes" className="field-label mb-2 block">
+                Mood Notes
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="mood_notes"
+                value={formData.mood_notes}
+                onChange={(e) => setFormData({ ...formData, mood_notes: e.target.value })}
+                placeholder="e.g. irritable, emotional, anxious..."
+                className="input-base w-full"
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="sleep_quality" className="field-label mb-2 block">
+                  Sleep Quality:{' '}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {formData.sleep_quality}/10
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  id="sleep_quality"
+                  min="1"
+                  max="10"
+                  value={formData.sleep_quality}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sleep_quality: parseInt(e.target.value, 10) })
+                  }
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
+                />
               </div>
 
               <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="notes" className="field-label mb-2 block">
-                  Additional Notes
-                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                <label htmlFor="energy_level" className="field-label mb-2 block">
+                  Energy Level:{' '}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {formData.energy_level}/10
+                  </span>
                 </label>
-                <textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="input-base min-h-[112px] w-full resize-none"
-                  rows={4}
-                  placeholder="Any other observations or context..."
+                <input
+                  type="range"
+                  id="energy_level"
+                  min="1"
+                  max="10"
+                  value={formData.energy_level}
+                  onChange={(e) =>
+                    setFormData({ ...formData, energy_level: parseInt(e.target.value, 10) })
+                  }
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[var(--color-accent-primary)]"
                 />
               </div>
-            </LogOptionalSection>
+            </div>
 
-            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="contraceptive_method" className="field-label mb-2 block">
+                  Contraceptive Method
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
+                <select
+                  id="contraceptive_method"
+                  value={formData.contraceptive_method}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contraceptive_method: e.target.value })
+                  }
+                  className="input-base w-full"
+                >
+                  {contraceptiveOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="cervical_mucus_type" className="field-label mb-2 block">
+                  Cervical Mucus
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
+                <select
+                  id="cervical_mucus_type"
+                  value={formData.cervical_mucus_type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cervical_mucus_type: e.target.value })
+                  }
+                  className="input-base w-full"
+                >
+                  {cervicalMucusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Ovulation Indicators</label>
+                <p className="field-help mt-1">(optional)</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                {ovulationIndicatorsList.map((indicator) => (
+                  <button
+                    key={indicator}
+                    type="button"
+                    onClick={() => toggleOvulationIndicator(indicator)}
+                    className={[
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                      formData.ovulation_indicators.includes(indicator)
+                        ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
+                  >
+                    {indicator}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="surface-panel-soft rounded-[24px] p-4">
+              <label htmlFor="basal_temp" className="field-label mb-2 block">
+                Basal Body Temperature
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+              </label>
+              <input
+                type="number"
+                id="basal_temp"
+                step="0.1"
+                min="96"
+                max="100"
+                value={formData.basal_temp}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    basal_temp: e.target.value ? parseFloat(e.target.value) : '',
+                  })
+                }
+                placeholder="e.g. 97.8 F"
+                className="input-base w-full"
+              />
+            </div>
+
+            <div className="surface-panel-quiet flex items-center justify-between rounded-[24px] p-4">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Sexual Activity
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+                  Include only if relevant to cycle context.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, sexual_activity: !formData.sexual_activity })
+                }
+                className={[
+                  'relative inline-flex h-6 w-11 items-center rounded-full transition-smooth',
+                  formData.sexual_activity ? 'bg-[var(--color-danger)]' : 'bg-white/12',
+                ].join(' ')}
+              >
+                <span
+                  className={[
+                    'inline-block h-4 w-4 rounded-full bg-white transition-transform',
+                    formData.sexual_activity ? 'translate-x-6' : 'translate-x-1',
+                  ].join(' ')}
+                />
+              </button>
+            </div>
+
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
+                Additional Notes
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+              </label>
+              <textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="input-base min-h-[112px] w-full resize-none"
+                rows={4}
+                placeholder="Any other observations or context..."
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
+              </Button>
+              {editingId && (
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
       ) : (

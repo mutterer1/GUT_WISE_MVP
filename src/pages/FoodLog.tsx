@@ -1,34 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Activity,
+  ChevronDown,
+  ChevronUp,
   Clock,
+  Pencil,
+  Save,
   Tag,
   Utensils,
 } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import LogEditingBanner from '../components/LogEditingBanner';
-import LogFollowUpActions from '../components/LogFollowUpActions';
-import LogFollowUpNotice from '../components/LogFollowUpNotice';
-import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
-import LogQualityNudges from '../components/LogQualityNudges';
-import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
-import LogOptionalSection from '../components/LogOptionalSection';
 import FoodAutocompleteInput from '../components/FoodAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { replaceFoodLogItemsForLog } from '../services/foodLogNormalizationService';
-import {
-  createLogFollowUpState,
-  mergeLogFollowUpPrefill,
-  readLogFollowUpState,
-  type LogFollowUpAction,
-} from '../services/logFollowUpService';
 import { type FoodReferenceSuggestion } from '../services/referenceSearchService';
-import { getFoodLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface FoodItem {
@@ -78,40 +68,10 @@ function hasNonDefaultDetails(formData: FoodFormData): boolean {
   );
 }
 
-function hasMeaningfulFoodDraft(
-  formData: FoodFormData,
-  defaultMealType: FoodFormData['meal_type']
-): boolean {
-  return (
-    formData.food_items.length > 0 ||
-    formData.meal_type !== defaultMealType ||
-    hasNonDefaultDetails(formData)
-  );
-}
-
-function summarizeFoodItems(items: FoodItem[]) {
-  if (items.length === 0) {
-    return 'No foods selected';
-  }
-
-  if (items.length === 1) {
-    return items[0].name;
-  }
-
-  if (items.length === 2) {
-    return `${items[0].name} + ${items[1].name}`;
-  }
-
-  return `${items[0].name} + ${items.length - 1} more`;
-}
-
 export default function FoodLog() {
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [foodItemInput, setFoodItemInput] = useState('');
   const [showDetails, setShowDetails] = useState(false);
-  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
-  const followUp = readLogFollowUpState<FoodFormData>(location.state);
 
   const getMealTypeFromParam = (): FoodFormData['meal_type'] => {
     const mealParam = searchParams.get('meal');
@@ -127,10 +87,6 @@ export default function FoodLog() {
   };
 
   const initialMealType = getMealTypeFromParam();
-  const hasMeaningfulDraft = useCallback(
-    (draft: FoodFormData) => hasMeaningfulFoodDraft(draft, initialMealType),
-    [initialMealType]
-  );
 
   const {
     formData,
@@ -140,11 +96,6 @@ export default function FoodLog() {
     setShowHistory,
     editingId,
     saving,
-    recentEntries,
-    applyRecent,
-    hasStoredDraft,
-    draftUpdatedAt,
-    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -163,7 +114,6 @@ export default function FoodLog() {
       tags: [],
       notes: '',
     },
-    hasMeaningfulDraft,
     buildInsertPayload: (data, userId) => ({
       user_id: userId,
       logged_at: data.logged_at,
@@ -207,96 +157,17 @@ export default function FoodLog() {
     }
   }, [editingId, formData]);
 
-  useEffect(() => {
-    if (!editingId && formData.food_items.length > 0 && hasNonDefaultDetails(formData)) {
-      setShowDetails(true);
-    }
-  }, [editingId, formData]);
-
-  useEffect(() => {
-    if (!followUp || editingId) {
-      return;
-    }
-
-    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
-    setFoodItemInput('');
-    setShowDetails(false);
-  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
-
   const resetForm = () => {
     baseResetForm();
     setFoodItemInput('');
     setShowDetails(false);
-    setPostSaveActions([]);
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const saveResult = await handleSubmit(e);
+    await handleSubmit(e);
     setFoodItemInput('');
-
-    if (!saveResult || saveResult.mode !== 'create') {
-      setPostSaveActions([]);
-      return;
-    }
-
-    const savedSummary = `${saveResult.formData.meal_type.charAt(0).toUpperCase()}${saveResult.formData.meal_type.slice(1)}: ${summarizeFoodItems(saveResult.formData.food_items)}`;
-    const context = {
-      sourceType: 'food' as const,
-      sourceTitle: 'Meal saved',
-      sourceSummary: savedSummary,
-      loggedAt: saveResult.formData.logged_at,
-    };
-
-    setPostSaveActions([
-      {
-        id: 'food-follow-up-symptoms',
-        label: 'Log symptoms',
-        description: 'Capture any reaction while the meal timing is still fresh.',
-        to: '/symptoms-log',
-        state: createLogFollowUpState(context, {
-          logged_at: saveResult.formData.logged_at,
-          triggers: ['Food'],
-        }),
-      },
-      {
-        id: 'food-follow-up-hydration',
-        label: 'Log hydration',
-        description: 'Add the drink that went with this meal or happened right after it.',
-        to: '/hydration-log',
-        state: createLogFollowUpState(context, {
-          logged_at: saveResult.formData.logged_at,
-        }),
-      },
-    ]);
   };
-
-  const handleUseRecent = (recentId: string) => {
-    const entry = recentEntries.find((item) => item.id === recentId);
-    if (!entry) {
-      return;
-    }
-
-    applyRecent(entry);
-    setFoodItemInput('');
-    setShowDetails(hasNonDefaultDetails(entry.data));
-    setPostSaveActions([]);
-  };
-
-  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => {
-    const totalCalories = entry.data.food_items.reduce(
-      (sum, item) => sum + (item.estimated_calories || 0),
-      0
-    );
-
-    return {
-      id: entry.id,
-      title: summarizeFoodItems(entry.data.food_items),
-      subtitle: `${entry.data.meal_type} | ${entry.data.portion_size}${
-        totalCalories > 0 ? ` | ${totalCalories} cal` : ''
-      }`,
-    };
-  });
 
   const addFoodItem = () => {
     if (!foodItemInput.trim()) return;
@@ -345,7 +216,6 @@ export default function FoodLog() {
     (sum, item) => sum + (item.estimated_calories || 0),
     0
   );
-  const qualityHints = getFoodLogQualityHints(formData, { detailsOpen: showDetails });
 
   return (
     <LogPageShell
@@ -367,41 +237,22 @@ export default function FoodLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
+              </div>
 
-          {!editingId ? (
-            <div className="mb-6">
-              <LogRecallPanel
-                hasStoredDraft={hasStoredDraft}
-                draftUpdatedAt={draftUpdatedAt}
-                draftLabel="Food draft restored from this device."
-                recentItems={recentRecallItems}
-                onDiscardDraft={() => {
-                  discardStoredDraft();
-                  setFoodItemInput('');
-                  setShowDetails(false);
-                  setPostSaveActions([]);
-                }}
-                onUseRecent={handleUseRecent}
-              />
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                Cancel
+              </button>
             </div>
-          ) : null}
-
-          {!editingId && followUp ? (
-            <div className="mb-6">
-              <LogFollowUpNotice followUp={followUp} />
-            </div>
-          ) : null}
-
-          {!editingId && postSaveActions.length > 0 ? (
-            <div className="mb-6">
-              <LogFollowUpActions
-                summary="This meal is saved. If another log belongs to the same moment, you can capture it now without starting cold."
-                actions={postSaveActions}
-                onDismiss={() => setPostSaveActions([])}
-              />
-            </div>
-          ) : null}
+          )}
 
           <form onSubmit={handleFormSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -538,82 +389,99 @@ export default function FoodLog() {
               )}
             </div>
 
-            <LogOptionalSection
-              title="Details"
-              isOpen={showDetails}
-              onToggle={() => setShowDetails(!showDetails)}
-              summary="Portion, digestive tags, and notes can sharpen later analysis without slowing the first pass."
-            >
-              <div>
-                <label className="field-label mb-3 block">Portion Size</label>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {portionSizes.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, portion_size: size })}
-                      className={[
-                        'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.portion_size === size
-                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {size}
-                    </button>
-                  ))}
+            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                <span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
+                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
+                </span>
+
+                {showDetails ? (
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                )}
+              </button>
+
+              {showDetails && (
+                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
+                  <div>
+                    <label className="field-label mb-3 block">Portion Size</label>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      {portionSizes.map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, portion_size: size })}
+                          className={[
+                            'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                            formData.portion_size === size
+                              ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                          ].join(' ')}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="field-label mb-3 block">Digestive Tags</label>
+
+                    <div className="flex flex-wrap gap-2">
+                      {digestiveTags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => toggleTag(tag)}
+                          className={[
+                            'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-smooth',
+                            formData.tags.includes(tag)
+                              ? 'border-[rgba(84,160,255,0.24)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
+                              : 'border-white/8 bg-white/[0.02] text-[var(--color-text-tertiary)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]',
+                          ].join(' ')}
+                        >
+                          <Tag className="h-3 w-3" />
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="notes" className="field-label mb-2 block">
+                      Notes
+                    </label>
+                    <textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={4}
+                      placeholder="Location, cravings, mood, unusual reactions..."
+                      className="input-base min-h-[112px] w-full resize-none"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div>
-                <label className="field-label mb-3 block">Digestive Tags</label>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button type="submit" disabled={saving || formData.food_items.length === 0} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
+              </Button>
 
-                <div className="flex flex-wrap gap-2">
-                  {digestiveTags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={[
-                        'inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-smooth',
-                        formData.tags.includes(tag)
-                          ? 'border-[rgba(84,160,255,0.24)] bg-[rgba(84,160,255,0.10)] text-[var(--color-accent-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-tertiary)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--color-text-secondary)]',
-                      ].join(' ')}
-                    >
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="notes" className="field-label mb-2 block">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={4}
-                  placeholder="Location, cravings, mood, unusual reactions..."
-                  className="input-base min-h-[112px] w-full resize-none"
-                />
-              </div>
-            </LogOptionalSection>
-
-            <LogQualityNudges
-              hints={qualityHints}
-              onApplyHint={() => setShowDetails(true)}
-            />
-
-            <LogFormActions
-              isEditing={Boolean(editingId)}
-              saving={saving}
-              submitDisabled={formData.food_items.length === 0}
-              onCancel={resetForm}
-            />
+              {editingId && (
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
       ) : (

@@ -1,33 +1,19 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import {
   Activity,
   AlertCircle,
   Clock,
   MapPin,
+  Pencil,
+  Save,
   Sparkles,
 } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import LogEditingBanner from '../components/LogEditingBanner';
-import LogFollowUpActions from '../components/LogFollowUpActions';
-import LogFollowUpNotice from '../components/LogFollowUpNotice';
-import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
-import LogQualityNudges from '../components/LogQualityNudges';
-import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
-import LogOptionalSection from '../components/LogOptionalSection';
 import { useLogCrud } from '../hooks/useLogCrud';
-import {
-  createLogFollowUpState,
-  getMealTypeFromDateTime,
-  mergeLogFollowUpPrefill,
-  readLogFollowUpState,
-  type LogFollowUpAction,
-} from '../services/logFollowUpService';
-import { getSymptomLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface SymptomsFormData {
@@ -62,31 +48,8 @@ const commonTriggers = [
   'Dehydration',
 ];
 
-function hasMeaningfulSymptomsDraft(formData: SymptomsFormData): boolean {
-  return (
-    formData.symptom_type.trim().length > 0 ||
-    formData.severity !== 5 ||
-    formData.duration_minutes !== 30 ||
-    formData.location.trim().length > 0 ||
-    formData.triggers.length > 0 ||
-    formData.notes.trim().length > 0
-  );
-}
-
-function hasSymptomContextDetails(formData: SymptomsFormData): boolean {
-  return (
-    formData.location.trim().length > 0 ||
-    formData.triggers.length > 0 ||
-    formData.notes.trim().length > 0
-  );
-}
-
 export default function SymptomsLog() {
-  const location = useLocation();
   const [customSymptom, setCustomSymptom] = useState('');
-  const [showContextDetails, setShowContextDetails] = useState(false);
-  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
-  const followUp = readLogFollowUpState<SymptomsFormData>(location.state);
 
   const {
     formData,
@@ -96,11 +59,6 @@ export default function SymptomsLog() {
     setShowHistory,
     editingId,
     saving,
-    recentEntries,
-    applyRecent,
-    hasStoredDraft,
-    draftUpdatedAt,
-    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -120,7 +78,6 @@ export default function SymptomsLog() {
       triggers: [],
       notes: '',
     },
-    hasMeaningfulDraft: hasMeaningfulSymptomsDraft,
     buildInsertPayload: (data, userId) => ({
       user_id: userId,
       logged_at: data.logged_at,
@@ -142,33 +99,9 @@ export default function SymptomsLog() {
     }),
   });
 
-  useEffect(() => {
-    if (hasSymptomContextDetails(formData)) {
-      setShowContextDetails(true);
-    } else if (!editingId) {
-      setShowContextDetails(false);
-    }
-  }, [editingId, formData]);
-
-  useEffect(() => {
-    if (!followUp || editingId) {
-      return;
-    }
-
-    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
-    setCustomSymptom('');
-    if (
-      Array.isArray(followUp.prefill.triggers) &&
-      followUp.prefill.triggers.length > 0
-    ) {
-      setShowContextDetails(true);
-    }
-  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
-
   const resetForm = () => {
     baseResetForm();
     setCustomSymptom('');
-    setPostSaveActions([]);
   };
 
   const toggleTrigger = (trigger: string) => {
@@ -179,67 +112,6 @@ export default function SymptomsLog() {
         : [...formData.triggers, trigger],
     });
   };
-
-  const handleUseRecent = (recentId: string) => {
-    const entry = recentEntries.find((item) => item.id === recentId);
-    if (!entry) {
-      return;
-    }
-
-    applyRecent(entry);
-    setCustomSymptom('');
-    setShowContextDetails(hasSymptomContextDetails(entry.data));
-    setPostSaveActions([]);
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    const saveResult = await handleSubmit(e);
-
-    if (!saveResult || saveResult.mode !== 'create') {
-      setPostSaveActions([]);
-      return;
-    }
-
-    const context = {
-      sourceType: 'symptoms' as const,
-      sourceTitle: 'Symptom saved',
-      sourceSummary: `${saveResult.formData.symptom_type} | severity ${saveResult.formData.severity}/10 | ${saveResult.formData.duration_minutes} min`,
-      loggedAt: saveResult.formData.logged_at,
-    };
-
-    setPostSaveActions([
-      {
-        id: 'symptom-follow-up-food',
-        label: 'Log food',
-        description: 'Capture what you ate around this symptom window while the timing is still clear.',
-        to: `/food-log?meal=${getMealTypeFromDateTime(saveResult.formData.logged_at)}`,
-        state: createLogFollowUpState(context, {
-          logged_at: saveResult.formData.logged_at,
-        }),
-      },
-      {
-        id: 'symptom-follow-up-medication',
-        label: 'Log medication response',
-        description: 'Record anything you took in response to this symptom.',
-        to: '/medication-log',
-        state: createLogFollowUpState(context, {
-          logged_at: saveResult.formData.logged_at,
-          reason_for_use: saveResult.formData.symptom_type,
-        }),
-      },
-    ]);
-  };
-
-  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
-    id: entry.id,
-    title: entry.data.symptom_type || 'Symptom entry',
-    subtitle: `Severity ${entry.data.severity}/10 | ${entry.data.duration_minutes} min${
-      entry.data.location ? ` | ${entry.data.location}` : ''
-    }`,
-  }));
-  const qualityHints = getSymptomLogQualityHints(formData, {
-    contextOpen: showContextDetails,
-  });
 
   return (
     <LogPageShell
@@ -261,49 +133,25 @@ export default function SymptomsLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner
-            isEditing={Boolean(editingId)}
-            onCancel={() => {
-              resetForm();
-              setShowContextDetails(false);
-            }}
-          />
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
+              </div>
 
-          {!editingId ? (
-            <div className="mb-6">
-              <LogRecallPanel
-                hasStoredDraft={hasStoredDraft}
-                draftUpdatedAt={draftUpdatedAt}
-                draftLabel="Symptom draft restored from this device."
-                recentItems={recentRecallItems}
-                onDiscardDraft={() => {
-                  discardStoredDraft();
-                  setCustomSymptom('');
-                  setPostSaveActions([]);
-                }}
-                onUseRecent={handleUseRecent}
-              />
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                Cancel
+              </button>
             </div>
-          ) : null}
+          )}
 
-          {!editingId && followUp ? (
-            <div className="mb-6">
-              <LogFollowUpNotice followUp={followUp} />
-            </div>
-          ) : null}
-
-          {!editingId && postSaveActions.length > 0 ? (
-            <div className="mb-6">
-              <LogFollowUpActions
-                summary="This symptom is saved. If a nearby meal or medication belongs to the same episode, capture it now while the timeline is fresh."
-                actions={postSaveActions}
-                onDismiss={() => setPostSaveActions([])}
-              />
-            </div>
-          ) : null}
-
-          <form onSubmit={handleFormSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
@@ -338,7 +186,7 @@ export default function SymptomsLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
               <div className="mb-4">
                 <label className="field-label">Symptom Type</label>
                 <p className="field-help mt-1">Choose the closest match or set a custom symptom.</p>
@@ -392,8 +240,8 @@ export default function SymptomsLog() {
               )}
             </div>
 
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
                 <label className="field-label mb-2 block">
                   Severity:{' '}
                   <span className="font-medium text-[var(--color-text-primary)]">
@@ -422,7 +270,7 @@ export default function SymptomsLog() {
                 </div>
               </div>
 
-              <div className="surface-panel-quiet rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
+              <div className="surface-panel-quiet rounded-[28px] p-4 sm:p-5">
                 <label htmlFor="duration" className="field-label mb-2 block">
                   Duration (minutes)
                 </label>
@@ -444,83 +292,77 @@ export default function SymptomsLog() {
               </div>
             </div>
 
-            <LogOptionalSection
-              title="Symptom context"
-              isOpen={showContextDetails}
-              onToggle={() => setShowContextDetails(!showContextDetails)}
-              summary="Location, likely triggers, and notes stay available without lengthening every symptom entry."
-            >
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="location" className="field-label mb-2 block">
-                  <MapPin className="mr-1 inline h-4 w-4" />
-                  Location
-                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="location" className="field-label mb-2 block">
+                <MapPin className="mr-1 inline h-4 w-4" />
+                Location
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+              </label>
 
-                <input
-                  type="text"
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g. Lower abdomen, head, left side..."
-                  className="input-base w-full"
-                />
+              <input
+                type="text"
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g. Lower abdomen, head, left side..."
+                className="input-base w-full"
+              />
+            </div>
+
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <div className="mb-4">
+                <label className="field-label">Potential Triggers</label>
+                <p className="field-help mt-1">
+                  Tag likely context without overfitting. Use only what seems relevant.
+                </p>
               </div>
 
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <div className="mb-4">
-                  <label className="field-label">Potential Triggers</label>
-                  <p className="field-help mt-1">
-                    Tag likely context without overfitting. Use only what seems relevant.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                  {commonTriggers.map((trigger) => (
-                    <button
-                      key={trigger}
-                      type="button"
-                      onClick={() => toggleTrigger(trigger)}
-                      className={[
-                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
-                        formData.triggers.includes(trigger)
-                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                      ].join(' ')}
-                    >
-                      {trigger}
-                    </button>
-                  ))}
-                </div>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                {commonTriggers.map((trigger) => (
+                  <button
+                    key={trigger}
+                    type="button"
+                    onClick={() => toggleTrigger(trigger)}
+                    className={[
+                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
+                      formData.triggers.includes(trigger)
+                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                    ].join(' ')}
+                  >
+                    {trigger}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="notes" className="field-label mb-2 block">
-                  Notes
-                </label>
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
+                Notes
+              </label>
 
-                <textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={4}
-                  placeholder="Additional observations..."
-                  className="input-base min-h-[112px] w-full resize-none"
-                />
-              </div>
-            </LogOptionalSection>
+              <textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={4}
+                placeholder="Additional observations..."
+                className="input-base min-h-[112px] w-full resize-none"
+              />
+            </div>
 
-            <LogQualityNudges
-              hints={qualityHints}
-              onApplyHint={() => setShowContextDetails(true)}
-            />
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button type="submit" disabled={saving || !formData.symptom_type} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
+              </Button>
 
-            <LogFormActions
-              isEditing={Boolean(editingId)}
-              saving={saving}
-              submitDisabled={!formData.symptom_type}
-              onCancel={resetForm}
-            />
+              {editingId && (
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
       ) : (

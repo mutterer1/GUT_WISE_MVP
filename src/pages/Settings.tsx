@@ -3,13 +3,10 @@ import {
   Bell,
   CreditCard,
   FileUp,
-  FileText,
   Globe,
   HeartPulse,
   HelpCircle,
-  Layers3,
   Lock,
-  Pill,
   ShieldCheck,
   Shield,
   User,
@@ -71,24 +68,6 @@ export default function Settings() {
       path: '/settings/document-intake',
     },
     {
-      title: 'Clinical Import Workbench',
-      icon: Layers3,
-      description: 'Stage future external imports as reviewable candidates before they enter active medical context.',
-      path: '/settings/import-workbench',
-    },
-    {
-      title: 'Medication List Importer',
-      icon: Pill,
-      description: 'Paste a portal or pharmacy medication list, preview parsed entries, and send them into the clinical review queue.',
-      path: '/settings/import-medication-list',
-    },
-    {
-      title: 'Clinical History Importer',
-      icon: FileText,
-      description: 'Normalize diagnoses, allergies, procedures, diet guidance, and red-flag history into reviewable candidates before activation.',
-      path: '/settings/import-clinical-history',
-    },
-    {
       title: 'Reference Review Queue',
       icon: ShieldCheck,
       description: 'Review custom foods and medications before promoting them into the live reference library.',
@@ -131,9 +110,6 @@ export default function Settings() {
             const discovery =
               section.title === 'Medical Context' ||
               section.title === 'Document Intake & Review' ||
-              section.title === 'Clinical Import Workbench' ||
-              section.title === 'Medication List Importer' ||
-              section.title === 'Clinical History Importer' ||
               section.title === 'Reference Review Queue';
 
             return (

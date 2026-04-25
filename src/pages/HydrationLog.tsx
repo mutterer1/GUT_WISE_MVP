@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Activity, Clock, Droplet, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { Activity, Clock, Droplet, Pencil, Save, Zap } from 'lucide-react';
+import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import LogEditingBanner from '../components/LogEditingBanner';
-import LogFormActions from '../components/LogFormActions';
-import LogFollowUpNotice from '../components/LogFollowUpNotice';
 import LogPageShell from '../components/LogPageShell';
-import LogQualityNudges from '../components/LogQualityNudges';
-import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
-import LogOptionalSection from '../components/LogOptionalSection';
 import { useLogCrud } from '../hooks/useLogCrud';
-import {
-  mergeLogFollowUpPrefill,
-  readLogFollowUpState,
-} from '../services/logFollowUpService';
 import { formatDateTime } from '../utils/dateFormatters';
-import { getHydrationLogQualityHints } from '../utils/logQualityHints';
 import {
   type HydrationUnit,
   mlToOz,
@@ -91,32 +80,8 @@ function buildHydrationFormData(
   };
 }
 
-function hasMeaningfulHydrationDraft(formData: HydrationFormData): boolean {
-  const defaults = buildHydrationFormData();
-  return (
-    formData.beverage_type !== defaults.beverage_type ||
-    formData.amount_ml !== defaults.amount_ml ||
-    formData.caffeine_content !== defaults.caffeine_content ||
-    formData.caffeine_mg !== defaults.caffeine_mg ||
-    formData.electrolyte_present !== defaults.electrolyte_present ||
-    formData.alcohol_present !== defaults.alcohol_present ||
-    formData.notes.trim().length > 0
-  );
-}
-
-function hasHydrationContextDetails(formData: HydrationFormData): boolean {
-  return (
-    formData.caffeine_content ||
-    formData.caffeine_mg > 0 ||
-    formData.notes.trim().length > 0
-  );
-}
-
 export default function HydrationLog() {
-  const location = useLocation();
   const [unit, setUnit] = useState<HydrationUnit>(getStoredHydrationUnit);
-  const [showHydrationDetails, setShowHydrationDetails] = useState(false);
-  const followUp = readLogFollowUpState<HydrationFormData>(location.state);
 
   const {
     formData,
@@ -126,11 +91,6 @@ export default function HydrationLog() {
     setShowHistory,
     editingId,
     saving,
-    recentEntries,
-    applyRecent,
-    hasStoredDraft,
-    draftUpdatedAt,
-    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -143,7 +103,6 @@ export default function HydrationLog() {
     table: 'hydration_logs' as const,
     logType: 'hydration' as const,
     defaultValues: buildHydrationFormData(),
-    hasMeaningfulDraft: hasMeaningfulHydrationDraft,
     buildInsertPayload: (data, userId) => {
       const normalized = hydrateLogWithDerivedFields(data);
       return {
@@ -182,23 +141,6 @@ export default function HydrationLog() {
       ...buildHydrationFormData(log),
     }),
   });
-
-  useEffect(() => {
-    if (hasHydrationContextDetails(formData)) {
-      setShowHydrationDetails(true);
-    } else if (!editingId) {
-      setShowHydrationDetails(false);
-    }
-  }, [editingId, formData]);
-
-  useEffect(() => {
-    if (!followUp || editingId) {
-      return;
-    }
-
-    setFormData((current) => mergeLogFollowUpPrefill(current, followUp));
-    setShowHydrationDetails(false);
-  }, [editingId, followUp?.followUpKey, followUp, setFormData]);
 
   const applyHydrationChanges = (patch: Partial<HydrationFormData>) => {
     setFormData((prev) => {
@@ -281,27 +223,6 @@ export default function HydrationLog() {
         ? 'Tracked separately from hydration'
         : 'Counts as total fluid, not water goal';
 
-  const handleUseRecent = (recentId: string) => {
-    const entry = recentEntries.find((item) => item.id === recentId);
-    if (!entry) {
-      return;
-    }
-
-    applyRecent(entry);
-    setShowHydrationDetails(hasHydrationContextDetails(entry.data));
-  };
-
-  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
-    id: entry.id,
-    title: `${entry.data.beverage_type} | ${formatHydrationAmount(entry.data.amount_ml, unit)}`,
-    subtitle: entry.data.caffeine_mg > 0
-      ? `${entry.data.caffeine_mg} mg caffeine | ${entry.data.beverage_category}`
-      : `caffeine-free | ${entry.data.beverage_category}`,
-  }));
-  const qualityHints = getHydrationLogQualityHints(formData, {
-    detailsOpen: showHydrationDetails,
-  });
-
   return (
     <LogPageShell
       title="Hydration Log"
@@ -322,37 +243,24 @@ export default function HydrationLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner
-            isEditing={Boolean(editingId)}
-            onCancel={() => {
-              resetForm();
-              setShowHydrationDetails(false);
-            }}
-          />
-
-          {!editingId ? (
-            <div className="mb-6">
-              <LogRecallPanel
-                hasStoredDraft={hasStoredDraft}
-                draftUpdatedAt={draftUpdatedAt}
-                draftLabel="Hydration draft restored from this device."
-                recentItems={recentRecallItems}
-                onDiscardDraft={() => {
-                  discardStoredDraft();
-                }}
-                onUseRecent={handleUseRecent}
-              />
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                Cancel
+              </button>
             </div>
-          ) : null}
-
-          {!editingId && followUp ? (
-            <div className="mb-6">
-              <LogFollowUpNotice followUp={followUp} />
-            </div>
-          ) : null}
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
@@ -388,7 +296,7 @@ export default function HydrationLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
               <div className="mb-4">
                 <label className="field-label">
                   <Droplet className="mr-1 inline h-4 w-4" />
@@ -432,7 +340,7 @@ export default function HydrationLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <label className="field-label">Amount</label>
 
@@ -489,53 +397,8 @@ export default function HydrationLog() {
               />
             </div>
 
-            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr]">
-              <div className="surface-panel-soft rounded-[24px] p-4 sm:p-5">
-                <div className="mb-4 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-[var(--color-accent-secondary)]" />
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                    Hydration interpretation
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <MetricChip
-                    label="Effective Hydration"
-                    value={formatHydrationAmount(formData.effective_hydration_ml, unit)}
-                  />
-                  <MetricChip
-                    label="Water Goal Credit"
-                    value={formatHydrationAmount(formData.water_goal_contribution_ml, unit)}
-                  />
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {formData.electrolyte_present && (
-                    <span className="rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-3 py-1 text-xs text-[var(--color-accent-primary)]">
-                      Electrolytes present
-                    </span>
-                  )}
-                  {formData.alcohol_present && (
-                    <span className="rounded-full border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] px-3 py-1 text-xs text-[rgba(252,165,165,0.98)]">
-                      Alcohol tracked separately
-                    </span>
-                  )}
-                  {!formData.electrolyte_present && !formData.alcohol_present && (
-                    <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs text-[var(--color-text-tertiary)]">
-                      Category: {formData.beverage_category}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <LogOptionalSection
-              title="Caffeine and notes"
-              isOpen={showHydrationDetails}
-              onToggle={() => setShowHydrationDetails(!showHydrationDetails)}
-              summary="Use this only when caffeine context or extra notes help explain the intake."
-            >
-              <div className="surface-panel-quiet rounded-[24px] p-4">
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-[var(--color-text-secondary)]">
@@ -577,28 +440,71 @@ export default function HydrationLog() {
                 />
               </div>
 
-              <div className="surface-panel-soft rounded-[24px] p-4">
-                <label htmlFor="notes" className="field-label mb-2 block">
-                  Notes
-                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-                </label>
-                <textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="input-base min-h-[112px] w-full resize-none"
-                  rows={4}
-                  placeholder="Context, brand, timing, or anything you want to remember..."
-                />
+              <div className="surface-panel-soft rounded-[24px] p-4 sm:p-5">
+                <div className="mb-4 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-[var(--color-accent-secondary)]" />
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                    Hydration interpretation
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <MetricChip
+                    label="Effective Hydration"
+                    value={formatHydrationAmount(formData.effective_hydration_ml, unit)}
+                  />
+                  <MetricChip
+                    label="Water Goal Credit"
+                    value={formatHydrationAmount(formData.water_goal_contribution_ml, unit)}
+                  />
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {formData.electrolyte_present && (
+                    <span className="rounded-full border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-3 py-1 text-xs text-[var(--color-accent-primary)]">
+                      Electrolytes present
+                    </span>
+                  )}
+                  {formData.alcohol_present && (
+                    <span className="rounded-full border border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] px-3 py-1 text-xs text-[rgba(252,165,165,0.98)]">
+                      Alcohol tracked separately
+                    </span>
+                  )}
+                  {!formData.electrolyte_present && !formData.alcohol_present && (
+                    <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs text-[var(--color-text-tertiary)]">
+                      Category: {formData.beverage_category}
+                    </span>
+                  )}
+                </div>
               </div>
-            </LogOptionalSection>
+            </div>
 
-            <LogQualityNudges
-              hints={qualityHints}
-              onApplyHint={() => setShowHydrationDetails(true)}
-            />
+            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+              <label htmlFor="notes" className="field-label mb-2 block">
+                Notes
+                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+              </label>
+              <textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="input-base min-h-[112px] w-full resize-none"
+                rows={4}
+                placeholder="Context, brand, timing, or anything you want to remember..."
+              />
+            </div>
 
-            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
+              </Button>
+              {editingId && (
+                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
       ) : (

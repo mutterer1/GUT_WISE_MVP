@@ -2,24 +2,18 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
   Clock,
+  Pencil,
+  Save,
 } from 'lucide-react';
+import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import LogEditingBanner from '../components/LogEditingBanner';
-import LogFollowUpActions from '../components/LogFollowUpActions';
-import LogFormActions from '../components/LogFormActions';
-import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
-import LogQualityNudges from '../components/LogQualityNudges';
-import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
-import {
-  createLogFollowUpState,
-  type LogFollowUpAction,
-} from '../services/logFollowUpService';
-import { getBmLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 import { BRISTOL_SCALE } from '../constants/domain';
 
@@ -90,17 +84,8 @@ function hasNonDefaultDetails(formData: BMFormData): boolean {
   );
 }
 
-function hasMeaningfulBmDraft(formData: BMFormData): boolean {
-  return (
-    formData.bristol_type !== 4 ||
-    formData.amount !== 'medium' ||
-    hasNonDefaultDetails(formData)
-  );
-}
-
 export default function BMLog() {
   const [showDetails, setShowDetails] = useState(false);
-  const [postSaveActions, setPostSaveActions] = useState<LogFollowUpAction[]>([]);
 
   const {
     formData,
@@ -110,11 +95,6 @@ export default function BMLog() {
     setShowHistory,
     editingId,
     saving,
-    recentEntries,
-    applyRecent,
-    hasStoredDraft,
-    draftUpdatedAt,
-    discardStoredDraft,
     message,
     toastVisible,
     error,
@@ -123,10 +103,7 @@ export default function BMLog() {
     handleEdit,
     handleDelete,
     resetForm,
-  } = useLogCrud<BMFormData>({
-    ...bmConfig,
-    hasMeaningfulDraft: hasMeaningfulBmDraft,
-  });
+  } = useLogCrud<BMFormData>(bmConfig);
 
   useEffect(() => {
     if (editingId && hasNonDefaultDetails(formData)) {
@@ -143,56 +120,7 @@ export default function BMLog() {
   const handleReset = () => {
     resetForm();
     setShowDetails(false);
-    setPostSaveActions([]);
   };
-
-  const handleUseRecent = (recentId: string) => {
-    const entry = recentEntries.find((item) => item.id === recentId);
-    if (!entry) {
-      return;
-    }
-
-    applyRecent(entry);
-    setShowDetails(hasNonDefaultDetails(entry.data));
-    setPostSaveActions([]);
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    const saveResult = await handleSubmit(e);
-
-    if (!saveResult || saveResult.mode !== 'create') {
-      setPostSaveActions([]);
-      return;
-    }
-
-    const context = {
-      sourceType: 'bm' as const,
-      sourceTitle: 'BM saved',
-      sourceSummary: `Bristol Type ${saveResult.formData.bristol_type} | ${saveResult.formData.amount}`,
-      loggedAt: saveResult.formData.logged_at,
-    };
-
-    setPostSaveActions([
-      {
-        id: 'bm-follow-up-symptoms',
-        label: 'Log symptoms',
-        description: 'Capture cramping, urgency, or lingering effects tied to this bowel event.',
-        to: '/symptoms-log',
-        state: createLogFollowUpState(context, {
-          logged_at: saveResult.formData.logged_at,
-        }),
-      },
-    ]);
-  };
-
-  const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
-    id: entry.id,
-    title: `Bristol Type ${entry.data.bristol_type} | ${entry.data.amount}`,
-    subtitle: `Urgency ${Number(entry.data.urgency).toFixed(1)}/10 | Pain ${Number(
-      entry.data.pain_level
-    ).toFixed(1)}/10`,
-  }));
-  const qualityHints = getBmLogQualityHints(formData, { detailsOpen: showDetails });
 
   return (
     <LogPageShell
@@ -214,36 +142,24 @@ export default function BMLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={handleReset} />
+          {editingId && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
+                <Pencil className="h-4 w-4" />
+                <span>Editing entry</span>
+              </div>
 
-          {!editingId ? (
-            <div className="mb-6">
-              <LogRecallPanel
-                hasStoredDraft={hasStoredDraft}
-                draftUpdatedAt={draftUpdatedAt}
-                draftLabel="BM draft restored from this device."
-                recentItems={recentRecallItems}
-                onDiscardDraft={() => {
-                  discardStoredDraft();
-                  setShowDetails(false);
-                  setPostSaveActions([]);
-                }}
-                onUseRecent={handleUseRecent}
-              />
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                Cancel
+              </button>
             </div>
-          ) : null}
+          )}
 
-          {!editingId && postSaveActions.length > 0 ? (
-            <div className="mb-6">
-              <LogFollowUpActions
-                summary="This bowel event is saved. If symptoms belong to the same episode, log them now while the timing is still precise."
-                actions={postSaveActions}
-                onDismiss={() => setPostSaveActions([])}
-              />
-            </div>
-          ) : null}
-
-          <form onSubmit={handleFormSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
@@ -338,85 +254,107 @@ export default function BMLog() {
               </div>
             </div>
 
-            <LogOptionalSection
-              title="Details"
-              isOpen={showDetails}
-              onToggle={() => setShowDetails(!showDetails)}
-              summary="Urgency, pain, difficulty, and unusual findings can sharpen the event signal."
-            >
-              <div className="grid gap-5 md:grid-cols-3">
-                <SliderField
-                  label="Urgency Level"
-                  value={formData.urgency}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, urgency: value }))}
-                  low="Low"
-                  high="High"
-                />
+            <div className="rounded-[28px] border border-white/8 bg-white/[0.02] px-4 py-3 sm:px-5">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex w-full items-center justify-between gap-4 py-1 text-left transition-smooth hover:text-[var(--color-text-primary)]"
+              >
+                <span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Details</span>
+                  <span className="ml-2 text-sm text-[var(--color-text-tertiary)]">(optional)</span>
+                </span>
 
-                <SliderField
-                  label="Pain Level"
-                  value={formData.pain_level}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, pain_level: value }))}
-                  low="None"
-                  high="Severe"
-                />
+                {showDetails ? (
+                  <ChevronUp className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                )}
+              </button>
 
-                <SliderField
-                  label="Difficulty Level"
-                  value={formData.difficulty_level}
-                  onChange={(value) => setFormData((prev) => ({ ...prev, difficulty_level: value }))}
-                  low="Easy"
-                  high="Hard"
-                />
-              </div>
+              {showDetails && (
+                <div className="mt-5 space-y-6 border-t border-white/8 pt-5">
+                  <div className="grid gap-5 md:grid-cols-3">
+                    <SliderField
+                      label="Urgency Level"
+                      value={formData.urgency}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, urgency: value }))}
+                      low="Low"
+                      high="High"
+                    />
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <ToggleField
-                  label="Incomplete Evacuation"
-                  active={formData.incomplete_evacuation}
-                  onToggle={() =>
-                    setFormData((prev) => ({ ...prev, incomplete_evacuation: !prev.incomplete_evacuation }))
-                  }
-                />
+                    <SliderField
+                      label="Pain Level"
+                      value={formData.pain_level}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, pain_level: value }))}
+                      low="None"
+                      high="Severe"
+                    />
 
-                <ToggleField
-                  label="Blood Present"
-                  active={formData.blood_present}
-                  onToggle={() =>
-                    setFormData((prev) => ({ ...prev, blood_present: !prev.blood_present }))
-                  }
-                />
+                    <SliderField
+                      label="Difficulty Level"
+                      value={formData.difficulty_level}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, difficulty_level: value }))}
+                      low="Easy"
+                      high="Hard"
+                    />
+                  </div>
 
-                <ToggleField
-                  label="Mucus Present"
-                  active={formData.mucus_present}
-                  onToggle={() =>
-                    setFormData((prev) => ({ ...prev, mucus_present: !prev.mucus_present }))
-                  }
-                />
-              </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <ToggleField
+                      label="Incomplete Evacuation"
+                      active={formData.incomplete_evacuation}
+                      onToggle={() =>
+                        setFormData((prev) => ({ ...prev, incomplete_evacuation: !prev.incomplete_evacuation }))
+                      }
+                    />
 
-              <div>
-                <label htmlFor="notes" className="field-label mb-2 block">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => { const v = e.target.value; setFormData((prev) => ({ ...prev, notes: v })); }}
-                  rows={4}
-                  placeholder="Any context worth remembering..."
-                  className="input-base min-h-[112px] w-full resize-none"
-                />
-              </div>
-            </LogOptionalSection>
+                    <ToggleField
+                      label="Blood Present"
+                      active={formData.blood_present}
+                      onToggle={() =>
+                        setFormData((prev) => ({ ...prev, blood_present: !prev.blood_present }))
+                      }
+                    />
 
-            <LogQualityNudges
-              hints={qualityHints}
-              onApplyHint={() => setShowDetails(true)}
-            />
+                    <ToggleField
+                      label="Mucus Present"
+                      active={formData.mucus_present}
+                      onToggle={() =>
+                        setFormData((prev) => ({ ...prev, mucus_present: !prev.mucus_present }))
+                      }
+                    />
+                  </div>
 
-            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={handleReset} />
+                  <div>
+                    <label htmlFor="notes" className="field-label mb-2 block">
+                      Notes
+                    </label>
+                    <textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => { const v = e.target.value; setFormData((prev) => ({ ...prev, notes: v })); }}
+                      rows={4}
+                      placeholder="Any context worth remembering..."
+                      className="input-base min-h-[112px] w-full resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button type="submit" disabled={saving} size="lg">
+                <Save className="mr-2 inline h-4 w-4" />
+                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
+              </Button>
+
+              {editingId && (
+                <Button type="button" variant="secondary" size="lg" onClick={handleReset}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
       ) : (

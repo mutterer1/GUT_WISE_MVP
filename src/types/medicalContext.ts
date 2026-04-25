@@ -15,8 +15,7 @@ export type ConfirmationState =
 export type ProvenanceSource =
   | 'manual_entry'
   | 'document_extraction'
-  | 'clinician_shared'
-  | 'external_import';
+  | 'clinician_shared';
 
 export interface FactProvenance {
   source: ProvenanceSource;
@@ -26,27 +25,12 @@ export interface FactProvenance {
   notes: string | null;
 }
 
-export type MedicalFactTimelineStatus =
-  | 'current'
-  | 'historical'
-  | 'resolved'
-  | 'under_investigation'
-  | 'inactive';
-
-export interface MedicalFactTimeline {
-  status: MedicalFactTimelineStatus;
-  effective_date: string | null;
-  end_date: string | null;
-  currency_label: string;
-}
-
 export interface MedicalFactBase {
   id: string;
   user_id: string;
   category: MedicalFactCategory;
   confirmation_state: ConfirmationState;
   provenance: FactProvenance;
-  timeline: MedicalFactTimeline;
   is_active: boolean;
   deactivated_at: string | null;
   created_at: string;
@@ -169,7 +153,6 @@ export interface MedicalContextSummary {
   surgeries_procedures: SurgeryProcedureFact[];
   allergies_intolerances: AllergyIntoleranceFact[];
   active_diet_guidance: DietGuidanceFact[];
-  active_red_flags: RedFlagHistoryFact[];
   red_flag_history: RedFlagHistoryFact[];
   has_confirmed_facts: boolean;
   confirmed_document_backed_fact_count: number;
@@ -202,8 +185,7 @@ export interface MedicalContextProfileRow {
 export type ExtractionSource =
   | 'document_extraction'
   | 'clinician_shared'
-  | 'inference'
-  | 'external_import';
+  | 'inference';
 
 export type DocumentExtractionStatus =
   | 'not_started'
@@ -240,8 +222,6 @@ export interface MedicalContextProfile extends MedicalContextProfileRow {
   pending_candidates_count: number;
 }
 
-export type IntakeSourceKind = 'document_upload' | 'external_import';
-
 export type IntakeStatus =
   | 'uploaded'
   | 'processing'
@@ -252,16 +232,12 @@ export type IntakeStatus =
 export interface MedicalDocumentIntakeRow {
   id: string;
   user_id: string;
-  intake_source: IntakeSourceKind;
   file_name: string;
   file_type: string;
   file_size_bytes: number;
   intake_status: IntakeStatus;
   document_notes: string | null;
   candidate_count: number;
-  source_label?: string | null;
-  source_reference?: string | null;
-  source_metadata?: Record<string, unknown> | null;
   storage_bucket?: string | null;
   storage_path?: string | null;
   content_sha256?: string | null;
@@ -272,13 +248,6 @@ export interface MedicalDocumentIntakeRow {
   page_count?: number | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface DocumentExtractionOrchestrationResponse {
-  success: boolean;
-  intake: MedicalDocumentIntakeRow;
-  extraction_supported: boolean;
-  message: string | null;
 }
 
 export type CandidateEvidenceKind =
@@ -317,55 +286,4 @@ export interface CandidateMedicalFactEvidenceRow {
   confidence_score: number | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface CandidateReviewEvidenceItem {
-  evidence: CandidateMedicalFactEvidenceRow;
-  segment: MedicalDocumentEvidenceSegmentRow | null;
-  intake: MedicalDocumentIntakeRow | null;
-}
-
-export type GenericMedicalImportSourceType =
-  | 'medication_list'
-  | 'visit_summary'
-  | 'lab_summary'
-  | 'clinician_packet'
-  | 'custom';
-
-export interface ImportedCandidateEvidenceDraft {
-  evidence_kind?: CandidateEvidenceKind;
-  page_number?: number | null;
-  section_label?: string | null;
-  quoted_text?: string | null;
-  normalized_text?: string | null;
-  cited_text?: string | null;
-  span_start?: number | null;
-  span_end?: number | null;
-  confidence_score?: number | null;
-  extractor_label?: string | null;
-}
-
-export interface ImportedMedicalFactDraft {
-  category: MedicalFactCategory;
-  detail: Record<string, unknown>;
-  extraction_confidence?: number | null;
-  extraction_notes?: string | null;
-  evidence_items?: ImportedCandidateEvidenceDraft[];
-}
-
-export interface MedicalImportBatchInput {
-  source_type: GenericMedicalImportSourceType;
-  source_label: string;
-  source_reference?: string | null;
-  import_note?: string | null;
-  source_metadata?: Record<string, unknown> | null;
-  candidates: ImportedMedicalFactDraft[];
-}
-
-export interface MedicalImportBatchResult {
-  intake: MedicalDocumentIntakeRow;
-  queued_candidates: CandidateMedicalFactRow[];
-  queued_count: number;
-  skipped_count: number;
-  skipped_reasons: string[];
 }
