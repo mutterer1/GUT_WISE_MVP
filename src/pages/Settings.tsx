@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Layers3,
   Lock,
+  Pill,
   ShieldCheck,
   Shield,
   User,
@@ -75,6 +76,12 @@ export default function Settings() {
       path: '/settings/import-workbench',
     },
     {
+      title: 'Medication List Importer',
+      icon: Pill,
+      description: 'Paste a portal or pharmacy medication list, preview parsed entries, and send them into the clinical review queue.',
+      path: '/settings/import-medication-list',
+    },
+    {
       title: 'Reference Review Queue',
       icon: ShieldCheck,
       description: 'Review custom foods and medications before promoting them into the live reference library.',
@@ -118,6 +125,7 @@ export default function Settings() {
               section.title === 'Medical Context' ||
               section.title === 'Document Intake & Review' ||
               section.title === 'Clinical Import Workbench' ||
+              section.title === 'Medication List Importer' ||
               section.title === 'Reference Review Queue';
 
             return (
