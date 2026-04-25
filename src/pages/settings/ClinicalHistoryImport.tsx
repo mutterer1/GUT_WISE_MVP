@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
+  BookmarkPlus,
   CheckCircle2,
   ClipboardPaste,
   FileJson2,
   HeartPulse,
   RefreshCcw,
   ShieldCheck,
+  Trash2,
+  UploadCloud,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SettingsPageLayout from '../../components/SettingsPageLayout';
@@ -27,6 +30,18 @@ import {
   getClinicalImportSourceOptions,
   type ClinicalImportSourceProfileId,
 } from '../../services/importSourceProfileService';
+import {
+  IMPORT_TEXT_FILE_ACCEPT,
+  formatImportFileSize,
+  readImportTextFile,
+  type ImportTextFileLoadResult,
+} from '../../services/importFileService';
+import {
+  deleteImportTemplate,
+  listClinicalImportTemplates,
+  saveClinicalImportTemplate,
+  type ClinicalImportTemplate,
+} from '../../services/importTemplateService';
 import type {
   GenericMedicalImportSourceType,
   MedicalImportBatchResult,
@@ -37,6 +52,7 @@ const fieldClassName =
   'w-full rounded-[18px] border border-white/10 bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[var(--color-text-primary)] outline-none transition-smooth placeholder:text-[var(--color-text-tertiary)] focus:border-[rgba(84,160,255,0.32)] focus:bg-[rgba(255,255,255,0.06)]';
 const labelClassName =
   'mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]';
+const DEFAULT_SOURCE_LABEL = 'Imported clinical history';
 
 const IMPORT_KIND_OPTIONS: Array<{ value: ClinicalImportKind; label: string }> = [
   { value: 'problem_list', label: 'Problem List' },
@@ -119,6 +135,10 @@ function stableStringify(value: unknown): string {
 function formatConfidence(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return 'Unscored';
   return `${Math.round(value * 100)}%`;
+}
+
+function formatDetectedFormatLabel(value: string): string {
+  return value.replace(/_/g, ' ').toUpperCase();
 }
 
 function previewHasCorrections(item: ClinicalImportPreviewItem): boolean {
@@ -379,12 +399,19 @@ function ClinicalPreviewCard({
 export default function ClinicalHistoryImport() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sourceType, setSourceType] = useState<GenericMedicalImportSourceType>('visit_summary');
   const [importKind, setImportKind] = useState<ClinicalImportKind>('mixed_clinical');
-  const [sourceLabel, setSourceLabel] = useState('Imported clinical history');
+  const [templateVersion, setTemplateVersion] = useState(0);
+  const [sourceLabel, setSourceLabel] = useState(DEFAULT_SOURCE_LABEL);
   const [sourceReference, setSourceReference] = useState('');
   const [sourceProfileId, setSourceProfileId] = useState<ClinicalImportSourceProfileId | ''>('');
   const [importNote, setImportNote] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [templateNotice, setTemplateNotice] = useState('');
+  const [loadedFile, setLoadedFile] = useState<ImportTextFileLoadResult | null>(null);
   const [inputText, setInputText] = useState(EXAMPLE_INPUT);
   const [parsing, setParsing] = useState(false);
   const [queueing, setQueueing] = useState(false);
@@ -392,6 +419,10 @@ export default function ClinicalHistoryImport() {
   const [parseResult, setParseResult] = useState<ClinicalHistoryImportParseResult | null>(null);
   const [previewItems, setPreviewItems] = useState<ClinicalImportPreviewItem[]>([]);
   const [queueResult, setQueueResult] = useState<MedicalImportBatchResult | null>(null);
+
+  const templates = useMemo(() => listClinicalImportTemplates(), [templateVersion]);
+  const selectedTemplate =
+    templates.find((template) => template.id === selectedTemplateId) ?? null;
 
   const correctedCount = useMemo(
     () => previewItems.filter(previewHasCorrections).length,
@@ -407,6 +438,78 @@ export default function ClinicalHistoryImport() {
   const sourceStrategyLabel = previewItems[0]?.parse_strategy_label ?? 'Not available';
   const effectiveImportKindLabel =
     previewItems[0]?.effective_import_kind.replace(/_/g, ' ') ?? 'Not available';
+
+  const applyTemplate = (template: ClinicalImportTemplate) => {
+    setSelectedTemplateId(template.id);
+    setSourceType(template.config.sourceType);
+    setImportKind(template.config.importKind);
+    setSourceLabel(template.config.sourceLabel);
+    setSourceReference(template.config.sourceReference);
+    setSourceProfileId(template.config.sourceProfileId);
+    setImportNote(template.config.importNote);
+    setTemplateNotice(`Loaded template: ${template.name}.`);
+  };
+
+  const handleSaveTemplate = () => {
+    try {
+      const saved = saveClinicalImportTemplate({
+        name: templateName,
+        description: templateDescription,
+        config: {
+          sourceType,
+          importKind,
+          sourceLabel,
+          sourceReference,
+          sourceProfileId,
+          importNote,
+        },
+      });
+
+      setTemplateVersion((current) => current + 1);
+      setTemplateName('');
+      setTemplateDescription('');
+      setSelectedTemplateId(saved.id);
+      setTemplateNotice(`Saved template: ${saved.name}.`);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save clinical importer template');
+    }
+  };
+
+  const handleDeleteTemplate = () => {
+    if (!selectedTemplate || selectedTemplate.is_built_in) return;
+
+    deleteImportTemplate('clinical_history', selectedTemplate.id);
+    setTemplateVersion((current) => current + 1);
+    setSelectedTemplateId('');
+    setTemplateNotice(`Deleted template: ${selectedTemplate.name}.`);
+  };
+
+  const handleFileSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const loaded = await readImportTextFile(file);
+      setLoadedFile(loaded);
+      setInputText(loaded.text);
+      setParseResult(null);
+      setPreviewItems([]);
+      setQueueResult(null);
+      setError('');
+
+      setSourceLabel((current) =>
+        !current.trim() || current === DEFAULT_SOURCE_LABEL ? loaded.source_label_suggestion : current
+      );
+      setSourceReference((current) =>
+        !current.trim() ? loaded.source_reference_suggestion : current
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load import file');
+    } finally {
+      event.target.value = '';
+    }
+  };
 
   const handleBuildPreview = async () => {
     setParsing(true);
@@ -463,6 +566,9 @@ export default function ClinicalHistoryImport() {
         source_reference: sourceReference || null,
         import_note: importNote || null,
         source_profile_id: sourceProfileId || null,
+        template_name: selectedTemplate?.name ?? null,
+        import_file_name: loadedFile?.file_name ?? null,
+        import_file_format: loadedFile?.detected_format ?? null,
         import_kind: importKind,
         detected_format: parseResult?.detected_format ?? 'line_list',
         items: previewItems,
@@ -643,6 +749,151 @@ export default function ClinicalHistoryImport() {
                 />
               </div>
 
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)]">
+                <div className="rounded-[24px] border border-[rgba(133,93,255,0.14)] bg-[rgba(133,93,255,0.08)] px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <BookmarkPlus className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-secondary)]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-secondary)]">
+                        Saved setup templates
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Keep reusable source presets for portal exports, visit summaries, and other
+                        recurring clinical-history imports.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <div>
+                      <label className={labelClassName}>Load Template</label>
+                      <select
+                        value={selectedTemplateId}
+                        onChange={(e) => {
+                          const nextId = e.target.value;
+                          setSelectedTemplateId(nextId);
+                          const template = templates.find((item) => item.id === nextId);
+                          if (template) {
+                            applyTemplate(template);
+                          } else {
+                            setTemplateNotice('');
+                          }
+                        }}
+                        className={fieldClassName}
+                      >
+                        <option value="">No template loaded</option>
+                        {templates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name}
+                            {template.is_built_in ? ' (starter)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedTemplate?.description && (
+                        <p className="mt-2 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                          {selectedTemplate.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-end">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDeleteTemplate}
+                        disabled={!selectedTemplate || selectedTemplate.is_built_in}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Custom
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className={labelClassName}>Save Current Setup As</label>
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        className={fieldClassName}
+                        placeholder="Example: GI portal problem export"
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelClassName}>Template Description</label>
+                      <input
+                        type="text"
+                        value={templateDescription}
+                        onChange={(e) => setTemplateDescription(e.target.value)}
+                        className={fieldClassName}
+                        placeholder="Optional note about this source setup"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Button size="sm" variant="secondary" onClick={handleSaveTemplate}>
+                      <BookmarkPlus className="h-4 w-4" />
+                      Save Template
+                    </Button>
+                    {templateNotice && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-[var(--color-text-tertiary)]">
+                        {templateNotice}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-[rgba(84,160,255,0.14)] bg-[rgba(84,160,255,0.08)] px-4 py-4">
+                  <div className="flex items-start gap-3">
+                    <UploadCloud className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-primary)]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-accent-primary)]">
+                        File-backed import entry
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        Upload a CSV, TSV, JSON, or plain-text export directly into the preview.
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={IMPORT_TEXT_FILE_ACCEPT}
+                    onChange={handleFileSelected}
+                    className="hidden"
+                  />
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <UploadCloud className="h-4 w-4" />
+                      Upload Import File
+                    </Button>
+                    {loadedFile && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-[var(--color-text-tertiary)]">
+                        {loadedFile.file_name} | {formatImportFileSize(loadedFile.file_size_bytes)}
+                      </span>
+                    )}
+                  </div>
+
+                  {loadedFile && (
+                    <div className="mt-4 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      <p>Detected file type: {formatDetectedFormatLabel(loadedFile.detected_format)}</p>
+                      {loadedFile.quality_notes.map((note) => (
+                        <p key={note}>{note}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className={labelClassName}>Clinical History Input</label>
                 <textarea
@@ -659,6 +910,10 @@ export default function ClinicalHistoryImport() {
                 <Button onClick={handleBuildPreview} disabled={parsing}>
                   <ClipboardPaste className="h-4 w-4" />
                   {parsing ? 'Building Preview...' : 'Build Preview'}
+                </Button>
+                <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                  <UploadCloud className="h-4 w-4" />
+                  Upload File
                 </Button>
                 <Button variant="secondary" onClick={() => setInputText(EXAMPLE_INPUT)}>
                   <FileJson2 className="h-4 w-4" />
@@ -681,9 +936,9 @@ export default function ClinicalHistoryImport() {
                     Supported import styles
                   </h3>
                   <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
-                    <p>Problem or allergy CSVs with headers like category, diagnosis, allergen, date, or notes.</p>
+                    <p>Paste or upload problem and allergy CSVs with headers like category, diagnosis, allergen, date, or notes.</p>
                     <p>Structured JSON arrays from portals or helper scripts.</p>
-                    <p>Plain line lists for quick clinician-note normalization.</p>
+                    <p>Plain line lists still work, but they rely more on preview review before queueing.</p>
                   </div>
                 </div>
               </div>
@@ -755,13 +1010,19 @@ export default function ClinicalHistoryImport() {
                       <p>Source system: {sourceSystemLabel}</p>
                       <p>Strategy: {sourceStrategyLabel}</p>
                       <p>Effective import kind: {effectiveImportKindLabel}</p>
+                      {selectedTemplate && <p>Template: {selectedTemplate.name}</p>}
+                      {loadedFile && (
+                        <p>
+                          File source: {loadedFile.file_name} ({formatDetectedFormatLabel(loadedFile.detected_format)})
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {parseResult.skipped_lines.length > 0 && (
                     <div className="rounded-[20px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
                       <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-                        Skipped details
+                        Skipped rows and cleanup notes
                       </p>
                       <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
                         {parseResult.skipped_lines.map((reason) => (
@@ -837,6 +1098,30 @@ export default function ClinicalHistoryImport() {
                       </p>
                     </div>
                   </div>
+
+                  {(selectedTemplate || loadedFile) && (
+                    <div className="space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                      {selectedTemplate && <p>Template used: {selectedTemplate.name}</p>}
+                      {loadedFile && (
+                        <p>
+                          Imported file: {loadedFile.file_name} ({formatDetectedFormatLabel(loadedFile.detected_format)})
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {queueResult.skipped_reasons.length > 0 && (
+                    <div className="rounded-[20px] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+                        Skipped rows and cleanup notes
+                      </p>
+                      <div className="mt-3 space-y-2 text-sm leading-6 text-[var(--color-text-secondary)]">
+                        {queueResult.skipped_reasons.map((reason) => (
+                          <p key={reason}>{reason}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <Button onClick={() => navigate('/settings/document-intake')}>
                     <ArrowRight className="h-4 w-4" />
