@@ -6,8 +6,10 @@ import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
 import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
+import LogQualityNudges from '../components/LogQualityNudges';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
+import { getStressLogQualityHints } from '../utils/logQualityHints';
 import { formatDateTime } from '../utils/dateFormatters';
 
 interface StressFormData {
@@ -118,6 +120,9 @@ export default function StressLog() {
       setShowContextDetails(false);
     }
   }, [editingId, formData]);
+  const qualityHints = getStressLogQualityHints(formData, {
+    contextOpen: showContextDetails,
+  });
 
   return (
     <LogPageShell
@@ -314,6 +319,11 @@ export default function StressLog() {
                 />
               </div>
             </LogOptionalSection>
+
+            <LogQualityNudges
+              hints={qualityHints}
+              onApplyHint={() => setShowContextDetails(true)}
+            />
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
