@@ -3,6 +3,7 @@ import type {
   MedicalFactRow,
   MedicalFactCategory,
   ConfirmationState,
+  ProvenanceSource,
   MedicalContextSummary,
   MedicalContextProfileRow,
   ConfirmedFactFilter,
@@ -20,9 +21,79 @@ import type {
   MedicalDocumentEvidenceSegmentRow,
   CandidateMedicalFactEvidenceRow,
   CandidateEvidenceKind,
+  DocumentExtractionStatus,
+  DocumentExtractionOrchestrationResponse,
+  CandidateReviewEvidenceItem,
+  ExtractionSource,
+  IntakeSourceKind,
 } from '../types/medicalContext';
 
 const MEDICAL_DOCUMENTS_BUCKET = 'medical-documents';
+const DOCUMENT_EXTRACTION_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-medical-document-intake`;
+const DOCUMENT_EXTRACTION_TIMEOUT_MS = 60_000;
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    return `{${keys
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function normalizeStringList(values: string[]): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const value of values) {
+    const cleaned = value.replace(/\s+/g, ' ').trim();
+    if (!cleaned) continue;
+
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    normalized.push(cleaned);
+  }
+
+  return normalized;
+}
+
+function normalizeDetailForSignature(detail: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, rawValue] of Object.entries(detail)) {
+    if (Array.isArray(rawValue)) {
+      normalized[key] = normalizeStringList(rawValue.map((value) => String(value))).sort((a, b) =>
+        a.localeCompare(b)
+      );
+      continue;
+    }
+
+    if (typeof rawValue === 'string') {
+      normalized[key] = rawValue.replace(/\s+/g, ' ').trim();
+      continue;
+    }
+
+    normalized[key] = rawValue;
+  }
+
+  return normalized;
+}
+
+function buildCandidateSignature(
+  category: MedicalFactCategory,
+  detail: Record<string, unknown>
+): string {
+  return `${category}:${stableStringify(normalizeDetailForSignature(detail))}`;
+}
 
 function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind {
   switch (category) {
@@ -37,12 +108,205 @@ function inferEvidenceKind(category: MedicalFactCategory): CandidateEvidenceKind
   }
 }
 
+function mapCandidateExtractionSourceToProvenanceSource(
+  extractionSource: ExtractionSource
+): ProvenanceSource {
+  switch (extractionSource) {
+    case 'clinician_shared':
+      return 'clinician_shared';
+    case 'external_import':
+      return 'external_import';
+    case 'document_extraction':
+    case 'inference':
+    default:
+      return 'document_extraction';
+  }
+}
+
+function normalizeDateOnly(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function todayDateOnly(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastDate(value: string | null): boolean {
+  return Boolean(value && value < todayDateOnly());
+}
+
+function deriveMedicalFactTimeline(row: MedicalFactRow) {
+  if (!row.is_active) {
+    return {
+      status: 'inactive' as const,
+      effective_date: null,
+      end_date: row.deactivated_at?.slice(0, 10) ?? null,
+      currency_label: 'Removed',
+    };
+  }
+
+  const detail = row.detail as Record<string, unknown>;
+
+  switch (row.category) {
+    case 'diagnosis':
+      return {
+        status: 'current' as const,
+        effective_date: normalizeDateOnly(detail.diagnosed_date),
+        end_date: null,
+        currency_label: 'Current diagnosis',
+      };
+    case 'suspected_condition': {
+      const underInvestigation = Boolean(detail.under_investigation);
+      return {
+        status: underInvestigation ? ('under_investigation' as const) : ('historical' as const),
+        effective_date: null,
+        end_date: null,
+        currency_label: underInvestigation ? 'Under investigation' : 'Historical suspicion',
+      };
+    }
+    case 'medication': {
+      const startDate = normalizeDateOnly(detail.start_date);
+      const endDate = normalizeDateOnly(detail.end_date);
+      const isCurrent = detail.is_current !== false && !isPastDate(endDate);
+
+      return {
+        status: isCurrent ? ('current' as const) : ('historical' as const),
+        effective_date: startDate,
+        end_date: endDate,
+        currency_label: isCurrent ? 'Current medication' : 'Past medication',
+      };
+    }
+    case 'surgery_procedure':
+      return {
+        status: 'historical' as const,
+        effective_date: normalizeDateOnly(detail.procedure_date),
+        end_date: normalizeDateOnly(detail.procedure_date),
+        currency_label: 'Historical procedure',
+      };
+    case 'allergy_intolerance':
+      return {
+        status: 'current' as const,
+        effective_date: null,
+        end_date: null,
+        currency_label: 'Current context',
+      };
+    case 'diet_guidance': {
+      const prescribedDate = normalizeDateOnly(detail.prescribed_date);
+      const isCurrent = detail.is_current !== false;
+      return {
+        status: isCurrent ? ('current' as const) : ('historical' as const),
+        effective_date: prescribedDate,
+        end_date: null,
+        currency_label: isCurrent ? 'Current guidance' : 'Past guidance',
+      };
+    }
+    case 'red_flag_history': {
+      const occurrenceDate = normalizeDateOnly(detail.occurrence_date);
+      const resolved = Boolean(detail.resolved);
+      return {
+        status: resolved ? ('resolved' as const) : ('current' as const),
+        effective_date: occurrenceDate,
+        end_date: resolved ? occurrenceDate : null,
+        currency_label: resolved ? 'Resolved red flag' : 'Active red flag',
+      };
+    }
+    default:
+      return {
+        status: 'current' as const,
+        effective_date: null,
+        end_date: null,
+        currency_label: 'Current context',
+      };
+  }
+}
+
 async function computeFileSha256(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
   return Array.from(new Uint8Array(hashBuffer))
     .map((value) => value.toString(16).padStart(2, '0'))
     .join('');
+}
+
+async function getAccessToken(): Promise<string> {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    throw new Error(`Failed to authenticate document extraction request. ${error.message}`);
+  }
+
+  if (!session?.access_token) {
+    throw new Error('No active session found for document extraction');
+  }
+
+  return session.access_token;
+}
+
+async function invokeDocumentExtraction(
+  intakeId: string
+): Promise<DocumentExtractionOrchestrationResponse> {
+  const accessToken = await getAccessToken();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DOCUMENT_EXTRACTION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DOCUMENT_EXTRACTION_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ intake_id: intakeId }),
+      signal: controller.signal,
+    });
+
+    const responseText = await response.text();
+    let body:
+      | (Partial<DocumentExtractionOrchestrationResponse> & {
+          error?: string;
+        })
+      | null = null;
+
+    if (responseText) {
+      try {
+        body = JSON.parse(responseText) as Partial<DocumentExtractionOrchestrationResponse> & {
+          error?: string;
+        };
+      } catch {
+        body = { error: responseText };
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        body?.error || `Document extraction function responded with status ${response.status}`
+      );
+    }
+
+    if (!body?.success || !body.intake) {
+      throw new Error(body?.error || 'Document extraction did not return an updated intake');
+    }
+
+    return body as DocumentExtractionOrchestrationResponse;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Document extraction request timed out');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function uploadMedicalDocumentArtifact(params: {
@@ -79,6 +343,7 @@ export async function uploadMedicalDocumentArtifact(params: {
 }
 
 function rowToFact(row: MedicalFactRow): MedicalFact {
+  const timeline = deriveMedicalFactTimeline(row);
   const base = {
     id: row.id,
     user_id: row.user_id,
@@ -91,6 +356,7 @@ function rowToFact(row: MedicalFactRow): MedicalFact {
       source_document_id: row.provenance_source_document_id,
       notes: row.provenance_notes,
     },
+    timeline,
     is_active: row.is_active,
     deactivated_at: row.deactivated_at,
     created_at: row.created_at,
@@ -119,19 +385,26 @@ function categorizeFacts(
     surgeries_procedures: [] as SurgeryProcedureFact[],
     allergies_intolerances: [] as AllergyIntoleranceFact[],
     active_diet_guidance: [] as DietGuidanceFact[],
+    active_red_flags: [] as RedFlagHistoryFact[],
     red_flag_history: [] as RedFlagHistoryFact[],
   };
 
   for (const fact of facts) {
     switch (fact.category) {
       case 'diagnosis':
-        result.active_diagnoses.push(fact as DiagnosisFact);
+        if (fact.timeline.status === 'current') {
+          result.active_diagnoses.push(fact as DiagnosisFact);
+        }
         break;
       case 'suspected_condition':
-        result.suspected_conditions.push(fact as SuspectedConditionFact);
+        if (fact.timeline.status === 'under_investigation') {
+          result.suspected_conditions.push(fact as SuspectedConditionFact);
+        }
         break;
       case 'medication':
-        result.current_medications.push(fact as MedicationFact);
+        if (fact.timeline.status === 'current') {
+          result.current_medications.push(fact as MedicationFact);
+        }
         break;
       case 'surgery_procedure':
         result.surgeries_procedures.push(fact as SurgeryProcedureFact);
@@ -140,10 +413,15 @@ function categorizeFacts(
         result.allergies_intolerances.push(fact as AllergyIntoleranceFact);
         break;
       case 'diet_guidance':
-        result.active_diet_guidance.push(fact as DietGuidanceFact);
+        if (fact.timeline.status === 'current') {
+          result.active_diet_guidance.push(fact as DietGuidanceFact);
+        }
         break;
       case 'red_flag_history':
         result.red_flag_history.push(fact as RedFlagHistoryFact);
+        if (fact.timeline.status === 'current') {
+          result.active_red_flags.push(fact as RedFlagHistoryFact);
+        }
         break;
     }
   }
@@ -252,7 +530,9 @@ export async function syncProfileCounters(userId: string): Promise<void> {
   const activeCount = facts.filter(
     f => f.confirmation_state !== 'candidate'
   ).length;
-  const hasRedFlags = facts.some(f => f.category === 'red_flag_history');
+  const hasRedFlags = facts.some(
+    (fact) => fact.category === 'red_flag_history' && fact.timeline.status === 'current'
+  );
 
   let profileStatus: 'empty' | 'partial' | 'reviewed' = 'empty';
   if (activeCount > 0) profileStatus = 'partial';
@@ -285,7 +565,7 @@ export async function hasRedFlagHistory(userId: string): Promise<boolean> {
   if (profile) return profile.has_red_flags;
 
   const facts = await fetchFactsByCategory(userId, 'red_flag_history');
-  return facts.length > 0;
+  return facts.some((fact) => fact.timeline.status === 'current');
 }
 
 export async function fetchPendingCandidatesCount(userId: string): Promise<number> {
@@ -379,25 +659,36 @@ export async function createDocumentIntake(
     file_name: string;
     file_type: string;
     file_size_bytes: number;
-    document_notes?: string;
-    storage_bucket?: string;
-    storage_path?: string;
-    content_sha256?: string;
+    document_notes?: string | null;
+    intake_source?: IntakeSourceKind;
+    source_label?: string | null;
+    source_reference?: string | null;
+    source_metadata?: Record<string, unknown> | null;
+    storage_bucket?: string | null;
+    storage_path?: string | null;
+    content_sha256?: string | null;
+    intake_status?: MedicalDocumentIntakeRow['intake_status'];
+    extraction_status?: DocumentExtractionStatus;
   }
 ): Promise<MedicalDocumentIntakeRow> {
   const { data, error } = await supabase
     .from('medical_document_intakes')
     .insert({
       user_id: userId,
+      intake_source: input.intake_source ?? 'document_upload',
       file_name: input.file_name,
       file_type: input.file_type,
       file_size_bytes: input.file_size_bytes,
       document_notes: input.document_notes || null,
+      source_label: input.source_label || null,
+      source_reference: input.source_reference || null,
+      source_metadata: input.source_metadata ?? {},
       storage_bucket: input.storage_bucket || null,
       storage_path: input.storage_path || null,
       content_sha256: input.content_sha256 || null,
-      intake_status: 'uploaded',
-      extraction_status: input.storage_path ? 'queued' : 'not_started',
+      intake_status: input.intake_status ?? 'uploaded',
+      extraction_status:
+        input.extraction_status ?? (input.storage_path ? 'queued' : 'not_started'),
     })
     .select()
     .maybeSingle();
@@ -417,6 +708,19 @@ export async function fetchDocumentIntakes(
 
   if (error) throw error;
   return (data ?? []) as MedicalDocumentIntakeRow[];
+}
+
+export async function startDocumentExtraction(
+  userId: string,
+  intakeId: string
+): Promise<DocumentExtractionOrchestrationResponse> {
+  const response = await invokeDocumentExtraction(intakeId);
+
+  if (response.intake.user_id !== userId) {
+    throw new Error('Document extraction returned an intake for the wrong user');
+  }
+
+  return response;
 }
 
 export async function updateIntakeStatus(
@@ -439,17 +743,35 @@ export async function seedCandidateFromIntake(
   candidate: {
     category: MedicalFactCategory;
     detail: Record<string, unknown>;
-    extraction_notes?: string;
+    extraction_notes?: string | null;
     extraction_confidence?: number | null;
+    extraction_source?: ExtractionSource;
+    evidence_kind?: CandidateEvidenceKind;
+    extractor_label?: string | null;
     evidence?: {
+      evidence_kind?: CandidateEvidenceKind;
       page_number?: number | null;
       section_label?: string | null;
       quoted_text?: string | null;
       normalized_text?: string | null;
+      cited_text?: string | null;
       span_start?: number | null;
       span_end?: number | null;
       confidence_score?: number | null;
+      extractor_label?: string | null;
     };
+    evidence_items?: Array<{
+      evidence_kind?: CandidateEvidenceKind;
+      page_number?: number | null;
+      section_label?: string | null;
+      quoted_text?: string | null;
+      normalized_text?: string | null;
+      cited_text?: string | null;
+      span_start?: number | null;
+      span_end?: number | null;
+      confidence_score?: number | null;
+      extractor_label?: string | null;
+    }>;
   }
 ): Promise<CandidateMedicalFactRow> {
   const { data, error } = await supabase
@@ -458,7 +780,7 @@ export async function seedCandidateFromIntake(
       user_id: userId,
       category: candidate.category,
       detail: candidate.detail,
-      extraction_source: 'document_extraction',
+      extraction_source: candidate.extraction_source ?? 'document_extraction',
       source_document_id: intakeId,
       extraction_confidence: candidate.extraction_confidence ?? null,
       extraction_notes: candidate.extraction_notes || null,
@@ -470,27 +792,41 @@ export async function seedCandidateFromIntake(
   if (error) throw error;
 
   const createdCandidate = data as CandidateMedicalFactRow;
+  const evidenceItems =
+    candidate.evidence_items && candidate.evidence_items.length > 0
+      ? candidate.evidence_items
+      : candidate.evidence
+        ? [candidate.evidence]
+        : [];
 
-  const quotedText = candidate.evidence?.quoted_text?.trim() ?? '';
-  const hasEvidence =
-    quotedText.length > 0 ||
-    candidate.evidence?.page_number !== undefined ||
-    (candidate.evidence?.section_label?.trim().length ?? 0) > 0;
+  for (const evidenceItem of evidenceItems) {
+    const quotedText = evidenceItem.quoted_text?.trim() ?? '';
+    const citedText = evidenceItem.cited_text?.trim() ?? quotedText;
+    const hasEvidence =
+      quotedText.length > 0 ||
+      citedText.length > 0 ||
+      evidenceItem.page_number !== undefined ||
+      (evidenceItem.section_label?.trim().length ?? 0) > 0;
 
-  if (hasEvidence) {
+    if (!hasEvidence) continue;
+
     const { data: segmentRow, error: segmentError } = await supabase
       .from('medical_document_evidence_segments')
       .insert({
         user_id: userId,
         document_intake_id: intakeId,
-        page_number: candidate.evidence?.page_number ?? null,
-        section_label: candidate.evidence?.section_label?.trim() || null,
-        quoted_text: quotedText || candidate.extraction_notes || '[manual evidence note]',
-        normalized_text: candidate.evidence?.normalized_text?.trim() || null,
-        span_start: candidate.evidence?.span_start ?? null,
-        span_end: candidate.evidence?.span_end ?? null,
-        extractor_label: 'manual_review',
-        confidence_score: candidate.evidence?.confidence_score ?? candidate.extraction_confidence ?? null,
+        page_number: evidenceItem.page_number ?? null,
+        section_label: evidenceItem.section_label?.trim() || null,
+        quoted_text: quotedText || citedText || candidate.extraction_notes || '[import evidence note]',
+        normalized_text: evidenceItem.normalized_text?.trim() || null,
+        span_start: evidenceItem.span_start ?? null,
+        span_end: evidenceItem.span_end ?? null,
+        extractor_label:
+          evidenceItem.extractor_label?.trim() ||
+          candidate.extractor_label ||
+          'manual_review',
+        confidence_score:
+          evidenceItem.confidence_score ?? candidate.extraction_confidence ?? null,
       })
       .select()
       .maybeSingle();
@@ -509,10 +845,14 @@ export async function seedCandidateFromIntake(
         candidate_medical_fact_id: createdCandidate.id,
         document_intake_id: intakeId,
         evidence_segment_id: segmentId,
-        evidence_kind: inferEvidenceKind(candidate.category),
-        page_number: candidate.evidence?.page_number ?? null,
-        cited_text: quotedText || null,
-        confidence_score: candidate.evidence?.confidence_score ?? candidate.extraction_confidence ?? null,
+        evidence_kind:
+          evidenceItem.evidence_kind ??
+          candidate.evidence_kind ??
+          inferEvidenceKind(candidate.category),
+        page_number: evidenceItem.page_number ?? null,
+        cited_text: citedText || null,
+        confidence_score:
+          evidenceItem.confidence_score ?? candidate.extraction_confidence ?? null,
       });
 
     if (evidenceError) throw evidenceError;
@@ -612,6 +952,62 @@ export async function fetchCandidateEvidence(
   return (data ?? []) as CandidateMedicalFactEvidenceRow[];
 }
 
+async function fetchDocumentIntakeById(
+  userId: string,
+  intakeId: string
+): Promise<MedicalDocumentIntakeRow | null> {
+  const { data, error } = await supabase
+    .from('medical_document_intakes')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('id', intakeId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as MedicalDocumentIntakeRow | null;
+}
+
+export async function fetchCandidateReviewEvidenceItems(
+  userId: string,
+  candidate: Pick<CandidateMedicalFactRow, 'id' | 'source_document_id'>
+): Promise<CandidateReviewEvidenceItem[]> {
+  const evidenceRows = await fetchCandidateEvidence(userId, candidate.id);
+  const resolvedIntakeId =
+    candidate.source_document_id ?? evidenceRows[0]?.document_intake_id ?? null;
+
+  if (!resolvedIntakeId) {
+    return evidenceRows.map((evidence) => ({
+      evidence,
+      segment: null,
+      intake: null,
+    }));
+  }
+
+  const [segmentRows, intake] = await Promise.all([
+    fetchDocumentEvidenceSegments(userId, resolvedIntakeId),
+    fetchDocumentIntakeById(userId, resolvedIntakeId),
+  ]);
+
+  const segmentMap = new Map(segmentRows.map((segment) => [segment.id, segment]));
+
+  return evidenceRows
+    .map((evidence) => ({
+      evidence,
+      segment: evidence.evidence_segment_id
+        ? segmentMap.get(evidence.evidence_segment_id) ?? null
+        : null,
+      intake,
+    }))
+    .sort((left, right) => {
+      const leftPage = left.segment?.page_number ?? left.evidence.page_number ?? Number.MAX_SAFE_INTEGER;
+      const rightPage =
+        right.segment?.page_number ?? right.evidence.page_number ?? Number.MAX_SAFE_INTEGER;
+
+      if (leftPage !== rightPage) return leftPage - rightPage;
+      return left.evidence.created_at.localeCompare(right.evidence.created_at);
+    });
+}
+
 export async function fetchAllCandidates(
   userId: string,
   statusFilter?: CandidateReviewStatus
@@ -661,6 +1057,79 @@ async function attachEvidenceCounts(
   }));
 }
 
+async function findExistingActiveFactMatch(
+  userId: string,
+  candidate: Pick<CandidateMedicalFactRow, 'category' | 'detail'>
+): Promise<MedicalFactRow | null> {
+  const candidateSignature = buildCandidateSignature(candidate.category, candidate.detail);
+
+  const { data, error } = await supabase
+    .from('medical_facts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('category', candidate.category)
+    .eq('is_active', true)
+    .in('confirmation_state', ['confirmed', 'user_reported'] as ConfirmationState[]);
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as MedicalFactRow[];
+  return (
+    rows.find(
+      (row) => buildCandidateSignature(candidate.category, row.detail) === candidateSignature
+    ) ?? null
+  );
+}
+
+async function mergeSiblingExactCandidates(params: {
+  userId: string;
+  category: MedicalFactCategory;
+  detail: Record<string, unknown>;
+  promotedFactId: string;
+  excludedCandidateId: string;
+  reviewedAt: string;
+}): Promise<string[]> {
+  const { userId, category, detail, promotedFactId, excludedCandidateId, reviewedAt } = params;
+  const candidateSignature = buildCandidateSignature(category, detail);
+
+  const { data, error } = await supabase
+    .from('candidate_medical_facts')
+    .select('id, source_document_id, detail, review_status, promoted_fact_id')
+    .eq('user_id', userId)
+    .eq('category', category)
+    .neq('id', excludedCandidateId)
+    .in('review_status', ['pending_review', 'merged'] as CandidateReviewStatus[]);
+
+  if (error) throw error;
+
+  const matchingRows = ((data ?? []) as CandidateMedicalFactRow[]).filter((row) => {
+    const sameSignature = buildCandidateSignature(category, row.detail) === candidateSignature;
+    if (!sameSignature) return false;
+
+    return row.review_status === 'pending_review' || row.promoted_fact_id === null;
+  });
+
+  if (matchingRows.length === 0) return [];
+
+  const duplicateIds = matchingRows.map((row) => row.id);
+  const { error: updateError } = await supabase
+    .from('candidate_medical_facts')
+    .update({
+      review_status: 'merged',
+      reviewed_at: reviewedAt,
+      promoted_fact_id: promotedFactId,
+      updated_at: reviewedAt,
+    })
+    .eq('user_id', userId)
+    .in('id', duplicateIds);
+
+  if (updateError) throw updateError;
+
+  return matchingRows
+    .map((row) => row.source_document_id)
+    .filter((value): value is string => Boolean(value));
+}
+
 export async function acceptCandidate(
   userId: string,
   candidateId: string
@@ -678,45 +1147,86 @@ export async function acceptCandidate(
 
   const row = candidate as CandidateMedicalFactRow;
   const now = new Date().toISOString();
+  const provenanceSource = mapCandidateExtractionSourceToProvenanceSource(
+    row.extraction_source
+  );
 
   await ensureMedicalContextProfile(userId);
 
-  const { data: newFact, error: insertErr } = await supabase
-    .from('medical_facts')
-    .insert({
-      user_id: userId,
-      category: row.category,
-      confirmation_state: 'confirmed',
-      detail: row.detail,
-      provenance_source: 'document_extraction',
-      provenance_entered_at: row.created_at,
-      provenance_confirmed_at: now,
-      provenance_source_document_id: row.source_document_id,
-      provenance_notes: row.extraction_notes,
-      is_active: true,
-    })
-    .select()
-    .maybeSingle();
+  const existingMatch = await findExistingActiveFactMatch(userId, row);
 
-  if (insertErr) throw insertErr;
+  let promoted: MedicalFactRow;
 
-  const promoted = newFact as MedicalFactRow;
+  if (existingMatch) {
+    promoted = existingMatch;
 
-  const { error: updateErr } = await supabase
-    .from('candidate_medical_facts')
-    .update({
-      review_status: 'accepted',
-      reviewed_at: now,
-      promoted_fact_id: promoted.id,
-      updated_at: now,
-    })
-    .eq('id', candidateId)
-    .eq('user_id', userId);
+    const { error: updateErr } = await supabase
+      .from('candidate_medical_facts')
+      .update({
+        review_status: 'merged',
+        reviewed_at: now,
+        promoted_fact_id: promoted.id,
+        updated_at: now,
+      })
+      .eq('id', candidateId)
+      .eq('user_id', userId);
 
-  if (updateErr) throw updateErr;
+    if (updateErr) throw updateErr;
+  } else {
+    const { data: newFact, error: insertErr } = await supabase
+      .from('medical_facts')
+      .insert({
+        user_id: userId,
+        category: row.category,
+        confirmation_state: 'confirmed',
+        detail: row.detail,
+        provenance_source: provenanceSource,
+        provenance_entered_at: row.created_at,
+        provenance_confirmed_at: now,
+        provenance_source_document_id: row.source_document_id,
+        provenance_notes: row.extraction_notes,
+        is_active: true,
+      })
+      .select()
+      .maybeSingle();
 
+    if (insertErr) throw insertErr;
+    promoted = newFact as MedicalFactRow;
+
+    const { error: updateErr } = await supabase
+      .from('candidate_medical_facts')
+      .update({
+        review_status: 'accepted',
+        reviewed_at: now,
+        promoted_fact_id: promoted.id,
+        updated_at: now,
+      })
+      .eq('id', candidateId)
+      .eq('user_id', userId);
+
+    if (updateErr) throw updateErr;
+  }
+
+  const affectedDocumentIds = new Set<string>();
   if (row.source_document_id) {
-    await syncIntakeReviewState(userId, row.source_document_id);
+    affectedDocumentIds.add(row.source_document_id);
+  }
+
+  const siblingDocumentIds = await mergeSiblingExactCandidates({
+    userId,
+    category: row.category,
+    detail: row.detail,
+    promotedFactId: promoted.id,
+    excludedCandidateId: candidateId,
+    reviewedAt: now,
+  });
+
+  for (const intakeId of siblingDocumentIds) {
+    affectedDocumentIds.add(intakeId);
+  }
+
+  for (const intakeId of affectedDocumentIds) {
+    await syncIntakeReviewState(userId, intakeId);
   }
 
   await syncProfileCounters(userId);
