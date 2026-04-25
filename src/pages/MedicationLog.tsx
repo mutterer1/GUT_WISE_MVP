@@ -1,14 +1,26 @@
+import { useState } from 'react';
 import { Activity, Clock, Pencil, Pill, Save } from 'lucide-react';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { syncMedicationNormalizationForLog } from '../services/medicationNormalizationService';
 import { type MedicationReferenceSuggestion } from '../services/referenceSearchService';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 import type { MedicationRegimenStatus } from '../types/intelligence';
 
 interface MedicationFormData {
@@ -74,6 +86,8 @@ function coerceMedicationType(
 }
 
 export default function MedicationLog() {
+  const [historyQuery, setHistoryQuery] = useState('');
+
   const {
     formData,
     setFormData,
@@ -185,6 +199,26 @@ export default function MedicationLog() {
         : [...filtered, effect],
     });
   };
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.medication_name,
+        log.dosage,
+        log.medication_type,
+        log.route,
+        log.regimen_status,
+        log.timing_context,
+        log.taken_as_prescribed ? 'taken as prescribed adherent' : 'off plan',
+        log.reason_for_use,
+        log.side_effects,
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -523,40 +557,42 @@ export default function MedicationLog() {
               icon={<Pill className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search medication, dosage, route, effects..."
+              />
+
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                  className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
+                        {formatLogHistoryTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         {log.medication_name} | {log.dosage}
                       </div>
                     </div>
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as MedicationFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <LogHistoryActions
+                      onEdit={() => handleEdit(log as MedicationFormData & { id: string })}
+                      onDelete={() => handleDelete(log.id!)}
+                    />
                   </div>
 
-                  <div className="mb-4 flex flex-wrap gap-2 text-xs">
+                  <div className="mb-3 flex flex-wrap gap-2 text-xs">
                     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 font-medium capitalize text-[var(--color-text-secondary)]">
                       {log.medication_type}
                     </span>
@@ -581,7 +617,7 @@ export default function MedicationLog() {
                   </div>
 
                   {log.reason_for_use && (
-                    <div className="mb-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    <div className="mb-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Reason
                       </span>
@@ -590,7 +626,7 @@ export default function MedicationLog() {
                   )}
 
                   {log.side_effects && log.side_effects.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <div className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
                         Side Effects
                       </div>
@@ -617,8 +653,12 @@ export default function MedicationLog() {
                       {log.notes}
                     </div>
                   )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
