@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pencil, Search, Trash2, X } from 'lucide-react';
+import { Copy, Pencil, Search, Trash2, X } from 'lucide-react';
 
 interface LogHistoryToolbarProps {
   query: string;
@@ -78,13 +78,25 @@ export function LogHistoryGroup({ label, count, children }: LogHistoryGroupProps
 }
 
 interface LogHistoryActionsProps {
+  onUseAsTemplate?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function LogHistoryActions({ onEdit, onDelete }: LogHistoryActionsProps) {
+export function LogHistoryActions({ onUseAsTemplate, onEdit, onDelete }: LogHistoryActionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
+      {onUseAsTemplate && (
+        <button
+          type="button"
+          onClick={onUseAsTemplate}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(143,128,246,0.20)] bg-[rgba(143,128,246,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--gw-brand-300)] transition-smooth hover:border-[rgba(143,128,246,0.34)] hover:bg-[rgba(143,128,246,0.12)]"
+        >
+          <Copy className="h-3.5 w-3.5" />
+          Use template
+        </button>
+      )}
+
       <button
         type="button"
         onClick={onEdit}
