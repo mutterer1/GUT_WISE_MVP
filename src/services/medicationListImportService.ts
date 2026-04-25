@@ -1,4 +1,9 @@
 import { fetchMedicationEnrichment } from './medicationEnrichmentService';
+import {
+  detectMedicationImportSourceProfile,
+  type ImportSourceDetectionResult,
+  type MedicationImportSourceProfileId,
+} from './importSourceProfileService';
 import { parseDosageComponents } from './medicationNormalizationService';
 import { queueMedicalImportBatch } from './medicalImportService';
 import type {
@@ -23,6 +28,12 @@ export interface MedicationImportPreviewItem {
   is_current: boolean;
   parse_confidence: number;
   parse_notes: string[];
+  source_profile_id: MedicationImportSourceProfileId;
+  source_profile_label: string;
+  source_system_label: string;
+  source_profile_confidence: number;
+  parse_strategy_label: string;
+  source_mapping_notes: string[];
   original_medication_name: string;
   original_dosage: string;
   original_frequency: string;
@@ -73,8 +84,15 @@ interface QueueMedicationListImportInput {
   source_label: string;
   source_reference?: string | null;
   import_note?: string | null;
+  source_profile_id?: MedicationImportSourceProfileId | null;
   items: MedicationImportPreviewItem[];
   detected_format: MedicationImportDetectedFormat;
+}
+
+interface ParseMedicationListOptions {
+  sourceLabel?: string | null;
+  sourceReference?: string | null;
+  sourceProfileId?: MedicationImportSourceProfileId | null;
 }
 
 const ROUTE_KEYWORDS = [
@@ -448,7 +466,8 @@ function parseJsonRecords(input: string): MedicationImportRecord[] | null {
 
 async function enrichRecord(
   record: MedicationImportRecord,
-  index: number
+  index: number,
+  sourceProfile: ImportSourceDetectionResult<MedicationImportSourceProfileId>
 ): Promise<MedicationImportPreviewItem> {
   const enrichment = await fetchMedicationEnrichment({
     displayName: record.medicationName,
@@ -473,7 +492,13 @@ async function enrichRecord(
     end_date: record.endDate,
     is_current: record.isCurrent,
     parse_confidence: record.parseConfidence,
-    parse_notes: record.parseNotes,
+    parse_notes: [...record.parseNotes, ...sourceProfile.mappingNotes],
+    source_profile_id: sourceProfile.profileId,
+    source_profile_label: sourceProfile.label,
+    source_system_label: sourceProfile.sourceSystemLabel,
+    source_profile_confidence: sourceProfile.confidence,
+    parse_strategy_label: sourceProfile.parseStrategyLabel,
+    source_mapping_notes: sourceProfile.mappingNotes,
     original_medication_name: record.medicationName,
     original_dosage: record.dosage,
     original_frequency: record.frequency,
@@ -588,12 +613,20 @@ function hasImportCorrections(item: MedicationImportPreviewItem): boolean {
 }
 
 export async function parseMedicationListInput(
-  input: string
+  input: string,
+  options: ParseMedicationListOptions = {}
 ): Promise<MedicationListImportParseResult> {
   const trimmed = input.trim();
   if (!trimmed) {
     throw new Error('Paste a medication list before building a preview.');
   }
+
+  const sourceProfile = detectMedicationImportSourceProfile({
+    input: trimmed,
+    sourceLabel: options.sourceLabel ?? null,
+    sourceReference: options.sourceReference ?? null,
+    requestedProfileId: options.sourceProfileId ?? null,
+  });
 
   let detectedFormat: MedicationImportDetectedFormat = 'line_list';
   let records: MedicationImportRecord[] | null = parseJsonRecords(trimmed);
@@ -635,7 +668,7 @@ export async function parseMedicationListInput(
   }
 
   const items = await Promise.all(
-    deduped.unique.map((record, index) => enrichRecord(record, index))
+    deduped.unique.map((record, index) => enrichRecord(record, index, sourceProfile))
   );
 
   return {
@@ -652,8 +685,14 @@ function buildImportCandidate(item: MedicationImportPreviewItem): ImportedMedica
     `Imported medication list entry: ${item.source_line}`,
     `import_meta: Source row ${item.source_row_label}`,
     `import_meta: Parse method ${item.parse_method.replace(/_/g, ' ')}`,
+    `import_meta: Source profile ${item.source_profile_label}`,
+    `import_meta: Source system ${item.source_system_label}`,
+    `import_meta: Parse strategy ${item.parse_strategy_label}`,
     formatConfidencePercent(item.parse_confidence)
       ? `import_meta: Parse confidence ${formatConfidencePercent(item.parse_confidence)}`
+      : null,
+    formatConfidencePercent(item.source_profile_confidence)
+      ? `import_meta: Source profile confidence ${formatConfidencePercent(item.source_profile_confidence)}`
       : null,
     `import_meta: Enrichment status ${item.enrichment_status.replace(/_/g, ' ')}`,
     formatConfidencePercent(item.enrichment_confidence)
@@ -673,6 +712,7 @@ function buildImportCandidate(item: MedicationImportPreviewItem): ImportedMedica
     item.enrichment_source_label
       ? `import_meta: Reference source ${item.enrichment_source_label}`
       : null,
+    ...item.source_mapping_notes.map((note) => `import_meta: ${note}`),
     item.enrichment_notes ? item.enrichment_notes : null,
     ...correctionNotes.map((note) => `import_correction: ${note}`),
   ].filter(Boolean);
@@ -725,6 +765,19 @@ export async function queueMedicationListImport(
     source_metadata: {
       importer: 'medication_list_importer',
       detected_format: input.detected_format,
+      source_profile_id: input.items[0]?.source_profile_id ?? input.source_profile_id ?? null,
+      source_profile_label: input.items[0]?.source_profile_label ?? null,
+      source_system_label: input.items[0]?.source_system_label ?? null,
+      source_profile_confidence_avg:
+        input.items.length > 0
+          ? Number(
+              (
+                input.items.reduce((sum, item) => sum + item.source_profile_confidence, 0) /
+                input.items.length
+              ).toFixed(2)
+            )
+          : null,
+      parse_strategy_label: input.items[0]?.parse_strategy_label ?? null,
       imported_item_count: input.items.length,
       corrected_item_count: input.items.filter(hasImportCorrections).length,
       enriched_item_count: input.items.filter((item) => item.enrichment_status === 'enriched').length,
