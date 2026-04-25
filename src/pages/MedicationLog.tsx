@@ -1,7 +1,8 @@
-import { Activity, Clock, Pencil, Pill, Save } from 'lucide-react';
-import Button from '../components/Button';
+import { Activity, Clock, Pill } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
+import LogEditingBanner from '../components/LogEditingBanner';
+import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import MedicationAutocompleteInput from '../components/MedicationAutocompleteInput';
@@ -206,21 +207,7 @@ export default function MedicationLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          {editingId && (
-            <div className="mb-6 flex items-center justify-between gap-4 rounded-[24px] border border-[rgba(84,160,255,0.18)] bg-[rgba(84,160,255,0.08)] px-4 py-3.5">
-              <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-accent-primary)]">
-                <Pencil className="h-4 w-4" />
-                <span>Editing entry</span>
-              </div>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm text-[var(--color-text-tertiary)] transition-smooth hover:text-[var(--color-text-primary)]"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -502,17 +489,7 @@ export default function MedicationLog() {
               />
             </div>
 
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button type="submit" disabled={saving} size="lg">
-                <Save className="mr-2 inline h-4 w-4" />
-                {saving ? 'Saving...' : editingId ? 'Update Entry' : 'Save Entry'}
-              </Button>
-              {editingId && (
-                <Button type="button" variant="secondary" size="lg" onClick={resetForm}>
-                  Cancel
-                </Button>
-              )}
-            </div>
+            <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
         </Card>
       ) : (
