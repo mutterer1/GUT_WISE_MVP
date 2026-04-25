@@ -13,8 +13,19 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
+import {
+  LogHistoryActions,
+  LogHistoryGroup,
+  LogHistoryNoMatches,
+  LogHistoryToolbar,
+} from '../components/LogHistoryTools';
 import { useLogCrud } from '../hooks/useLogCrud';
-import { formatDateTime } from '../utils/dateFormatters';
+import {
+  buildLogHistorySearchText,
+  formatLogHistoryTime,
+  groupLogHistoryByDay,
+  matchesLogHistoryQuery,
+} from '../utils/logHistoryDisplay';
 import { BRISTOL_SCALE } from '../constants/domain';
 
 interface BMFormData {
@@ -86,6 +97,7 @@ function hasNonDefaultDetails(formData: BMFormData): boolean {
 
 export default function BMLog() {
   const [showDetails, setShowDetails] = useState(false);
+  const [historyQuery, setHistoryQuery] = useState('');
 
   const {
     formData,
@@ -101,6 +113,7 @@ export default function BMLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<BMFormData>(bmConfig);
@@ -121,6 +134,25 @@ export default function BMLog() {
     resetForm();
     setShowDetails(false);
   };
+
+  const filteredHistory = history.filter((log) =>
+    matchesLogHistoryQuery(
+      buildLogHistorySearchText(
+        log.logged_at,
+        log.bristol_type,
+        log.amount,
+        log.urgency,
+        log.pain_level,
+        log.difficulty_level,
+        log.incomplete_evacuation ? 'incomplete evacuation incomplete' : '',
+        log.blood_present ? 'blood present blood' : '',
+        log.mucus_present ? 'mucus present mucus' : '',
+        log.notes
+      ),
+      historyQuery
+    )
+  );
+  const groupedHistory = groupLogHistoryByDay(filteredHistory);
 
   return (
     <LogPageShell
@@ -365,39 +397,41 @@ export default function BMLog() {
               icon={<Activity className="h-8 w-8 text-[var(--color-text-tertiary)]" />}
             />
           ) : (
-            <div className="space-y-4">
-              {history.map((log) => (
+            <div className="space-y-5">
+              <LogHistoryToolbar
+                query={historyQuery}
+                onQueryChange={setHistoryQuery}
+                totalCount={history.length}
+                filteredCount={filteredHistory.length}
+                placeholder="Search Bristol type, amount, flags, notes..."
+              />
+
+              {filteredHistory.length === 0 ? (
+                <LogHistoryNoMatches query={historyQuery} onClear={() => setHistoryQuery('')} />
+              ) : (
+                <div className="space-y-5">
+                  {groupedHistory.map((group) => (
+                    <LogHistoryGroup key={group.key} label={group.label} count={group.entries.length}>
+                      {group.entries.map((log) => (
                 <div
                   key={log.id}
-                  className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-5"
+                  className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3 transition-smooth hover:border-white/14 hover:bg-white/[0.04] sm:p-4"
                 >
-                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {formatDateTime(log.logged_at)}
+                        {formatLogHistoryTime(log.logged_at)}
                       </div>
                       <div className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                         Bristol Type {log.bristol_type} · {log.amount}
                       </div>
                     </div>
 
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(log as BMFormData & { id: string })}
-                        className="font-medium text-[var(--color-accent-primary)] transition-smooth hover:text-[var(--color-text-primary)]"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(log.id!)}
-                        className="font-medium text-[var(--color-danger)] transition-smooth hover:opacity-80"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <LogHistoryActions
+                      onUseAsTemplate={() => handleUseAsTemplate(log as BMFormData & { id: string })}
+                      onEdit={() => handleEdit(log as BMFormData & { id: string })}
+                      onDelete={() => handleDelete(log.id!)}
+                    />
                   </div>
 
                   <div className="grid gap-3 text-sm sm:grid-cols-3">
@@ -410,7 +444,7 @@ export default function BMLog() {
                   </div>
 
                   {(log.incomplete_evacuation || log.blood_present || log.mucus_present) && (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {log.incomplete_evacuation && <Badge label="Incomplete" />}
                       {log.blood_present && <Badge label="Blood" />}
                       {log.mucus_present && <Badge label="Mucus" />}
@@ -418,12 +452,16 @@ export default function BMLog() {
                   )}
 
                   {log.notes && (
-                    <div className="mt-4 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+                    <div className="mt-3 rounded-[18px] border border-white/8 bg-black/[0.14] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
                       {log.notes}
                     </div>
                   )}
+                        </div>
+                      ))}
+                    </LogHistoryGroup>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>
