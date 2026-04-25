@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertCircle,
@@ -14,6 +14,7 @@ import LogFormActions from '../components/LogFormActions';
 import LogPageShell from '../components/LogPageShell';
 import LogRecallPanel from '../components/LogRecallPanel';
 import LogModeTabs from '../components/LogModeTabs';
+import LogOptionalSection from '../components/LogOptionalSection';
 import { useLogCrud } from '../hooks/useLogCrud';
 import { formatDateTime } from '../utils/dateFormatters';
 
@@ -60,8 +61,17 @@ function hasMeaningfulSymptomsDraft(formData: SymptomsFormData): boolean {
   );
 }
 
+function hasSymptomContextDetails(formData: SymptomsFormData): boolean {
+  return (
+    formData.location.trim().length > 0 ||
+    formData.triggers.length > 0 ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function SymptomsLog() {
   const [customSymptom, setCustomSymptom] = useState('');
+  const [showContextDetails, setShowContextDetails] = useState(false);
 
   const {
     formData,
@@ -117,6 +127,14 @@ export default function SymptomsLog() {
     }),
   });
 
+  useEffect(() => {
+    if (hasSymptomContextDetails(formData)) {
+      setShowContextDetails(true);
+    } else if (!editingId) {
+      setShowContextDetails(false);
+    }
+  }, [editingId, formData]);
+
   const resetForm = () => {
     baseResetForm();
     setCustomSymptom('');
@@ -139,6 +157,7 @@ export default function SymptomsLog() {
 
     applyRecent(entry);
     setCustomSymptom('');
+    setShowContextDetails(hasSymptomContextDetails(entry.data));
   };
 
   const recentRecallItems = recentEntries.slice(0, 3).map((entry) => ({
@@ -169,7 +188,13 @@ export default function SymptomsLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+          <LogEditingBanner
+            isEditing={Boolean(editingId)}
+            onCancel={() => {
+              resetForm();
+              setShowContextDetails(false);
+            }}
+          />
 
           {!editingId ? (
             <div className="mb-6">
@@ -188,7 +213,7 @@ export default function SymptomsLog() {
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
@@ -223,7 +248,7 @@ export default function SymptomsLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <div className="mb-4">
                 <label className="field-label">Symptom Type</label>
                 <p className="field-help mt-1">Choose the closest match or set a custom symptom.</p>
@@ -277,8 +302,8 @@ export default function SymptomsLog() {
               )}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
                 <label className="field-label mb-2 block">
                   Severity:{' '}
                   <span className="font-medium text-[var(--color-text-primary)]">
@@ -307,7 +332,7 @@ export default function SymptomsLog() {
                 </div>
               </div>
 
-              <div className="surface-panel-quiet rounded-[28px] p-4 sm:p-5">
+              <div className="surface-panel-quiet rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
                 <label htmlFor="duration" className="field-label mb-2 block">
                   Duration (minutes)
                 </label>
@@ -329,64 +354,71 @@ export default function SymptomsLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <label htmlFor="location" className="field-label mb-2 block">
-                <MapPin className="mr-1 inline h-4 w-4" />
-                Location
-                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-              </label>
+            <LogOptionalSection
+              title="Symptom context"
+              isOpen={showContextDetails}
+              onToggle={() => setShowContextDetails(!showContextDetails)}
+              summary="Location, likely triggers, and notes stay available without lengthening every symptom entry."
+            >
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="location" className="field-label mb-2 block">
+                  <MapPin className="mr-1 inline h-4 w-4" />
+                  Location
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
 
-              <input
-                type="text"
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g. Lower abdomen, head, left side..."
-                className="input-base w-full"
-              />
-            </div>
-
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4">
-                <label className="field-label">Potential Triggers</label>
-                <p className="field-help mt-1">
-                  Tag likely context without overfitting. Use only what seems relevant.
-                </p>
+                <input
+                  type="text"
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="e.g. Lower abdomen, head, left side..."
+                  className="input-base w-full"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                {commonTriggers.map((trigger) => (
-                  <button
-                    key={trigger}
-                    type="button"
-                    onClick={() => toggleTrigger(trigger)}
-                    className={[
-                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                      formData.triggers.includes(trigger)
-                        ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
-                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                    ].join(' ')}
-                  >
-                    {trigger}
-                  </button>
-                ))}
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <div className="mb-4">
+                  <label className="field-label">Potential Triggers</label>
+                  <p className="field-help mt-1">
+                    Tag likely context without overfitting. Use only what seems relevant.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {commonTriggers.map((trigger) => (
+                    <button
+                      key={trigger}
+                      type="button"
+                      onClick={() => toggleTrigger(trigger)}
+                      className={[
+                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.triggers.includes(trigger)
+                          ? 'border-[rgba(84,160,255,0.34)] bg-[rgba(84,160,255,0.12)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {trigger}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <label htmlFor="notes" className="field-label mb-2 block">
-                Notes
-              </label>
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
+                </label>
 
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                placeholder="Additional observations..."
-                className="input-base min-h-[112px] w-full resize-none"
-              />
-            </div>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={4}
+                  placeholder="Additional observations..."
+                  className="input-base min-h-[112px] w-full resize-none"
+                />
+              </div>
+            </LogOptionalSection>
 
             <LogFormActions
               isEditing={Boolean(editingId)}
