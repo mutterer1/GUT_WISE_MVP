@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Activity, Clock, Frown } from 'lucide-react';
 import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import LogEditingBanner from '../components/LogEditingBanner';
 import LogFormActions from '../components/LogFormActions';
+import LogOptionalSection from '../components/LogOptionalSection';
 import LogPageShell from '../components/LogPageShell';
 import LogModeTabs from '../components/LogModeTabs';
 import { useLogCrud } from '../hooks/useLogCrud';
@@ -53,7 +55,17 @@ const commonPhysicalSymptoms = [
 const toggleItem = (array: string[], item: string) =>
   array.includes(item) ? array.filter((entry) => entry !== item) : [...array, item];
 
+function hasStressContextDetails(formData: StressFormData): boolean {
+  return (
+    formData.triggers.length > 0 ||
+    formData.coping_methods.length > 0 ||
+    formData.physical_symptoms.length > 0 ||
+    formData.notes.trim().length > 0
+  );
+}
+
 export default function StressLog() {
+  const [showContextDetails, setShowContextDetails] = useState(false);
   const {
     formData,
     setFormData,
@@ -99,6 +111,14 @@ export default function StressLog() {
     }),
   });
 
+  useEffect(() => {
+    if (hasStressContextDetails(formData)) {
+      setShowContextDetails(true);
+    } else if (!editingId) {
+      setShowContextDetails(false);
+    }
+  }, [editingId, formData]);
+
   return (
     <LogPageShell
       title="Stress Log"
@@ -119,10 +139,16 @@ export default function StressLog() {
 
       {!showHistory ? (
         <Card variant="elevated" className="rounded-[28px]">
-          <LogEditingBanner isEditing={Boolean(editingId)} onCancel={resetForm} />
+          <LogEditingBanner
+            isEditing={Boolean(editingId)}
+            onCancel={() => {
+              resetForm();
+              setShowContextDetails(false);
+            }}
+          />
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="surface-panel-quiet rounded-[24px] p-4 sm:p-5">
                 <label htmlFor="logged_at" className="field-label mb-2 block">
                   <Clock className="mr-1 inline h-4 w-4" />
@@ -155,7 +181,7 @@ export default function StressLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
+            <div className="surface-panel-soft rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
               <label className="field-label mb-2 block">
                 <Frown className="mr-1 inline h-4 w-4" />
                 Stress Level:{' '}
@@ -180,107 +206,114 @@ export default function StressLog() {
               </div>
             </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4">
-                <label className="field-label">Triggers</label>
-                <p className="field-help mt-1">(optional)</p>
+            <LogOptionalSection
+              title="Stress context"
+              isOpen={showContextDetails}
+              onToggle={() => setShowContextDetails(!showContextDetails)}
+              summary="Triggers, coping methods, body symptoms, and notes stay easy to reach without filling every screen by default."
+            >
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <div className="mb-4">
+                  <label className="field-label">Triggers</label>
+                  <p className="field-help mt-1">(optional)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {commonTriggers.map((trigger) => (
+                    <button
+                      key={trigger}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          triggers: toggleItem(formData.triggers, trigger),
+                        })
+                      }
+                      className={[
+                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.triggers.includes(trigger)
+                          ? 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {trigger}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                {commonTriggers.map((trigger) => (
-                  <button
-                    key={trigger}
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        triggers: toggleItem(formData.triggers, trigger),
-                      })
-                    }
-                    className={[
-                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                      formData.triggers.includes(trigger)
-                        ? 'border-[rgba(255,120,120,0.28)] bg-[rgba(255,120,120,0.10)] text-[var(--color-text-primary)]'
-                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                    ].join(' ')}
-                  >
-                    {trigger}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4">
-                <label className="field-label">Coping Methods Used</label>
-                <p className="field-help mt-1">(optional)</p>
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <div className="mb-4">
+                  <label className="field-label">Coping Methods Used</label>
+                  <p className="field-help mt-1">(optional)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {commonCopingMethods.map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          coping_methods: toggleItem(formData.coping_methods, method),
+                        })
+                      }
+                      className={[
+                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.coping_methods.includes(method)
+                          ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                {commonCopingMethods.map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        coping_methods: toggleItem(formData.coping_methods, method),
-                      })
-                    }
-                    className={[
-                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                      formData.coping_methods.includes(method)
-                        ? 'border-[rgba(84,160,255,0.28)] bg-[rgba(84,160,255,0.10)] text-[var(--color-text-primary)]'
-                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                    ].join(' ')}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <div className="mb-4">
-                <label className="field-label">Physical Symptoms</label>
-                <p className="field-help mt-1">(optional)</p>
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <div className="mb-4">
+                  <label className="field-label">Physical Symptoms</label>
+                  <p className="field-help mt-1">(optional)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {commonPhysicalSymptoms.map((symptom) => (
+                    <button
+                      key={symptom}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          physical_symptoms: toggleItem(formData.physical_symptoms, symptom),
+                        })
+                      }
+                      className={[
+                        'rounded-[18px] border px-3 py-3 text-sm font-medium transition-smooth',
+                        formData.physical_symptoms.includes(symptom)
+                          ? 'border-[rgba(255,170,92,0.28)] bg-[rgba(255,170,92,0.10)] text-[var(--color-text-primary)]'
+                          : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
+                      ].join(' ')}
+                    >
+                      {symptom}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                {commonPhysicalSymptoms.map((symptom) => (
-                  <button
-                    key={symptom}
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        physical_symptoms: toggleItem(formData.physical_symptoms, symptom),
-                      })
-                    }
-                    className={[
-                      'rounded-[20px] border px-3 py-3 text-sm font-medium transition-smooth',
-                      formData.physical_symptoms.includes(symptom)
-                        ? 'border-[rgba(255,170,92,0.28)] bg-[rgba(255,170,92,0.10)] text-[var(--color-text-primary)]'
-                        : 'border-white/8 bg-white/[0.02] text-[var(--color-text-secondary)] hover:border-white/14 hover:bg-white/[0.04]',
-                    ].join(' ')}
-                  >
-                    {symptom}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="surface-panel-soft rounded-[28px] p-4 sm:p-5">
-              <label htmlFor="notes" className="field-label mb-2 block">
-                Notes
-                <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
-              </label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="input-base min-h-[112px] w-full resize-none"
-                rows={4}
-                placeholder="Additional context or observations..."
-              />
-            </div>
+              <div className="surface-panel-soft rounded-[24px] p-4">
+                <label htmlFor="notes" className="field-label mb-2 block">
+                  Notes
+                  <span className="ml-2 text-[var(--color-text-tertiary)]">(optional)</span>
+                </label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="input-base min-h-[112px] w-full resize-none"
+                  rows={4}
+                  placeholder="Additional context or observations..."
+                />
+              </div>
+            </LogOptionalSection>
 
             <LogFormActions isEditing={Boolean(editingId)} saving={saving} onCancel={resetForm} />
           </form>
