@@ -9,6 +9,7 @@ import {
   Frown,
   Heart,
   Moon,
+  Pencil,
   Pill,
   Pin,
   RefreshCw,
@@ -20,8 +21,9 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import {
   deleteLogRoutine,
-  fetchLogRoutines,
+  fetchLogRoutineSummary,
   markLogRoutineUsed,
+  renameLogRoutine,
   type LogRoutine,
   type LogRoutineType,
 } from '../../services/logRoutineService';
@@ -33,7 +35,7 @@ interface RoutineMeta {
   icon: LucideIcon;
 }
 
-const MAX_ROUTINES = 6;
+const ROUTINE_DISPLAY_LIMIT = 6;
 
 const routineMeta: Record<LogRoutineType, RoutineMeta> = {
   bm: {
@@ -217,6 +219,8 @@ export default function PinnedRoutinesWidget() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [maxRoutines, setMaxRoutines] = useState(12);
 
   const loadRoutines = useCallback(async () => {
     const requestId = requestIdRef.current + 1;
@@ -228,6 +232,7 @@ export default function PinnedRoutinesWidget() {
       setLoading(false);
       setError('');
       setLastLoadedAt(null);
+      setTotalCount(0);
       return;
     }
 
@@ -235,11 +240,13 @@ export default function PinnedRoutinesWidget() {
     setError('');
 
     try {
-      const nextRoutines = await fetchLogRoutines(user.id, MAX_ROUTINES);
+      const summary = await fetchLogRoutineSummary(user.id, ROUTINE_DISPLAY_LIMIT);
 
       if (!isActiveRequest()) return;
 
-      setRoutines(nextRoutines);
+      setRoutines(summary.routines);
+      setTotalCount(summary.totalCount);
+      setMaxRoutines(summary.maxRoutines);
       setLastLoadedAt(Date.now());
     } catch (err) {
       if (!isActiveRequest()) return;
@@ -273,11 +280,47 @@ export default function PinnedRoutinesWidget() {
 
     try {
       await markLogRoutineUsed(routine.id);
+      const usedAt = new Date().toISOString();
+      setRoutines((current) =>
+        current.map((item) =>
+          item.id === routine.id
+            ? {
+                ...item,
+                usage_count: item.usage_count + 1,
+                last_used_at: usedAt,
+              }
+            : item
+        )
+      );
     } catch (err) {
       console.error('Error updating routine usage:', err);
     }
 
     navigate(routineMeta[routine.log_type].path);
+  };
+
+  const renameRoutine = async (routine: LogRoutine) => {
+    if (!user?.id) {
+      setError('You must be signed in to rename a routine');
+      return;
+    }
+
+    const routineName = window.prompt('Rename this routine', routine.routine_name)?.trim();
+
+    if (!routineName || routineName === routine.routine_name) {
+      return;
+    }
+
+    try {
+      const updatedRoutine = await renameLogRoutine(user.id, routine.id, routineName);
+      setRoutines((current) =>
+        current.map((item) => (item.id === updatedRoutine.id ? updatedRoutine : item))
+      );
+      setError('');
+    } catch (err) {
+      console.error('Error renaming pinned routine:', err);
+      setError(err instanceof Error ? err.message : 'Could not rename routine');
+    }
   };
 
   const removeRoutine = async (routine: LogRoutine) => {
@@ -293,12 +336,16 @@ export default function PinnedRoutinesWidget() {
     try {
       await deleteLogRoutine(user.id, routine.id);
       setRoutines((current) => current.filter((item) => item.id !== routine.id));
+      setTotalCount((count) => Math.max(0, count - 1));
       setError('');
     } catch (err) {
       console.error('Error deleting pinned routine:', err);
       setError(err instanceof Error ? err.message : 'Could not remove routine');
     }
   };
+
+  const hasHiddenRoutines = totalCount > routines.length;
+  const isAtRoutineLimit = totalCount >= maxRoutines;
 
   return (
     <section className="card-enter surface-intelligence rounded-[28px] p-4 sm:rounded-[32px] sm:p-6 lg:p-7">
@@ -315,6 +362,10 @@ export default function PinnedRoutinesWidget() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-tertiary)]">
+            {totalCount}/{maxRoutines} routines
+          </span>
+
           {lastLoadedAt && (
             <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-tertiary)]">
               Updated {formatLoadedAt(lastLoadedAt)}
@@ -333,6 +384,14 @@ export default function PinnedRoutinesWidget() {
         </div>
       </div>
 
+      {(hasHiddenRoutines || isAtRoutineLimit) && (
+        <div className="mb-4 rounded-2xl border border-[rgba(143,128,246,0.18)] bg-[rgba(143,128,246,0.07)] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+          {hasHiddenRoutines
+            ? `Showing your top ${routines.length} routines. Rename or remove older routines if the dashboard starts feeling crowded.`
+            : 'Routine limit reached. Remove or update a routine before pinning another saved entry.'}
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 rounded-2xl border border-[rgba(255,120,120,0.24)] bg-[rgba(255,120,120,0.08)] px-4 py-3 text-sm text-[var(--color-danger)]">
           {error}
@@ -347,6 +406,11 @@ export default function PinnedRoutinesWidget() {
               className="min-h-[166px] animate-pulse rounded-[24px] border border-white/8 bg-white/[0.03]"
             />
           ))}
+        </div>
+      ) : error && routines.length === 0 ? (
+        <div className="rounded-[24px] border border-[rgba(255,120,120,0.18)] bg-[rgba(255,120,120,0.06)] px-5 py-6 text-sm leading-6 text-[var(--color-text-secondary)]">
+          Pinned routines could not load. Refresh after confirming the routine SQL migration has
+          run successfully in Supabase.
         </div>
       ) : routines.length === 0 ? (
         <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-6 text-sm leading-6 text-[var(--color-text-secondary)]">
@@ -407,6 +471,15 @@ export default function PinnedRoutinesWidget() {
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open log
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => renameRoutine(routine)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-[var(--color-text-tertiary)] transition-smooth hover:border-white/16 hover:text-[var(--color-text-primary)]"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Rename
                   </button>
 
                   <button
