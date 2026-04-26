@@ -4,7 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { getLocalDateTimeString } from '../utils/dateFormatters';
 import { getSuccessMessage, getUpdateMessage, getDeleteMessage } from '../utils/copySystem';
 import { consumeLogTemplateDraft } from '../utils/logTemplateDrafts';
-import { buildDefaultRoutineName, createLogRoutine } from '../services/logRoutineService';
+import {
+  MAX_LOG_ROUTINES,
+  buildDefaultRoutineName,
+  countLogRoutines,
+  createLogRoutine,
+  findLogRoutineBySource,
+  updateLogRoutine,
+} from '../services/logRoutineService';
 import { saveEventManager } from '../services/saveEventManager';
 import { useLogFeedback } from './useLogFeedback';
 import { useLogHistory } from './useLogHistory';
@@ -15,6 +22,8 @@ const TEMPLATE_LOADED_MESSAGE =
   'Template loaded as a new unsaved entry. Review and save when ready.';
 const ROUTINE_SAVED_MESSAGE =
   'Routine saved. It will appear on your dashboard under Pinned Routines.';
+const ROUTINE_UPDATED_MESSAGE =
+  'Routine updated. The dashboard shortcut now uses this saved entry.';
 
 interface UseLogCrudConfig<T extends { logged_at: string; id?: string }> {
   table: string;
@@ -299,14 +308,54 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     }
 
     const routineEntry = log as unknown as Record<string, unknown>;
-    const defaultName = buildDefaultRoutineName(logType, routineEntry);
-    const routineName = window.prompt('Name this reusable routine', defaultName)?.trim();
-
-    if (!routineName) {
-      return;
-    }
 
     try {
+      const existingRoutine = await findLogRoutineBySource(user.id, logType, log.id);
+
+      if (existingRoutine) {
+        const shouldReplace = window.confirm(
+          `"${existingRoutine.routine_name}" is already pinned from this saved entry. Replace it with the latest saved details?`
+        );
+
+        if (!shouldReplace) {
+          return;
+        }
+
+        const routineName = window
+          .prompt('Rename this routine if needed', existingRoutine.routine_name)
+          ?.trim();
+
+        if (!routineName) {
+          return;
+        }
+
+        await updateLogRoutine({
+          userId: user.id,
+          routineId: existingRoutine.id,
+          routineName,
+          entry: routineEntry,
+          sourceLogId: log.id,
+        });
+
+        showSuccess(ROUTINE_UPDATED_MESSAGE);
+        return;
+      }
+
+      const routineCount = await countLogRoutines(user.id);
+      if (routineCount >= MAX_LOG_ROUTINES) {
+        showError(
+          `Routine limit reached (${MAX_LOG_ROUTINES}). Rename, remove, or update an existing routine before adding another.`
+        );
+        return;
+      }
+
+      const defaultName = buildDefaultRoutineName(logType, routineEntry);
+      const routineName = window.prompt('Name this reusable routine', defaultName)?.trim();
+
+      if (!routineName) {
+        return;
+      }
+
       await createLogRoutine({
         userId: user.id,
         logType,
