@@ -144,6 +144,7 @@ export default function MenstrualCycleLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<MenstrualFormData>(menstrualConfig);
@@ -705,6 +706,9 @@ export default function MenstrualCycleLog() {
                       </div>
                     </div>
                     <LogHistoryActions
+                      onUseAsTemplate={() =>
+                        handleUseAsTemplate(log as MenstrualFormData & { id: string })
+                      }
                       onEdit={() => handleEdit(log as MenstrualFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
                     />
