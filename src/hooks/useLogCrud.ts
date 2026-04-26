@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getLocalDateTimeString } from '../utils/dateFormatters';
 import { getSuccessMessage, getUpdateMessage, getDeleteMessage } from '../utils/copySystem';
 import { consumeLogTemplateDraft } from '../utils/logTemplateDrafts';
+import { buildDefaultRoutineName, createLogRoutine } from '../services/logRoutineService';
 import { saveEventManager } from '../services/saveEventManager';
 import { useLogFeedback } from './useLogFeedback';
 import { useLogHistory } from './useLogHistory';
@@ -12,6 +13,8 @@ import type { SaveEvent } from '../services/saveEventManager';
 type LogType = SaveEvent['logType'];
 const TEMPLATE_LOADED_MESSAGE =
   'Template loaded as a new unsaved entry. Review and save when ready.';
+const ROUTINE_SAVED_MESSAGE =
+  'Routine saved. It will appear on your dashboard under Pinned Routines.';
 
 interface UseLogCrudConfig<T extends { logged_at: string; id?: string }> {
   table: string;
@@ -42,6 +45,7 @@ interface UseLogCrudReturn<T extends { logged_at: string; id?: string }> {
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   handleEdit: (log: T & { id: string }) => void;
   handleUseAsTemplate: (log: T & { id: string }) => void;
+  handleSaveAsRoutine: (log: T & { id: string }) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
   resetForm: () => void;
   fetchHistory: () => Promise<void>;
@@ -286,6 +290,38 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     scrollToLogForm();
   };
 
+  const handleSaveAsRoutine = async (log: T & { id: string }) => {
+    clearError();
+
+    if (!user?.id) {
+      showError('You must be signed in to save a routine');
+      return;
+    }
+
+    const routineEntry = log as unknown as Record<string, unknown>;
+    const defaultName = buildDefaultRoutineName(logType, routineEntry);
+    const routineName = window.prompt('Name this reusable routine', defaultName)?.trim();
+
+    if (!routineName) {
+      return;
+    }
+
+    try {
+      await createLogRoutine({
+        userId: user.id,
+        logType,
+        routineName,
+        entry: routineEntry,
+        sourceLogId: log.id,
+      });
+
+      showSuccess(ROUTINE_SAVED_MESSAGE);
+    } catch (err) {
+      console.error(`Error saving ${logType} routine:`, err);
+      showError(getErrorMessage(err, 'Failed to save routine'));
+    }
+  };
+
   useEffect(() => {
     const draft = consumeLogTemplateDraft(logType);
     if (!draft) return;
@@ -355,6 +391,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
     fetchHistory,
