@@ -48,6 +48,7 @@ export default function SleepLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<SleepFormData>({
@@ -363,6 +364,9 @@ export default function SleepLog() {
                       <LogHistoryActions
                         onUseAsTemplate={() =>
                           handleUseAsTemplate(log as SleepFormData & { id: string })
+                        }
+                        onSaveAsRoutine={() =>
+                          handleSaveAsRoutine(log as SleepFormData & { id: string })
                         }
                         onEdit={() => handleEdit(log as SleepFormData & { id: string })}
                         onDelete={() => handleDelete(log.id!)}
