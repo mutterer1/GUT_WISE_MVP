@@ -25,6 +25,22 @@ interface CreateLogRoutineInput {
   sourceLogId?: string | null;
 }
 
+interface UpdateLogRoutineInput {
+  userId: string;
+  routineId: string;
+  routineName: string;
+  entry: Record<string, unknown>;
+  sourceLogId?: string | null;
+}
+
+export interface LogRoutineSummary {
+  routines: LogRoutine[];
+  totalCount: number;
+  maxRoutines: number;
+}
+
+export const MAX_LOG_ROUTINES = 12;
+
 const OMITTED_ROUTINE_KEYS = new Set([
   'id',
   'user_id',
@@ -127,10 +143,70 @@ export async function fetchLogRoutines(userId: string, limit = 8): Promise<LogRo
   return (data || []) as LogRoutine[];
 }
 
+export async function fetchLogRoutineSummary(
+  userId: string,
+  limit = 6
+): Promise<LogRoutineSummary> {
+  const { data, error, count } = await supabase
+    .from('user_log_routines')
+    .select('*', { count: 'exact' })
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true })
+    .order('usage_count', { ascending: false })
+    .order('updated_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return {
+    routines: (data || []) as LogRoutine[],
+    totalCount: count ?? data?.length ?? 0,
+    maxRoutines: MAX_LOG_ROUTINES,
+  };
+}
+
+export async function countLogRoutines(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('user_log_routines')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  if (error) throw error;
+
+  return count ?? 0;
+}
+
+export async function findLogRoutineBySource(
+  userId: string,
+  logType: LogRoutineType,
+  sourceLogId: string
+): Promise<LogRoutine | null> {
+  const { data, error } = await supabase
+    .from('user_log_routines')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('log_type', logType)
+    .eq('source_log_id', sourceLogId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data ? (data as LogRoutine) : null;
+}
+
 export async function createLogRoutine(input: CreateLogRoutineInput): Promise<LogRoutine> {
   const routineName = input.routineName.trim();
   if (!routineName) {
     throw new Error('Routine name is required');
+  }
+
+  const routineCount = await countLogRoutines(input.userId);
+  if (routineCount >= MAX_LOG_ROUTINES) {
+    throw new Error(
+      `Routine limit reached (${MAX_LOG_ROUTINES}). Remove or update an existing routine before adding another.`
+    );
   }
 
   const { data, error } = await supabase
@@ -147,6 +223,58 @@ export async function createLogRoutine(input: CreateLogRoutineInput): Promise<Lo
 
   if (error) throw error;
   if (!data) throw new Error('Saved routine but did not receive it back from Supabase');
+
+  return data as LogRoutine;
+}
+
+export async function updateLogRoutine(input: UpdateLogRoutineInput): Promise<LogRoutine> {
+  const routineName = input.routineName.trim();
+  if (!routineName) {
+    throw new Error('Routine name is required');
+  }
+
+  const { data, error } = await supabase
+    .from('user_log_routines')
+    .update({
+      routine_name: routineName,
+      source_log_id: input.sourceLogId ?? null,
+      routine_payload: buildRoutinePayload(input.entry),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.routineId)
+    .eq('user_id', input.userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Routine could not be updated');
+
+  return data as LogRoutine;
+}
+
+export async function renameLogRoutine(
+  userId: string,
+  routineId: string,
+  routineName: string
+): Promise<LogRoutine> {
+  const nextName = routineName.trim();
+  if (!nextName) {
+    throw new Error('Routine name is required');
+  }
+
+  const { data, error } = await supabase
+    .from('user_log_routines')
+    .update({
+      routine_name: nextName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', routineId)
+    .eq('user_id', userId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Routine could not be renamed');
 
   return data as LogRoutine;
 }
