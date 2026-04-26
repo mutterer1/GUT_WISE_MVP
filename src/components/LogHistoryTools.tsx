@@ -79,21 +79,28 @@ export function LogHistoryGroup({ label, count, children }: LogHistoryGroupProps
 
 interface LogHistoryActionsProps {
   onUseAsTemplate?: () => void;
+  templateLabel?: string;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function LogHistoryActions({ onUseAsTemplate, onEdit, onDelete }: LogHistoryActionsProps) {
+export function LogHistoryActions({
+  onUseAsTemplate,
+  templateLabel = 'Use template',
+  onEdit,
+  onDelete,
+}: LogHistoryActionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {onUseAsTemplate && (
         <button
           type="button"
           onClick={onUseAsTemplate}
+          aria-label={`${templateLabel}: load this entry as a new unsaved log`}
           className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(143,128,246,0.20)] bg-[rgba(143,128,246,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--gw-brand-300)] transition-smooth hover:border-[rgba(143,128,246,0.34)] hover:bg-[rgba(143,128,246,0.12)]"
         >
           <Copy className="h-3.5 w-3.5" />
-          Use template
+          {templateLabel}
         </button>
       )}
 
