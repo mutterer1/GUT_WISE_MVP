@@ -115,6 +115,7 @@ export default function FoodLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm: baseResetForm,
   } = useLogCrud<FoodFormData>({
@@ -560,6 +561,9 @@ export default function FoodLog() {
                               <LogHistoryActions
                                 onUseAsTemplate={() =>
                                   handleUseAsTemplate(log as FoodFormData & { id: string })
+                                }
+                                onSaveAsRoutine={() =>
+                                  handleSaveAsRoutine(log as FoodFormData & { id: string })
                                 }
                                 onEdit={() => handleEdit(log as FoodFormData & { id: string })}
                                 onDelete={() => handleDelete(log.id!)}
