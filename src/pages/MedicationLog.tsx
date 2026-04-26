@@ -102,6 +102,7 @@ export default function MedicationLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<MedicationFormData>({
@@ -587,6 +588,9 @@ export default function MedicationLog() {
                       </div>
                     </div>
                     <LogHistoryActions
+                      onUseAsTemplate={() =>
+                        handleUseAsTemplate(log as MedicationFormData & { id: string })
+                      }
                       onEdit={() => handleEdit(log as MedicationFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
                     />
