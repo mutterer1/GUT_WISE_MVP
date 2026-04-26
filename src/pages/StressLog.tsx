@@ -81,6 +81,7 @@ export default function StressLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<StressFormData>({
@@ -375,6 +376,9 @@ export default function StressLog() {
                       </div>
                     </div>
                     <LogHistoryActions
+                      onUseAsTemplate={() =>
+                        handleUseAsTemplate(log as StressFormData & { id: string })
+                      }
                       onEdit={() => handleEdit(log as StressFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
                     />
