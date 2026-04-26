@@ -29,6 +29,7 @@ import SymptomSnapshotWidget from '../components/dashboard/SymptomSnapshotWidget
 import HydrationWidget from '../components/dashboard/HydrationWidget';
 import MedicationWidget from '../components/dashboard/MedicationWidget';
 import PatternInsightsWidget from '../components/dashboard/PatternInsightsWidget';
+import QuickLogAgainWidget from '../components/dashboard/QuickLogAgainWidget';
 import SignalRibbonBackground from '../components/dashboard/SignalRibbonBackground';
 import type { DashboardMetrics } from '../types/dashboard';
 
@@ -350,6 +351,8 @@ export default function Dashboard() {
               })}
             </div>
           </section>
+
+          <QuickLogAgainWidget />
 
           <section className="space-y-4">
             <div className="page-header">
