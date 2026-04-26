@@ -110,6 +110,7 @@ export default function HydrationLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<HydrationFormData>({
@@ -580,6 +581,9 @@ export default function HydrationLog() {
                     <LogHistoryActions
                       onUseAsTemplate={() =>
                         handleUseAsTemplate(log as HydrationFormData & { id: string })
+                      }
+                      onSaveAsRoutine={() =>
+                        handleSaveAsRoutine(log as HydrationFormData & { id: string })
                       }
                       onEdit={() => handleEdit(log as HydrationFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
