@@ -145,6 +145,7 @@ export default function MenstrualCycleLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<MenstrualFormData>(menstrualConfig);
@@ -708,6 +709,9 @@ export default function MenstrualCycleLog() {
                     <LogHistoryActions
                       onUseAsTemplate={() =>
                         handleUseAsTemplate(log as MenstrualFormData & { id: string })
+                      }
+                      onSaveAsRoutine={() =>
+                        handleSaveAsRoutine(log as MenstrualFormData & { id: string })
                       }
                       onEdit={() => handleEdit(log as MenstrualFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
