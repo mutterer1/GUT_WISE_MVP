@@ -47,6 +47,7 @@ export default function SleepLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<SleepFormData>({
@@ -78,6 +79,15 @@ export default function SleepLog() {
       interruptions: data.interruptions,
       felt_rested: data.felt_rested,
       notes: data.notes || null,
+    }),
+    mapTemplateToForm: (log, defaultFormData) => ({
+      logged_at: defaultFormData.logged_at,
+      sleep_start: '',
+      sleep_end: '',
+      quality: log.quality,
+      interruptions: log.interruptions,
+      felt_rested: log.felt_rested,
+      notes: log.notes ?? '',
     }),
   });
 
@@ -351,6 +361,9 @@ export default function SleepLog() {
                         </div>
                       </div>
                       <LogHistoryActions
+                        onUseAsTemplate={() =>
+                          handleUseAsTemplate(log as SleepFormData & { id: string })
+                        }
                         onEdit={() => handleEdit(log as SleepFormData & { id: string })}
                         onDelete={() => handleDelete(log.id!)}
                       />
