@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  AlertTriangle,
   Copy,
   Droplet,
   Dumbbell,
@@ -9,6 +10,7 @@ import {
   Heart,
   Moon,
   Pill,
+  RefreshCw,
   Utensils,
   Waves,
   type LucideIcon,
@@ -47,6 +49,12 @@ interface RecentTemplate {
   entry: LogRecord;
 }
 
+interface TemplateLoadResult {
+  definition: TemplateDefinition;
+  templates: RecentTemplate[];
+  failed: boolean;
+}
+
 const MAX_VISIBLE_TEMPLATES = 6;
 const PER_TYPE_LIMIT = 2;
 
@@ -76,6 +84,13 @@ function formatLoggedAt(value: string): string {
   return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
+  });
+}
+
+function formatLoadedAt(value: number): string {
+  return new Date(value).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
   });
 }
 
@@ -225,87 +240,111 @@ const templateDefinitions: TemplateDefinition[] = [
 export default function QuickLogAgainWidget() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const mountedRef = useRef(true);
+  const requestIdRef = useRef(0);
   const [templates, setTemplates] = useState<RecentTemplate[]>([]);
+  const [unavailableLabels, setUnavailableLabels] = useState<string[]>([]);
+  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const fetchRecentTemplates = useCallback(async () => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    const isActiveRequest = () => mountedRef.current && requestIdRef.current === requestId;
+
     if (!user?.id) {
       setTemplates([]);
+      setUnavailableLabels([]);
+      setLastLoadedAt(null);
+      setLoading(false);
+      setError('');
       return;
     }
 
     const userId = user.id;
-    let cancelled = false;
 
-    async function fetchRecentTemplates() {
-      setLoading(true);
-      setError('');
+    setLoading(true);
+    setError('');
 
-      try {
-        const results = await Promise.all(
-          templateDefinitions.map(async (definition) => {
-            try {
-              const { data, error: queryError } = await supabase
-                .from(definition.table)
-                .select('*')
-                .eq('user_id', userId)
-                .order('logged_at', { ascending: false })
-                .limit(PER_TYPE_LIMIT);
+    try {
+      const results = await Promise.all(
+        templateDefinitions.map(async (definition): Promise<TemplateLoadResult> => {
+          try {
+            const { data, error: queryError } = await supabase
+              .from(definition.table)
+              .select('*')
+              .eq('user_id', userId)
+              .order('logged_at', { ascending: false })
+              .limit(PER_TYPE_LIMIT);
 
-              if (queryError) {
-                throw queryError;
-              }
-
-              return (data || []).map((entry) => {
-                const record = entry as LogRecord;
-                const timestamp = stringValue(record, 'logged_at', '');
-
-                return {
-                  key: `${definition.logType}-${String(record.id ?? timestamp)}`,
-                  logType: definition.logType,
-                  path: definition.path,
-                  label: definition.label,
-                  icon: definition.icon,
-                  title: definition.title(record),
-                  detail: definition.detail(record),
-                  timestamp,
-                  entry: record,
-                };
-              });
-            } catch (queryErr) {
-              console.error(`Error loading ${definition.table} templates:`, queryErr);
-              return [];
+            if (queryError) {
+              throw queryError;
             }
-          })
-        );
 
-        if (cancelled) return;
+            const nextTemplates = (data || []).map((entry) => {
+              const record = entry as LogRecord;
+              const timestamp = stringValue(record, 'logged_at', '');
 
-        const nextTemplates = results
-          .flat()
-          .sort((a, b) => getTimestampMs(b.timestamp) - getTimestampMs(a.timestamp))
-          .slice(0, MAX_VISIBLE_TEMPLATES);
+              return {
+                key: `${definition.logType}-${String(record.id ?? timestamp)}`,
+                logType: definition.logType,
+                path: definition.path,
+                label: definition.label,
+                icon: definition.icon,
+                title: definition.title(record),
+                detail: definition.detail(record),
+                timestamp,
+                entry: record,
+              };
+            });
 
-        setTemplates(nextTemplates);
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Error loading quick log templates:', err);
-          setError(err instanceof Error ? err.message : 'Could not load recent templates');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+            return { definition, templates: nextTemplates, failed: false };
+          } catch (queryErr) {
+            console.error(`Error loading ${definition.table} templates:`, queryErr);
+            return { definition, templates: [], failed: true };
+          }
+        })
+      );
+
+      const nextTemplates = results
+        .flatMap((result) => result.templates)
+        .sort((a, b) => getTimestampMs(b.timestamp) - getTimestampMs(a.timestamp))
+        .slice(0, MAX_VISIBLE_TEMPLATES);
+      const nextUnavailableLabels = results
+        .filter((result) => result.failed)
+        .map((result) => result.definition.label);
+
+      if (!isActiveRequest()) return;
+
+      setTemplates(nextTemplates);
+      setUnavailableLabels(nextUnavailableLabels);
+      setLastLoadedAt(Date.now());
+
+      if (nextTemplates.length === 0 && nextUnavailableLabels.length > 0) {
+        setError('Recent templates could not load. Try refreshing or open a log directly.');
+      }
+    } catch (err) {
+      if (isActiveRequest()) {
+        console.error('Error loading quick log templates:', err);
+        setError(err instanceof Error ? err.message : 'Could not load recent templates');
+      }
+    } finally {
+      if (isActiveRequest()) {
+        setLoading(false);
       }
     }
-
-    fetchRecentTemplates();
-
-    return () => {
-      cancelled = true;
-    };
   }, [user?.id]);
+
+  useEffect(() => {
+    fetchRecentTemplates();
+  }, [fetchRecentTemplates]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const useTemplate = (template: RecentTemplate) => {
     const staged = stageLogTemplateDraft(template.logType, template.entry);
@@ -319,20 +358,34 @@ export default function QuickLogAgainWidget() {
   };
 
   return (
-    <section className="card-enter surface-panel rounded-[32px] p-5 sm:p-6 lg:p-7">
+    <section className="card-enter surface-panel rounded-[28px] p-4 sm:rounded-[32px] sm:p-6 lg:p-7">
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <span className="badge-secondary mb-3 inline-flex">Reuse</span>
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
+          <h2 className="text-[clamp(1.45rem,2vw,1.75rem)] font-semibold tracking-[-0.03em] text-[var(--color-text-primary)]">
             Quick log again
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-secondary)]">
-            Reuse a recent entry as a starting point, adjust what changed, then save it as a new log.
+            Load a recent entry as a new unsaved draft. Adjust what changed, then save.
           </p>
         </div>
 
-        <div className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-[var(--color-text-tertiary)] sm:flex">
-          <Copy className="h-4 w-4" />
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {lastLoadedAt && (
+            <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-tertiary)]">
+              Updated {formatLoadedAt(lastLoadedAt)}
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={fetchRecentTemplates}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-smooth hover:border-white/16 hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -342,8 +395,18 @@ export default function QuickLogAgainWidget() {
         </div>
       )}
 
+      {!error && unavailableLabels.length > 0 && templates.length > 0 && (
+        <div className="mb-4 flex gap-3 rounded-2xl border border-[rgba(255,170,92,0.22)] bg-[rgba(255,170,92,0.08)] px-4 py-3 text-sm leading-6 text-[var(--color-text-secondary)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-warning)]" />
+          <span>
+            Some recent sources did not load: {unavailableLabels.join(', ')}. The templates below
+            are still safe to use.
+          </span>
+        </div>
+      )}
+
       {loading ? (
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2].map((item) => (
             <div
               key={item}
@@ -353,7 +416,8 @@ export default function QuickLogAgainWidget() {
         </div>
       ) : templates.length === 0 ? (
         <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-6 text-sm leading-6 text-[var(--color-text-secondary)]">
-          Recent templates will appear after you have saved a few log entries.
+          Recent templates will appear after you have saved a few log entries. You can still use
+          Quick Capture above to create a new entry.
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -385,15 +449,19 @@ export default function QuickLogAgainWidget() {
                   </span>
                 </div>
 
-                <p className="min-h-[40px] text-sm leading-5 text-[var(--color-text-secondary)]">
+                <p className="min-h-[36px] text-sm leading-5 text-[var(--color-text-secondary)]">
                   {template.detail}
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 rounded-2xl border border-white/8 bg-black/[0.10] px-3 py-2 text-xs leading-5 text-[var(--color-text-tertiary)]">
+                  Opens as a new unsaved draft. Your original entry stays unchanged.
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => useTemplate(template)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(143,128,246,0.22)] bg-[rgba(143,128,246,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--gw-brand-300)] transition-smooth hover:border-[rgba(143,128,246,0.36)] hover:bg-[rgba(143,128,246,0.12)]"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[rgba(143,128,246,0.22)] bg-[rgba(143,128,246,0.08)] px-3 py-2 text-xs font-semibold text-[var(--gw-brand-300)] transition-smooth hover:border-[rgba(143,128,246,0.36)] hover:bg-[rgba(143,128,246,0.12)]"
                   >
                     <Copy className="h-3.5 w-3.5" />
                     Use template
@@ -402,7 +470,7 @@ export default function QuickLogAgainWidget() {
                   <button
                     type="button"
                     onClick={() => navigate(template.path)}
-                    className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-tertiary)] transition-smooth hover:border-white/16 hover:text-[var(--color-text-primary)]"
+                    className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-[var(--color-text-tertiary)] transition-smooth hover:border-white/16 hover:text-[var(--color-text-primary)]"
                   >
                     Open log
                   </button>
