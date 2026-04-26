@@ -114,6 +114,7 @@ export default function BMLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<BMFormData>(bmConfig);
@@ -429,6 +430,7 @@ export default function BMLog() {
 
                     <LogHistoryActions
                       onUseAsTemplate={() => handleUseAsTemplate(log as BMFormData & { id: string })}
+                      onSaveAsRoutine={() => handleSaveAsRoutine(log as BMFormData & { id: string })}
                       onEdit={() => handleEdit(log as BMFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
                     />
