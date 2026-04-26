@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Copy, Pencil, Search, Trash2, X } from 'lucide-react';
+import { Copy, Pencil, Pin, Search, Trash2, X } from 'lucide-react';
 
 interface LogHistoryToolbarProps {
   query: string;
@@ -80,6 +80,8 @@ export function LogHistoryGroup({ label, count, children }: LogHistoryGroupProps
 interface LogHistoryActionsProps {
   onUseAsTemplate?: () => void;
   templateLabel?: string;
+  onSaveAsRoutine?: () => void;
+  routineLabel?: string;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -87,6 +89,8 @@ interface LogHistoryActionsProps {
 export function LogHistoryActions({
   onUseAsTemplate,
   templateLabel = 'Use template',
+  onSaveAsRoutine,
+  routineLabel = 'Save routine',
   onEdit,
   onDelete,
 }: LogHistoryActionsProps) {
@@ -101,6 +105,18 @@ export function LogHistoryActions({
         >
           <Copy className="h-3.5 w-3.5" />
           {templateLabel}
+        </button>
+      )}
+
+      {onSaveAsRoutine && (
+        <button
+          type="button"
+          onClick={onSaveAsRoutine}
+          aria-label={`${routineLabel}: pin this saved entry as a dashboard routine`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(84,160,255,0.20)] bg-[rgba(84,160,255,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-primary)] transition-smooth hover:border-[rgba(84,160,255,0.34)] hover:bg-[rgba(84,160,255,0.12)]"
+        >
+          <Pin className="h-3.5 w-3.5" />
+          {routineLabel}
         </button>
       )}
 
