@@ -3,6 +3,7 @@ import type { SaveEvent } from '../services/saveEventManager';
 type LogType = SaveEvent['logType'];
 
 const TEMPLATE_DRAFT_STORAGE_KEY = 'gutwise:log-template-draft:v1';
+const TEMPLATE_DRAFT_TTL_MS = 15 * 60 * 1000;
 
 export interface LogTemplateDraft {
   logType: LogType;
@@ -18,6 +19,25 @@ function getSessionStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isValidDraft(value: unknown): value is LogTemplateDraft {
+  if (!isRecord(value)) return false;
+
+  return (
+    typeof value.logType === 'string' &&
+    isRecord(value.entry) &&
+    typeof value.createdAt === 'number' &&
+    Number.isFinite(value.createdAt)
+  );
+}
+
+function isDraftExpired(draft: LogTemplateDraft): boolean {
+  return Date.now() - draft.createdAt > TEMPLATE_DRAFT_TTL_MS;
 }
 
 export function stageLogTemplateDraft(logType: LogType, entry: Record<string, unknown>): boolean {
@@ -46,7 +66,19 @@ export function consumeLogTemplateDraft(logType: LogType): LogTemplateDraft | nu
   if (!rawDraft) return null;
 
   try {
-    const draft = JSON.parse(rawDraft) as LogTemplateDraft;
+    const parsedDraft = JSON.parse(rawDraft) as unknown;
+
+    if (!isValidDraft(parsedDraft)) {
+      storage.removeItem(TEMPLATE_DRAFT_STORAGE_KEY);
+      return null;
+    }
+
+    const draft = parsedDraft;
+
+    if (isDraftExpired(draft)) {
+      storage.removeItem(TEMPLATE_DRAFT_STORAGE_KEY);
+      return null;
+    }
 
     if (draft.logType !== logType) {
       return null;
@@ -58,4 +90,11 @@ export function consumeLogTemplateDraft(logType: LogType): LogTemplateDraft | nu
     storage.removeItem(TEMPLATE_DRAFT_STORAGE_KEY);
     return null;
   }
+}
+
+export function clearLogTemplateDraft(): void {
+  const storage = getSessionStorage();
+  if (!storage) return;
+
+  storage.removeItem(TEMPLATE_DRAFT_STORAGE_KEY);
 }
