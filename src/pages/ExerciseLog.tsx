@@ -70,6 +70,7 @@ export default function ExerciseLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<ExerciseFormData>({
@@ -433,6 +434,9 @@ export default function ExerciseLog() {
                     <LogHistoryActions
                       onUseAsTemplate={() =>
                         handleUseAsTemplate(log as ExerciseFormData & { id: string })
+                      }
+                      onSaveAsRoutine={() =>
+                        handleSaveAsRoutine(log as ExerciseFormData & { id: string })
                       }
                       onEdit={() => handleEdit(log as ExerciseFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
