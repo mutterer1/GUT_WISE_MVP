@@ -69,6 +69,7 @@ export default function ExerciseLog() {
     dismissToast,
     handleSubmit,
     handleEdit,
+    handleUseAsTemplate,
     handleDelete,
     resetForm,
   } = useLogCrud<ExerciseFormData>({
@@ -430,6 +431,9 @@ export default function ExerciseLog() {
                       </div>
                     </div>
                     <LogHistoryActions
+                      onUseAsTemplate={() =>
+                        handleUseAsTemplate(log as ExerciseFormData & { id: string })
+                      }
                       onEdit={() => handleEdit(log as ExerciseFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
                     />
