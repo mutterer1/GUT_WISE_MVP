@@ -103,6 +103,7 @@ export default function MedicationLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm,
   } = useLogCrud<MedicationFormData>({
@@ -590,6 +591,9 @@ export default function MedicationLog() {
                     <LogHistoryActions
                       onUseAsTemplate={() =>
                         handleUseAsTemplate(log as MedicationFormData & { id: string })
+                      }
+                      onSaveAsRoutine={() =>
+                        handleSaveAsRoutine(log as MedicationFormData & { id: string })
                       }
                       onEdit={() => handleEdit(log as MedicationFormData & { id: string })}
                       onDelete={() => handleDelete(log.id!)}
