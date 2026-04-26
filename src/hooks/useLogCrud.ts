@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getLocalDateTimeString } from '../utils/dateFormatters';
 import { getSuccessMessage, getUpdateMessage, getDeleteMessage } from '../utils/copySystem';
+import { consumeLogTemplateDraft } from '../utils/logTemplateDrafts';
 import { saveEventManager } from '../services/saveEventManager';
 import { useLogFeedback } from './useLogFeedback';
 import { useLogHistory } from './useLogHistory';
@@ -64,6 +65,12 @@ function getErrorMessage(err: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+function omitLogId<T extends { id?: string }>(log: T): Omit<T, 'id'> {
+  const copy = { ...log };
+  delete copy.id;
+  return copy;
 }
 
 export function useLogCrud<T extends { id?: string; logged_at: string }>(
@@ -231,8 +238,7 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
   };
 
   const handleEdit = (log: T & { id: string }) => {
-    const { id: _id, ...rest } = log;
-    const mappedLog = mapHistoryToForm ? mapHistoryToForm(log) : (rest as T);
+    const mappedLog = mapHistoryToForm ? mapHistoryToForm(log) : (omitLogId(log) as T);
 
     setFormData(mappedLog);
     setEditingId(log.id);
@@ -247,12 +253,11 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
 
   const handleUseAsTemplate = (log: T & { id: string }) => {
     const defaultFormData = createDefaultFormData();
-    const { id: _id, ...rest } = log;
     const mappedLog = mapTemplateToForm
       ? mapTemplateToForm(log, defaultFormData)
       : mapHistoryToForm
         ? mapHistoryToForm(log)
-        : (rest as T);
+        : (omitLogId(log) as T);
 
     const templateData = {
       ...mappedLog,
@@ -272,6 +277,41 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       behavior: 'smooth',
     });
   };
+
+  useEffect(() => {
+    const draft = consumeLogTemplateDraft(logType);
+    if (!draft) return;
+
+    const defaultFormData = createDefaultFormData();
+    const draftLog = {
+      id: typeof draft.entry.id === 'string' ? draft.entry.id : 'template-draft',
+      ...draft.entry,
+    } as T & { id: string };
+    const mappedLog = mapTemplateToForm
+      ? mapTemplateToForm(draftLog, defaultFormData)
+      : mapHistoryToForm
+        ? mapHistoryToForm(draftLog)
+        : (omitLogId(draftLog) as T);
+
+    const templateData = {
+      ...mappedLog,
+      logged_at: defaultFormData.logged_at,
+    } as T;
+
+    delete (templateData as { id?: string }).id;
+
+    setFormData(templateData);
+    setEditingId(null);
+    setShowHistory(false);
+    showSuccess('Template loaded. Review and save as a new entry.');
+  }, [
+    logType,
+    createDefaultFormData,
+    mapHistoryToForm,
+    mapTemplateToForm,
+    setShowHistory,
+    showSuccess,
+  ]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this entry?')) {
