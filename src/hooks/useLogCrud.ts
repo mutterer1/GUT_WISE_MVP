@@ -10,6 +10,8 @@ import { useLogHistory } from './useLogHistory';
 import type { SaveEvent } from '../services/saveEventManager';
 
 type LogType = SaveEvent['logType'];
+const TEMPLATE_LOADED_MESSAGE =
+  'Template loaded as a new unsaved entry. Review and save when ready.';
 
 interface UseLogCrudConfig<T extends { logged_at: string; id?: string }> {
   table: string;
@@ -71,6 +73,14 @@ function omitLogId<T extends { id?: string }>(log: T): Omit<T, 'id'> {
   const copy = { ...log };
   delete copy.id;
   return copy;
+}
+
+function scrollToLogForm(): void {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'smooth',
+  });
 }
 
 export function useLogCrud<T extends { id?: string; logged_at: string }>(
@@ -244,38 +254,36 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
     setEditingId(log.id);
     setShowHistory(false);
 
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'smooth',
-    });
+    scrollToLogForm();
   };
+
+  const applyTemplateData = useCallback(
+    (templateLog: T & { id: string }, defaultFormData: T) => {
+      const mappedLog = mapTemplateToForm
+        ? mapTemplateToForm(templateLog, defaultFormData)
+        : mapHistoryToForm
+          ? mapHistoryToForm(templateLog)
+          : (omitLogId(templateLog) as T);
+
+      const templateData = {
+        ...mappedLog,
+        logged_at: defaultFormData.logged_at,
+      } as T;
+
+      delete (templateData as { id?: string }).id;
+
+      setFormData(templateData);
+      setEditingId(null);
+      setShowHistory(false);
+      showSuccess(TEMPLATE_LOADED_MESSAGE);
+    },
+    [mapHistoryToForm, mapTemplateToForm, setShowHistory, showSuccess]
+  );
 
   const handleUseAsTemplate = (log: T & { id: string }) => {
     const defaultFormData = createDefaultFormData();
-    const mappedLog = mapTemplateToForm
-      ? mapTemplateToForm(log, defaultFormData)
-      : mapHistoryToForm
-        ? mapHistoryToForm(log)
-        : (omitLogId(log) as T);
-
-    const templateData = {
-      ...mappedLog,
-      logged_at: defaultFormData.logged_at,
-    } as T;
-
-    delete (templateData as { id?: string }).id;
-
-    setFormData(templateData);
-    setEditingId(null);
-    setShowHistory(false);
-    showSuccess('Template loaded. Review and save as a new entry.');
-
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'smooth',
-    });
+    applyTemplateData(log, defaultFormData);
+    scrollToLogForm();
   };
 
   useEffect(() => {
@@ -287,31 +295,9 @@ export function useLogCrud<T extends { id?: string; logged_at: string }>(
       id: typeof draft.entry.id === 'string' ? draft.entry.id : 'template-draft',
       ...draft.entry,
     } as T & { id: string };
-    const mappedLog = mapTemplateToForm
-      ? mapTemplateToForm(draftLog, defaultFormData)
-      : mapHistoryToForm
-        ? mapHistoryToForm(draftLog)
-        : (omitLogId(draftLog) as T);
-
-    const templateData = {
-      ...mappedLog,
-      logged_at: defaultFormData.logged_at,
-    } as T;
-
-    delete (templateData as { id?: string }).id;
-
-    setFormData(templateData);
-    setEditingId(null);
-    setShowHistory(false);
-    showSuccess('Template loaded. Review and save as a new entry.');
-  }, [
-    logType,
-    createDefaultFormData,
-    mapHistoryToForm,
-    mapTemplateToForm,
-    setShowHistory,
-    showSuccess,
-  ]);
+    applyTemplateData(draftLog, defaultFormData);
+    scrollToLogForm();
+  }, [logType, createDefaultFormData, applyTemplateData]);
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this entry?')) {
