@@ -78,6 +78,7 @@ export default function SymptomsLog() {
     handleSubmit,
     handleEdit,
     handleUseAsTemplate,
+    handleSaveAsRoutine,
     handleDelete,
     resetForm: baseResetForm,
   } = useLogCrud<SymptomsFormData>({
@@ -435,6 +436,9 @@ export default function SymptomsLog() {
                             <LogHistoryActions
                               onUseAsTemplate={() =>
                                 handleUseAsTemplate(log as SymptomsFormData & { id: string })
+                              }
+                              onSaveAsRoutine={() =>
+                                handleSaveAsRoutine(log as SymptomsFormData & { id: string })
                               }
                               onEdit={() => handleEdit(log as SymptomsFormData & { id: string })}
                               onDelete={() => handleDelete(log.id!)}
